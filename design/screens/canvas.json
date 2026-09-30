@@ -59,7 +59,7 @@
    "x": 2350,
    "y": 240,
    "w": 390,
-   "h": 1120,
+   "h": 1440,
    "title": "Business settings",
    "is_interactive": true,
    "radius": 28
@@ -75,43 +75,43 @@
   },
   "Inventory.dc.html": {
    "x": 0,
-   "y": 1900,
+   "y": 2080,
    "w": 390,
-   "h": 960,
+   "h": 1010,
    "title": "Inventory",
    "is_interactive": true,
    "radius": 28
   },
   "ProductDetail.dc.html": {
    "x": 470,
-   "y": 1900,
+   "y": 2080,
    "w": 390,
-   "h": 1080,
+   "h": 1280,
    "title": "Product detail",
    "is_interactive": true,
    "radius": 28
   },
   "ReceiveStock.dc.html": {
    "x": 940,
-   "y": 1900,
+   "y": 2080,
    "w": 390,
-   "h": 900,
+   "h": 1000,
    "title": "Receive stock",
    "is_interactive": true,
    "radius": 28
   },
   "DailyRecord.dc.html": {
    "x": 1410,
-   "y": 1900,
+   "y": 2080,
    "w": 390,
-   "h": 1250,
+   "h": 1340,
    "title": "Daily record",
    "is_interactive": true,
    "radius": 28
   },
   "CloseDay.dc.html": {
    "x": 1880,
-   "y": 1900,
+   "y": 2080,
    "w": 390,
    "h": 960,
    "title": "Close the day",
@@ -120,7 +120,7 @@
   },
   "Sales.dc.html": {
    "x": 0,
-   "y": 3550,
+   "y": 3820,
    "w": 390,
    "h": 1060,
    "title": "Sales and deliveries",
@@ -129,7 +129,7 @@
   },
   "NewSale.dc.html": {
    "x": 470,
-   "y": 3550,
+   "y": 3820,
    "w": 390,
    "h": 1120,
    "title": "New sale",
@@ -138,7 +138,7 @@
   },
   "Customers.dc.html": {
    "x": 940,
-   "y": 3550,
+   "y": 3820,
    "w": 390,
    "h": 900,
    "title": "Customers",
@@ -147,7 +147,7 @@
   },
   "CustomerProfile.dc.html": {
    "x": 1410,
-   "y": 3550,
+   "y": 3820,
    "w": 390,
    "h": 1120,
    "title": "Customer profile",
@@ -156,7 +156,7 @@
   },
   "Expenses.dc.html": {
    "x": 0,
-   "y": 5070,
+   "y": 5340,
    "w": 390,
    "h": 1000,
    "title": "Expenses",
@@ -165,7 +165,7 @@
   },
   "AddExpense.dc.html": {
    "x": 470,
-   "y": 5070,
+   "y": 5340,
    "w": 390,
    "h": 980,
    "title": "Add expense",
@@ -174,7 +174,7 @@
   },
   "Staff.dc.html": {
    "x": 940,
-   "y": 5070,
+   "y": 5340,
    "w": 390,
    "h": 1040,
    "title": "Staff and payments",
@@ -183,7 +183,7 @@
   },
   "Riders.dc.html": {
    "x": 1410,
-   "y": 5070,
+   "y": 5340,
    "w": 390,
    "h": 940,
    "title": "Riders and bikes",
@@ -192,7 +192,7 @@
   },
   "OnboardRider.dc.html": {
    "x": 1880,
-   "y": 5070,
+   "y": 5340,
    "w": 390,
    "h": 1400,
    "title": "Onboard a rider",
@@ -201,7 +201,7 @@
   },
   "Finance.dc.html": {
    "x": 0,
-   "y": 6870,
+   "y": 7140,
    "w": 390,
    "h": 1300,
    "title": "Finance",
@@ -210,7 +210,7 @@
   },
   "Reports.dc.html": {
    "x": 470,
-   "y": 6870,
+   "y": 7140,
    "w": 390,
    "h": 1120,
    "title": "Reports",
@@ -219,7 +219,7 @@
   },
   "Users.dc.html": {
    "x": 940,
-   "y": 6870,
+   "y": 7140,
    "w": 390,
    "h": 1180,
    "title": "Users and access",
@@ -228,7 +228,7 @@
   },
   "RiderHome.dc.html": {
    "x": 0,
-   "y": 8570,
+   "y": 8840,
    "w": 390,
    "h": 1000,
    "title": "Rider deliveries",
@@ -237,7 +237,7 @@
   },
   "DeliveryDetail.dc.html": {
    "x": 470,
-   "y": 8570,
+   "y": 8840,
    "w": 390,
    "h": 1060,
    "title": "Confirm delivery",
@@ -246,7 +246,7 @@
   },
   "RiderHistory.dc.html": {
    "x": 940,
-   "y": 8570,
+   "y": 8840,
    "w": 390,
    "h": 900,
    "title": "Rider history",
@@ -255,7 +255,7 @@
   },
   "RiderProfile.dc.html": {
    "x": 1410,
-   "y": 8570,
+   "y": 8840,
    "w": 390,
    "h": 900,
    "title": "Rider profile",
@@ -303,35 +303,35 @@
   },
   "stock": {
    "x": 0,
-   "y": 1660,
+   "y": 1840,
    "text": "Stock & daily record",
    "kind": "title1",
    "maxW": 2270
   },
   "sales": {
    "x": 0,
-   "y": 3310,
+   "y": 3580,
    "text": "Sales, deliveries & customers",
    "kind": "title1",
    "maxW": 1800
   },
   "money": {
    "x": 0,
-   "y": 4830,
+   "y": 5100,
    "text": "Expenses, staff & riders",
    "kind": "title1",
    "maxW": 2270
   },
   "fin": {
    "x": 0,
-   "y": 6630,
+   "y": 6900,
    "text": "Finance, reports & access (Admin)",
    "kind": "title1",
    "maxW": 1330
   },
   "rider": {
    "x": 0,
-   "y": 8330,
+   "y": 8600,
    "text": "Rider app",
    "kind": "title1",
    "maxW": 1800
