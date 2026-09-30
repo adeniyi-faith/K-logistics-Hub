@@ -2,14 +2,16 @@ import json, datetime, sys
 sys.path.insert(0, '.')
 from lib import page
 S = {}
-for m in ("screens1", "screens2", "screens3"):
+for m in ("screens1", "screens2", "screens3", "screens4"):
     S.update(__import__(m).S)
 rows = [
-  ("start", "Start, home & settings", ["Main", "Dashboard", "ManagerDashboard", "SyncCenter", "More", "Settings", "StyleGuide"]),
+  ("start", "Start, home & settings", ["Main", "Dashboard", "SyncCenter", "More", "Settings", "StyleGuide"]),
+  ("staff", "Staff app — each person sees only what Admin allows", ["StaffHome", "StaffHomeAccounts", "StaffProfile"]),
+  ("access", "Access control (Admin)", ["Users", "StaffAccess", "Roles"]),
   ("stock", "Stock & daily record", ["Inventory", "ProductDetail", "ReceiveStock", "DailyRecord", "CloseDay"]),
   ("sales", "Sales, deliveries & customers", ["Sales", "NewSale", "Customers", "CustomerProfile"]),
   ("money", "Expenses, staff & riders", ["Expenses", "AddExpense", "Staff", "Riders", "OnboardRider"]),
-  ("fin", "Finance, reports & access (Admin)", ["Finance", "Reports", "Users"]),
+  ("fin", "Finance & reports", ["Finance", "Reports"]),
   ("rider", "Rider app", ["RiderHome", "DeliveryDetail", "RiderHistory", "RiderProfile"]),
 ]
 boards, order, notes = {}, [], {}
