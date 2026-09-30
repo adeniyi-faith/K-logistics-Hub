@@ -150,9 +150,6 @@ TABS = {
     "staff_mgr": [("home", "Home", "StaffHome.dc.html"), ("box", "Stock", "Inventory.dc.html"),
                   ("cart", "Sales", "Sales.dc.html"), ("users", "Customers", "Customers.dc.html"),
                   ("user", "Me", "StaffProfile.dc.html")],
-    "staff_acc": [("home", "Home", "StaffHomeAccounts.dc.html"), ("receipt", "Expenses", "Expenses.dc.html"),
-                  ("chart", "Finance", "Finance.dc.html"), ("file", "Reports", "Reports.dc.html"),
-                  ("user", "Me", "StaffProfile.dc.html")],
     "rider": [("truck", "Deliveries", "RiderHome.dc.html"), ("clock", "History", "RiderHistory.dc.html"),
               ("user", "Profile", "RiderProfile.dc.html")],
 }
