@@ -69,21 +69,12 @@
    "y": 2080,
    "w": 390,
    "h": 1000,
-   "title": "Staff home: Manager",
-   "is_interactive": true,
-   "radius": 28
-  },
-  "StaffHomeAccounts.dc.html": {
-   "x": 470,
-   "y": 2080,
-   "w": 390,
-   "h": 1060,
-   "title": "Staff home: Accounts",
+   "title": "Staff home",
    "is_interactive": true,
    "radius": 28
   },
   "StaffProfile.dc.html": {
-   "x": 940,
+   "x": 470,
    "y": 2080,
    "w": 390,
    "h": 1100,
@@ -113,8 +104,8 @@
    "x": 940,
    "y": 3580,
    "w": 390,
-   "h": 1260,
-   "title": "Roles",
+   "h": 1180,
+   "title": "Staff roles",
    "is_interactive": true,
    "radius": 28
   },
@@ -307,7 +298,6 @@
   "Settings.dc.html",
   "StyleGuide.dc.html",
   "StaffHome.dc.html",
-  "StaffHomeAccounts.dc.html",
   "StaffProfile.dc.html",
   "Users.dc.html",
   "StaffAccess.dc.html",
@@ -346,7 +336,7 @@
    "y": 1840,
    "text": "Staff app \u2014 each person sees only what Admin allows",
    "kind": "title1",
-   "maxW": 1330
+   "maxW": 860
   },
   "access": {
    "x": 0,

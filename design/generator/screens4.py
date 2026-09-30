@@ -26,33 +26,11 @@ def can(label, lvl, first=False):
             f'<span style="font-weight: 500">{label}</span>{badge(txt, LEVEL_BADGE[lvl])}</div>')
 
 
-# ---------------- Staff home: Accounts (Ada) ----------------
-S["StaffHomeAccounts"] = ("Staff home: Accounts", 1060, dash_header.replace("Good morning, Kasim", "Good morning, Ada") + f'''
-<main style="flex-grow: 1; overflow: hidden; display: flex; flex-direction: column; gap: 18px; padding: 0 16px 24px; margin-top: -60px">
-<section style="background: #FFFFFF; border-radius: 20px; padding: 18px; box-shadow: 0 10px 30px rgba(15,30,59,0.12); display: flex; flex-direction: column; gap: 14px">
-<div style="display: flex; justify-content: space-between; align-items: flex-start">
-<div><div style="font-size: 13px; color: {MUTED}; font-weight: 500">Today's sales</div>
-<div style="font-family: {HEAD}; font-size: 30px; font-weight: 700; line-height: 1.2">₦1,204,000</div></div>{badge("View only", "blue")}</div>
-<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding-top: 12px; border-top: 1px solid {LINE}">
-<div><div style="font-size: 12px; color: {MUTED}">Expenses today</div><div style="font-weight: 700">₦41,500</div></div>
-<div><div style="font-size: 12px; color: {MUTED}">Profit today</div><div style="font-weight: 700; color: {GREEN}">₦378,500</div></div></div>
-</section>
-<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
-{quick("receipt", "Add expense", "AddExpense.dc.html")}{quick("users", "Pay staff", "Staff.dc.html")}{quick("wallet", "Take payment", "CustomerProfile.dc.html")}{quick("file", "Reports", "Reports.dc.html")}
-</div>
-{card(h2("Customers who owe", badge("₦494,500", "red")) + row(avatar("DH"), "Divine Health Store", "Trans-Amadi", "₦215,000", "", "CustomerProfile.dc.html", border=False)
-      + row(avatar("GH"), "Grace Herbal Store", "Rumuola", "₦129,000", "", "CustomerProfile.dc.html") + row(avatar("MC"), "Mama Chioma Chemist", "Mile 1", "₦107,500", "", "CustomerProfile.dc.html"), gap=0)}
-{card(h2("Staff pay due this week", link("Pay", "Staff.dc.html")) + kv("Bola Johnson · weekly", "₦25,000") + kv("Riders · daily (4)", "₦20,000 today") + f'<div style="border-top: 1px solid {LINE}"></div>' + kv("Due this week", "₦180,000", True), gap=10)}
-<div style="display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 16px; border: 1px dashed #C9CFDB; color: {MUTED}">
-{ic("lock", 20)}<div style="font-size: 13px; line-height: 1.4"><b style="color: {NAVY}">Stock and deliveries are hidden for your role.</b> Kasim decides what each staff member can see.</div></div>
-</main>
-{tabbar("staff_acc", "Home")}''')
-
 # ---------------- Staff profile: my access (Kemi) ----------------
 S["StaffProfile"] = ("My access", 1100, topbar("Me", sync="offline") + main(f'''
 <div style="display: flex; align-items: center; gap: 14px; padding: 4px 0">{avatar("KE", ORANGE, NAVY, 64)}
 <div style="display: flex; flex-direction: column; gap: 4px"><div style="font-family: {HEAD}; font-size: 20px; font-weight: 600">Kemi Eze</div>
-<div style="font-size: 13px; color: {MUTED}">Sales &amp; dispatch manager</div><div style="display: flex; gap: 6px">{badge("Staff", "navy")}{badge("Manager role + 2 changes", "amber")}</div></div></div>
+<div style="font-size: 13px; color: {MUTED}">Sales &amp; dispatch manager</div><div style="display: flex; gap: 6px">{badge("Staff", "navy")}{badge("Manager access + 2 changes", "amber")}</div></div></div>
 {card(h2("What I can use") + can("Stock", "Edit", True) + can("Sales &amp; deliveries", "Edit") + can("Customers", "Edit") + can("Riders &amp; bikes", "Edit")
       + can("Expenses", "View") + can("Reports", "View") + can("Finance &amp; profit", "Off") + can("Staff &amp; pay", "Off") + can("Business settings", "Off"), gap=0)}
 {card(h2("Extra permissions") + "".join(
@@ -79,13 +57,13 @@ def cmp(area, vals, first=False):
 
 
 S["Users"] = ("Users and access", 1240, topbar("Users & access", "More.dc.html", sync="synced") + main(f'''
-{segmented(["People", "Roles"], "People")}
+<div style="font-size: 14px; line-height: 1.5; color: {MUTED}">Three kinds of user: <b style="color: {NAVY}">Admin</b> (everything), <b style="color: {NAVY}">Staff</b> (what you allow) and <b style="color: {NAVY}">Rider</b> (own deliveries).</div>
 {chips(["All (11)", "Staff (4)", "Riders (6)"], "All (11)")}
 {card(person("K", "Kasim", "CEO · You", "Admin", "navy", "Full access", True, "#")
-      + person("KE", "Kemi Eze", "Sales &amp; dispatch manager", "Manager", "blue", "+ 2 changes")
-      + person("AO", "Ada Okoro", "Accounts officer", "Accounts", "blue")
-      + person("BJ", "Bola Johnson", "Store keeper", "Store keeper", "blue")
-      + person("PA", "Precious Amadi", "Sales rep", "Sales", "blue", "+ 1 change")
+      + person("KE", "Kemi Eze", "Manager access", "Staff", "blue", "+ 2 changes")
+      + person("AO", "Ada Okoro", "Accounts access", "Staff", "blue")
+      + person("BJ", "Bola Johnson", "Store keeper access", "Staff", "blue")
+      + person("PA", "Precious Amadi", "Sales access", "Staff", "blue", "+ 1 change")
       + row(icon_tile("bike", "#EEF1F8", NAVY), "6 riders", "Use the Rider app · deliveries only", badge("Rider", "gray"), "", "Riders.dc.html"), pad=14, gap=0, extra="; padding-top: 2px; padding-bottom: 2px")}
 {btn("Invite staff", "StaffAccess.dc.html", "accent", "plus")}
 {card(h2("Compare staff access") + f"""<div style="display: grid; grid-template-columns: 1.5fr repeat(4, minmax(0, 1fr)); font-size: 12px; color: {MUTED}; font-weight: 700"><span>Area</span><span style="text-align: center">Kemi</span><span style="text-align: center">Ada</span><span style="text-align: center">Bola</span><span style="text-align: center">Precious</span></div>"""
@@ -99,7 +77,7 @@ S["StaffAccess"] = ("Edit staff access", 1640, topbar("Kemi's access", "Users.dc
 <div style="display: flex; align-items: center; gap: 12px">{avatar("KE", ORANGE, NAVY, 52)}
 <div style="flex-grow: 1"><div style="font-weight: 700; font-size: 17px">Kemi Eze</div><div style="font-size: 13px; color: {MUTED}">0803 222 1111 · Staff since Feb 2026</div></div>{badge("Active", "green")}</div>
 {field("Job title", "Sales &amp; dispatch manager", fid="sa-title")}
-{card(h2("Start from a role", link("Edit roles", "Roles.dc.html")) + chips(["Manager", "Sales", "Store keeper", "Accounts", "Custom"], "Manager")
+{card(h2("Start from a role", link("Staff roles", "Roles.dc.html")) + chips(["Manager", "Sales", "Store keeper", "Accounts", "Custom"], "Manager")
       + note("Kemi has 2 changes from the Manager role: <b>Close the day</b> turned on, <b>Reports</b> set to view only.", "sliders", "amber"))}
 {card(h2("What Kemi can use") + f'<div style="font-size: 12px; color: {MUTED}">Off = hidden · View = look only · Edit = add and change</div>'
       + level("Stock", "Products, receive stock, counts", "Edit", True) + level("Sales &amp; deliveries", "New sales, assign riders", "Edit")
@@ -125,14 +103,12 @@ def role_card(name, people, summary, areas, fixed=False):
 <div style="font-size: 13px; line-height: 1.4">{summary}</div><div style="display: flex; flex-wrap: wrap; gap: 6px">{pills}</div>''', gap=10)
 
 
-S["Roles"] = ("Roles", 1260, topbar("Roles", "Users.dc.html", sync="synced") + main(f'''
-<div style="font-size: 14px; line-height: 1.5; color: {MUTED}">A role is a starting set of access. Give a role to a staff member, then turn single things on or off just for them.</div>
-{role_card("Admin", "1 person · Kasim", "Everything, including users, settings and finance.", ["All areas"], True)}
+S["Roles"] = ("Staff roles", 1180, topbar("Staff roles", "Users.dc.html", sync="synced") + main(f'''
+<div style="font-size: 14px; line-height: 1.5; color: {MUTED}">A staff role is a ready-made set of access. Give one to a staff member, then turn single things on or off just for them. Admin and Rider access are fixed.</div>
 {role_card("Manager", "1 person", "Runs daily operations: stock, sales, customers and riders.", ["Stock: edit", "Sales: edit", "Customers: edit", "Riders: edit", "Expenses: view", "Reports: edit"])}
 {role_card("Accounts", "1 person", "Handles money: expenses, staff pay, finance and reports.", ["Expenses: edit", "Staff pay: edit", "Finance: view", "Reports: edit", "Sales: view"])}
 {role_card("Store keeper", "1 person", "Receives and counts stock. Sees sales so they can pack orders.", ["Stock: edit", "Sales: view"])}
 {role_card("Sales", "1 person", "Takes orders and looks after customers.", ["Sales: edit", "Customers: edit", "Stock: view"])}
-{role_card("Rider", "6 people", "Uses the Rider app: own deliveries, collection, proof of delivery.", ["Own deliveries only"], True)}
-{btn("Create a new role", None, "ghost", "plus")}
+{btn("Create a staff role", None, "ghost", "plus")}
 <div style="font-size: 12px; color: {MUTED}; text-align: center">Changing a role updates everyone who has it, except the things you changed for one person.</div>
 '''))

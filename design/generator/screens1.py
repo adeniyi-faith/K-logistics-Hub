@@ -22,10 +22,9 @@ S["Main"] = ("Sign in", 844, f'''
 <a href="#" style="align-self: center; font-size: 14px; font-weight: 700; color: {ORANGE_TXT}; padding: 8px">Forgot password?</a>
 <div style="display: flex; flex-direction: column; gap: 8px; margin-top: auto">
 <div style="font-size: 12px; color: {MUTED}; text-align: center; font-weight: 700; letter-spacing: 0.04em">DEMO — OPEN THE APP AS</div>
-<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
 <a href="Dashboard.dc.html" style="min-height: 44px; border-radius: 12px; border: 1px solid {LINE}; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">Admin</a>
-<a href="StaffHome.dc.html" style="min-height: 44px; border-radius: 12px; border: 1px solid {LINE}; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">Staff · Manager</a>
-<a href="StaffHomeAccounts.dc.html" style="min-height: 44px; border-radius: 12px; border: 1px solid {LINE}; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">Staff · Accounts</a>
+<a href="StaffHome.dc.html" style="min-height: 44px; border-radius: 12px; border: 1px solid {LINE}; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">Staff</a>
 <a href="RiderHome.dc.html" style="min-height: 44px; border-radius: 12px; border: 1px solid {LINE}; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">Rider</a>
 </div>
 <div style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: {MUTED}; margin-top: 4px">{ic("cloudoff", 16)}Works without internet. Syncs when you're back online.</div>
@@ -89,7 +88,7 @@ S["Dashboard"] = ("Admin dashboard", 1260, dash_header + f'''
 {tabbar("admin", "Home")}''')
 
 # ---------------- Manager dashboard ----------------
-S["StaffHome"] = ("Staff home: Manager", 1000, dash_header.replace("Good morning, Kasim", "Good morning, Kemi") + f'''
+S["StaffHome"] = ("Staff home", 1000, dash_header.replace("Good morning, Kasim", "Good morning, Kemi") + f'''
 <main style="flex-grow: 1; overflow: hidden; display: flex; flex-direction: column; gap: 18px; padding: 0 16px 24px; margin-top: -60px">
 <section style="background: #FFFFFF; border-radius: 20px; padding: 18px; box-shadow: 0 10px 30px rgba(15,30,59,0.12); display: flex; flex-direction: column; gap: 12px">
 <div style="font-size: 13px; color: {MUTED}; font-weight: 500">Today's deliveries</div>
