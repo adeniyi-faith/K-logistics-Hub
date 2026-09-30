@@ -5,6 +5,23 @@ Interactive design canvas (all screens, clickable): https://claude.ai/artifact/H
 This folder holds the approved look and flow for the first Expo (React Native) app.
 The numbers on the screens are sample data only.
 
+## The business
+
+- **CEO / Owner:** Kasim (the Admin account in the design).
+- **Area served:** Port Harcourt and wider Rivers State. Delivery areas (GRA, Rumuola, Trans-Amadi, Rumuokoro, Mile 1, D-Line, Ada George, Choba, Eleme, Outside PH) are editable in Business settings.
+- **What they sell:** herbal and health products (mostly Bioharb), not food items.
+
+## Products (27)
+
+5 Vitamin C, Baysel, Boazem, Cazibin, Dark Spot, Devano, Fibnova, Facial Soap, Glow Serum, Hair Plus Formula,
+Kojic Acid, Menopause Support, Mvera, Mullein (herbal tea), Orafix, Prostdesx, Proxan, Sootra, Soluvia, Sovana,
+Swanky, Sabana Pro, Visura, Zouwa, Kidney Support (tea), Zudes Capsule, Zemora Tea.
+
+- Selling price in the design: **₦21,500 per unit** (each product's price can be changed on its own).
+- Cost price in the design: **₦14,000** — a placeholder until the real cost prices are known.
+- Product groups: Capsules, Herbal teas, Skin care, Oral care, Hair care, Women's health, Men's health.
+- Health products need extra fields, which the design includes: **NAFDAC registration number**, **supplier**, **batch number** and **expiry date** (captured when stock is received).
+
 ## Brand
 
 | Token | Hex | Use |
