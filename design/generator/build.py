@@ -12,7 +12,7 @@ rows = [
   ("sales", "Sales, deliveries & customers", ["Sales", "NewSale", "Customers", "CustomerProfile"]),
   ("money", "Expenses, staff & riders", ["Expenses", "AddExpense", "Staff", "Riders", "OnboardRider"]),
   ("fin", "Finance & reports", ["Finance", "Reports"]),
-  ("rider", "Rider app", ["RiderHome", "DeliveryDetail", "RiderHistory", "RiderProfile"]),
+  ("rider", "Rider app", ["RiderHome", "DeliveryDetail", "RiderHistory", "RiderProfile", "RiderEditProfile"]),
 ]
 boards, order, notes = {}, [], {}
 y = 0

@@ -58,7 +58,7 @@ There are exactly three kinds of user: **Admin, Staff and Rider**. Manager, Acco
 - Staff can see their own access on the **Me** screen. Every access change is logged. Changes reach a staff phone on its next sync; turning off "Can sign in" blocks the person straight away when online.
 - Rider and Admin access are fixed.
 
-## Screens (31)
+## Screens (32)
 
 1. **Start, home & settings** — Sign in (with demo picker: Admin, Staff, Rider), Admin dashboard, Sync centre, More menu, Business settings (logo, expense categories, units, low-stock alert, own words for "sale"/"rider"), Style guide.
 2. **Stock & daily record** — Stock list, Product detail (Opening + Received − Delivered = Closing, cost/sell/profit, last 5 days), Receive stock, Daily record (any past day), Close the day (closing stock carried into tomorrow's opening stock).
@@ -67,7 +67,7 @@ There are exactly three kinds of user: **Admin, Staff and Rider**. Manager, Acco
 5. **Finance & reports** — Finance (Day/Week/Month), Reports (filter by period, product, customer, staff, rider; export PDF/Excel/share).
 7. **Staff app** — Staff home (shown for Kemi, who has Manager access: stock, sales, riders, no money; the home and tabs change with each person's access), Me (my access and pay).
 8. **Access control (Admin)** — Users & access (everyone labelled Admin, Staff or Rider, plus a side-by-side comparison of staff access), Edit one staff member's access, Staff roles.
-6. **Rider app** — Deliveries today, Confirm delivery (items, cash/transfer collected, photo, signature), History, Profile.
+6. **Rider app** — Deliveries today, Confirm delivery (items, cash/transfer collected, photo, signature), History, Profile, Edit profile. Riders change their own photo, phone, address, next of kin, pay account and password straight away (a new phone number is confirmed by code; Admin is told when the pay account changes). Name, ID and bike/plate are checked by Admin, so the rider taps "Ask to change" instead.
 
 ## Automatic sums shown in the design
 
