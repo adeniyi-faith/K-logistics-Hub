@@ -28,17 +28,8 @@
    "is_interactive": true,
    "radius": 28
   },
-  "ManagerDashboard.dc.html": {
-   "x": 940,
-   "y": 240,
-   "w": 390,
-   "h": 1000,
-   "title": "Manager dashboard",
-   "is_interactive": true,
-   "radius": 28
-  },
   "SyncCenter.dc.html": {
-   "x": 1410,
+   "x": 940,
    "y": 240,
    "w": 390,
    "h": 900,
@@ -47,7 +38,7 @@
    "radius": 28
   },
   "More.dc.html": {
-   "x": 1880,
+   "x": 1410,
    "y": 240,
    "w": 390,
    "h": 980,
@@ -56,7 +47,7 @@
    "radius": 28
   },
   "Settings.dc.html": {
-   "x": 2350,
+   "x": 1880,
    "y": 240,
    "w": 390,
    "h": 1440,
@@ -65,7 +56,7 @@
    "radius": 28
   },
   "StyleGuide.dc.html": {
-   "x": 2820,
+   "x": 2350,
    "y": 240,
    "w": 390,
    "h": 1200,
@@ -73,9 +64,63 @@
    "is_interactive": true,
    "radius": 28
   },
-  "Inventory.dc.html": {
+  "StaffHome.dc.html": {
    "x": 0,
    "y": 2080,
+   "w": 390,
+   "h": 1000,
+   "title": "Staff home: Manager",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "StaffHomeAccounts.dc.html": {
+   "x": 470,
+   "y": 2080,
+   "w": 390,
+   "h": 1060,
+   "title": "Staff home: Accounts",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "StaffProfile.dc.html": {
+   "x": 940,
+   "y": 2080,
+   "w": 390,
+   "h": 1100,
+   "title": "My access",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Users.dc.html": {
+   "x": 0,
+   "y": 3580,
+   "w": 390,
+   "h": 1240,
+   "title": "Users and access",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "StaffAccess.dc.html": {
+   "x": 470,
+   "y": 3580,
+   "w": 390,
+   "h": 1640,
+   "title": "Edit staff access",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Roles.dc.html": {
+   "x": 940,
+   "y": 3580,
+   "w": 390,
+   "h": 1260,
+   "title": "Roles",
+   "is_interactive": true,
+   "radius": 28
+  },
+  "Inventory.dc.html": {
+   "x": 0,
+   "y": 5620,
    "w": 390,
    "h": 1010,
    "title": "Inventory",
@@ -84,7 +129,7 @@
   },
   "ProductDetail.dc.html": {
    "x": 470,
-   "y": 2080,
+   "y": 5620,
    "w": 390,
    "h": 1280,
    "title": "Product detail",
@@ -93,7 +138,7 @@
   },
   "ReceiveStock.dc.html": {
    "x": 940,
-   "y": 2080,
+   "y": 5620,
    "w": 390,
    "h": 1000,
    "title": "Receive stock",
@@ -102,7 +147,7 @@
   },
   "DailyRecord.dc.html": {
    "x": 1410,
-   "y": 2080,
+   "y": 5620,
    "w": 390,
    "h": 1340,
    "title": "Daily record",
@@ -111,7 +156,7 @@
   },
   "CloseDay.dc.html": {
    "x": 1880,
-   "y": 2080,
+   "y": 5620,
    "w": 390,
    "h": 960,
    "title": "Close the day",
@@ -120,7 +165,7 @@
   },
   "Sales.dc.html": {
    "x": 0,
-   "y": 3820,
+   "y": 7360,
    "w": 390,
    "h": 1060,
    "title": "Sales and deliveries",
@@ -129,7 +174,7 @@
   },
   "NewSale.dc.html": {
    "x": 470,
-   "y": 3820,
+   "y": 7360,
    "w": 390,
    "h": 1120,
    "title": "New sale",
@@ -138,7 +183,7 @@
   },
   "Customers.dc.html": {
    "x": 940,
-   "y": 3820,
+   "y": 7360,
    "w": 390,
    "h": 900,
    "title": "Customers",
@@ -147,7 +192,7 @@
   },
   "CustomerProfile.dc.html": {
    "x": 1410,
-   "y": 3820,
+   "y": 7360,
    "w": 390,
    "h": 1120,
    "title": "Customer profile",
@@ -156,7 +201,7 @@
   },
   "Expenses.dc.html": {
    "x": 0,
-   "y": 5340,
+   "y": 8880,
    "w": 390,
    "h": 1000,
    "title": "Expenses",
@@ -165,7 +210,7 @@
   },
   "AddExpense.dc.html": {
    "x": 470,
-   "y": 5340,
+   "y": 8880,
    "w": 390,
    "h": 980,
    "title": "Add expense",
@@ -174,7 +219,7 @@
   },
   "Staff.dc.html": {
    "x": 940,
-   "y": 5340,
+   "y": 8880,
    "w": 390,
    "h": 1040,
    "title": "Staff and payments",
@@ -183,7 +228,7 @@
   },
   "Riders.dc.html": {
    "x": 1410,
-   "y": 5340,
+   "y": 8880,
    "w": 390,
    "h": 940,
    "title": "Riders and bikes",
@@ -192,7 +237,7 @@
   },
   "OnboardRider.dc.html": {
    "x": 1880,
-   "y": 5340,
+   "y": 8880,
    "w": 390,
    "h": 1400,
    "title": "Onboard a rider",
@@ -201,7 +246,7 @@
   },
   "Finance.dc.html": {
    "x": 0,
-   "y": 7140,
+   "y": 10680,
    "w": 390,
    "h": 1300,
    "title": "Finance",
@@ -210,25 +255,16 @@
   },
   "Reports.dc.html": {
    "x": 470,
-   "y": 7140,
+   "y": 10680,
    "w": 390,
    "h": 1120,
    "title": "Reports",
    "is_interactive": true,
    "radius": 28
   },
-  "Users.dc.html": {
-   "x": 940,
-   "y": 7140,
-   "w": 390,
-   "h": 1180,
-   "title": "Users and access",
-   "is_interactive": true,
-   "radius": 28
-  },
   "RiderHome.dc.html": {
    "x": 0,
-   "y": 8840,
+   "y": 12380,
    "w": 390,
    "h": 1000,
    "title": "Rider deliveries",
@@ -237,7 +273,7 @@
   },
   "DeliveryDetail.dc.html": {
    "x": 470,
-   "y": 8840,
+   "y": 12380,
    "w": 390,
    "h": 1060,
    "title": "Confirm delivery",
@@ -246,7 +282,7 @@
   },
   "RiderHistory.dc.html": {
    "x": 940,
-   "y": 8840,
+   "y": 12380,
    "w": 390,
    "h": 900,
    "title": "Rider history",
@@ -255,7 +291,7 @@
   },
   "RiderProfile.dc.html": {
    "x": 1410,
-   "y": 8840,
+   "y": 12380,
    "w": 390,
    "h": 900,
    "title": "Rider profile",
@@ -266,11 +302,16 @@
  "order": [
   "Main.dc.html",
   "Dashboard.dc.html",
-  "ManagerDashboard.dc.html",
   "SyncCenter.dc.html",
   "More.dc.html",
   "Settings.dc.html",
   "StyleGuide.dc.html",
+  "StaffHome.dc.html",
+  "StaffHomeAccounts.dc.html",
+  "StaffProfile.dc.html",
+  "Users.dc.html",
+  "StaffAccess.dc.html",
+  "Roles.dc.html",
   "Inventory.dc.html",
   "ProductDetail.dc.html",
   "ReceiveStock.dc.html",
@@ -287,7 +328,6 @@
   "OnboardRider.dc.html",
   "Finance.dc.html",
   "Reports.dc.html",
-  "Users.dc.html",
   "RiderHome.dc.html",
   "DeliveryDetail.dc.html",
   "RiderHistory.dc.html",
@@ -299,39 +339,53 @@
    "y": 0,
    "text": "Start, home & settings",
    "kind": "title1",
-   "maxW": 3210
+   "maxW": 2740
+  },
+  "staff": {
+   "x": 0,
+   "y": 1840,
+   "text": "Staff app \u2014 each person sees only what Admin allows",
+   "kind": "title1",
+   "maxW": 1330
+  },
+  "access": {
+   "x": 0,
+   "y": 3340,
+   "text": "Access control (Admin)",
+   "kind": "title1",
+   "maxW": 1330
   },
   "stock": {
    "x": 0,
-   "y": 1840,
+   "y": 5380,
    "text": "Stock & daily record",
    "kind": "title1",
    "maxW": 2270
   },
   "sales": {
    "x": 0,
-   "y": 3580,
+   "y": 7120,
    "text": "Sales, deliveries & customers",
    "kind": "title1",
    "maxW": 1800
   },
   "money": {
    "x": 0,
-   "y": 5100,
+   "y": 8640,
    "text": "Expenses, staff & riders",
    "kind": "title1",
    "maxW": 2270
   },
   "fin": {
    "x": 0,
-   "y": 6900,
-   "text": "Finance, reports & access (Admin)",
+   "y": 10440,
+   "text": "Finance & reports",
    "kind": "title1",
-   "maxW": 1330
+   "maxW": 860
   },
   "rider": {
    "x": 0,
-   "y": 8600,
+   "y": 12140,
    "text": "Rider app",
    "kind": "title1",
    "maxW": 1800

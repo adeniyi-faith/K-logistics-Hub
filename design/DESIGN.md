@@ -40,21 +40,33 @@ Touch targets are at least 44px. Orange buttons use navy text (white on orange f
 
 ## Who uses the app
 
-| Role | Home screen | Bottom tabs |
+There are three kinds of user:
+
+| User | Home screen | Bottom tabs |
 |---|---|---|
-| Admin / Owner | Dashboard (money + stock + operations) | Home · Stock · Sales · Customers · More |
-| Manager | Dashboard without money figures | Same as Admin; Finance/Expenses/Reports only if the owner allows |
+| Admin (Kasim, CEO) | Full dashboard (money + stock + operations) | Home · Stock · Sales · Customers · More |
+| Staff | A home built from what that person is allowed to use | Only the areas they can use, plus **Me** |
 | Rider | Today's assigned deliveries | Deliveries · History · Profile |
 
-The "Users & access" screen holds the permission table and the owner's switches for what managers can see.
+### How staff access works
 
-## Screens (28)
+- Admin gives each staff member a **role** as a starting point: Manager, Accounts, Store keeper, Sales, or a new role Admin creates.
+- For every area (Stock, Sales & deliveries, Customers, Riders & bikes, Expenses, Staff & pay, Finance & profit, Reports, Business settings) access is **Off** (hidden), **View** (look only) or **Edit** (add and change).
+- **Extra permissions** are single switches: see cost prices and profit, give discounts (with a limit), record customer payments, cancel/change a saved sale, close the day, export reports, decide sync clashes.
+- Admin can change any of these **for one person** without changing the role. So two staff with the same role can still have different access (e.g. Kemi is a Manager but can also close the day).
+- Changing a role updates everyone who has it, except the things changed for one person.
+- Staff can see their own access on the **Me** screen. Every access change is logged. Changes reach a staff phone on its next sync; turning off "Can sign in" blocks the person straight away when online.
+- Rider and Admin access are fixed.
 
-1. **Start, home & settings** — Sign in (with demo role picker), Admin dashboard, Manager dashboard, Sync centre, More menu, Business settings (logo, expense categories, units, low-stock alert, own words for "sale"/"rider"), Style guide.
+## Screens (32)
+
+1. **Start, home & settings** — Sign in (with demo picker: Admin, two different staff, Rider), Admin dashboard, Sync centre, More menu, Business settings (logo, expense categories, units, low-stock alert, own words for "sale"/"rider"), Style guide.
 2. **Stock & daily record** — Stock list, Product detail (Opening + Received − Delivered = Closing, cost/sell/profit, last 5 days), Receive stock, Daily record (any past day), Close the day (closing stock carried into tomorrow's opening stock).
 3. **Sales, deliveries & customers** — Sales list, New sale (customer, items, rider + bike, payment, balance), Customers (total owed), Customer profile (Bought / Paid / Owes, running balance, most bought).
 4. **Expenses, staff & riders** — Expenses (by category and Daily/Weekly/Monthly/One-time), Add expense, Staff & pay, Riders & bikes, Add a rider (personal → bike → ID & login).
-5. **Finance, reports & access** — Finance (Day/Week/Month), Reports (filter by period, product, customer, staff, rider; export PDF/Excel/share), Users & access.
+5. **Finance & reports** — Finance (Day/Week/Month), Reports (filter by period, product, customer, staff, rider; export PDF/Excel/share).
+7. **Staff app** — Staff home for a Manager (Kemi: stock, sales, riders, no money), Staff home for Accounts (Ada: money, expenses, staff pay, no stock), Me (my access and pay).
+8. **Access control (Admin)** — Users & access (people list and a side-by-side comparison of staff access), Edit one person's access, Roles.
 6. **Rider app** — Deliveries today, Confirm delivery (items, cash/transfer collected, photo, signature), History, Profile.
 
 ## Automatic sums shown in the design
