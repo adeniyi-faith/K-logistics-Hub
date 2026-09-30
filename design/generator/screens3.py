@@ -241,13 +241,41 @@ S["RiderHistory"] = ("Rider history", 900, topbar("My deliveries", sync="offline
 {card(hist_row("16:20", "Mama Chioma Chemist", "Devano × 4", "Delivered", "green", True) + hist_row("14:02", "Divine Health Store", "Customer shop closed", "Failed", "red") + hist_row("11:30", "Grace Herbal Store", "Mullein herbal tea × 2", "Delivered", "green"), gap=0, pad=14, extra="; padding-top: 2px; padding-bottom: 2px")}
 ''') + tabbar("rider", "History"))
 
-S["RiderProfile"] = ("Rider profile", 900, topbar("My profile", sync="offline") + main(f'''
+S["RiderProfile"] = ("Rider profile", 960, topbar("My profile", sync="offline", right=f'<a href="RiderEditProfile.dc.html" aria-label="Edit profile" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid {LINE}">{ic("pen", 20)}</a>') + main(f'''
 <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 8px 0">{avatar("EO", ORANGE, NAVY, 80)}
 <div style="font-family: {HEAD}; font-size: 20px; font-weight: 600">Emeka Obi</div>{badge("Active rider", "green")}</div>
-{card(h2("My details") + kv("Phone", "0809 123 4567") + kv("Address", "Rumuokoro, Port Harcourt") + kv("Joined", "12 Mar 2026") + kv("ID", "NIN · verified"), gap=10)}
+{btn("Edit my profile", "RiderEditProfile.dc.html", "ghost", "pen")}
+{card(h2("My details") + kv("Phone", "0809 123 4567") + kv("Address", "Rumuokoro, Port Harcourt") + kv("Next of kin", "Ngozi Obi · 0803 555 0101") + kv("Joined", "12 Mar 2026") + kv("ID", "NIN · verified"), gap=10)}
 {card(h2("My bike") + kv("Bike", "Bike 1 · Bajaj Boxer") + kv("Plate number", "PHC-234KA") + kv("Last service", "1 Sep 2026"), gap=10)}
-{card(h2("My pay") + kv("Rate", "₦5,000 per day") + kv("Paid this month", "₦130,000"), gap=10)}
+{card(h2("My pay") + kv("Rate", "₦5,000 per day") + kv("Paid this month", "₦130,000") + kv("Paid into", "Opay · ****4521"), gap=10)}
 {btn("Sign out", "Main.dc.html", "danger", "logout")}
+''') + tabbar("rider", "Profile"))
+
+# ---------------- Rider: edit profile ----------------
+def locked(label, value, why):
+    return (f'<div style="display: flex; flex-direction: column; gap: 6px"><div style="font-size: 13px; font-weight: 700">{label}</div>'
+            f'<div style="display: flex; align-items: center; gap: 10px; min-height: 50px; padding: 0 6px 0 14px; background: {BG}; border: 1px solid {LINE}; border-radius: 12px">'
+            f'<span style="color: {MUTED}; display: flex">{ic("lock", 18)}</span><span style="flex-grow: 1; font-weight: 500; color: {MUTED}">{value}</span>'
+            f'<button type="button" style="min-height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid #C9CFDB; background: #FFFFFF; font-weight: 700; font-size: 13px; color: {NAVY}">Ask to change</button></div>'
+            f'<div style="font-size: 12px; color: {MUTED}">{why}</div></div>')
+
+
+ACCT_OK = f'<div style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: {GREEN}">{ic("check", 16, GREEN, 2.4)}Account name: EMEKA OBI</div>'
+
+
+S["RiderEditProfile"] = ("Rider edit profile", 1500, topbar("Edit profile", "RiderProfile.dc.html", sync="offline") + main(f'''
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 4px 0">
+<div style="position: relative">{avatar("EO", ORANGE, NAVY, 88)}
+<button type="button" aria-label="Change photo" style="position: absolute; right: -4px; bottom: -4px; width: 40px; height: 40px; border-radius: 999px; border: 3px solid {BG}; background: {NAVY}; display: flex; align-items: center; justify-content: center">{ic("camera", 18, "#FFFFFF")}</button></div>
+<div style="font-size: 13px; color: {MUTED}">Tap the camera to change your photo</div></div>
+{card(h2("Contact") + field("Phone number", "0809 123 4567", icon="phone", fid="rp-phone", helper="We'll send a code to the new number to confirm it") + field("Other phone (optional)", "", "Second line", icon="phone", fid="rp-phone2") + field("Home address", "Rumuokoro, Port Harcourt", icon="pin", fid="rp-addr"))}
+{card(h2("Next of kin") + field("Full name", "Ngozi Obi", icon="user", fid="rp-kin") + field("Phone number", "0803 555 0101", icon="phone", fid="rp-kinphone") + field("Relationship", "Wife", select=True, fid="rp-kinrel"))}
+{card(h2("Where to pay me") + field("Bank or wallet", "Opay", select=True, fid="rp-bank") + field("Account number", "812 345 4521", fid="rp-acct") + ACCT_OK
+      + note("Admin gets a notice when you change your pay account, before the next payment goes out.", "shield", "blue"))}
+{card(h2("Checked by Admin") + locked("Full name", "Emeka Obi", "Must match your ID") + locked("ID", "NIN · verified", "Send a new photo of your ID if it changed") + locked("Bike &amp; plate number", "Bike 1 · PHC-234KA", "Bikes are assigned by Admin"), gap=14)}
+{card(h2("Password") + btn("Change password", None, "ghost", "lock"), gap=10)}
+{btn("Save changes", "RiderProfile.dc.html", "accent", "check")}
+<div style="font-size: 12px; color: {MUTED}; text-align: center">Saved on your phone now. Uploads when you're online.</div>
 ''') + tabbar("rider", "Profile"))
 
 # ---------------- Style guide ----------------
