@@ -55,7 +55,11 @@ export default function AdminHome() {
           </View>
           <View style={st.grid}>
             <Stat label="Pending deliveries" value={String(pending.length)} />
-            <Stat label="Delivered orders" value={String(delivered.length)} note={`${delivered.reduce((s, o) => s + orderUnits(o), 0)} units`} />
+            <Stat
+              label="Delivered orders"
+              value={String(delivered.length)}
+              note={`${delivered.reduce((s, o) => s + orderUnits(o), 0)} units`}
+            />
           </View>
         </Card>
 
@@ -134,7 +138,14 @@ const st = StyleSheet.create({
     gap: 6,
     minHeight: 44,
   },
-  quickIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.orangeBg, alignItems: 'center', justifyContent: 'center' },
+  quickIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: colors.orangeBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   quickLabel: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.navy, textAlign: 'center' },
   soon: { fontFamily: fonts.body, fontSize: 10, color: colors.muted },
   muted: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },

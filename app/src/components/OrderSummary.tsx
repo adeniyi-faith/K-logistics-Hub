@@ -13,8 +13,10 @@ export function OrderSummary({ order }: { order: Order }) {
   return (
     <View style={{ gap: 6 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <Muted>#{order.id}</Muted>
-        <Badge kind={order.status === 'delivered' ? 'green' : 'amber'}>{order.status === 'delivered' ? 'Delivered' : 'Pending'}</Badge>
+        <Muted>#{order.code}</Muted>
+        <Badge kind={order.status === 'delivered' ? 'green' : 'amber'}>
+          {order.status === 'delivered' ? 'Delivered' : 'Pending'}
+        </Badge>
       </View>
       <Text style={st.customer}>{order.customer}</Text>
       <Muted>{order.address}</Muted>
@@ -26,7 +28,9 @@ export function OrderSummary({ order }: { order: Order }) {
           </Text>
         );
       })}
-      <Text style={st.collect}>{order.payment === 'on_delivery' ? `Collect ${naira(orderTotal(order))}` : 'Paid by transfer'}</Text>
+      <Text style={st.collect}>
+        {order.payment === 'on_delivery' ? `Collect ${naira(orderTotal(order))}` : 'Paid by transfer'}
+      </Text>
     </View>
   );
 }

@@ -47,7 +47,12 @@ export default function RiderDeliveries() {
             <OrderSummary order={next} />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <View style={{ flex: 1 }}>
-                <Button title="Call" kind="ghost" icon="phone" onPress={() => Linking.openURL(`tel:${next.phone.replace(/\s/g, '')}`)} />
+                <Button
+                  title="Call"
+                  kind="ghost"
+                  icon="phone"
+                  onPress={() => Linking.openURL(`tel:${next.phone.replace(/\s/g, '')}`)}
+                />
               </View>
               <View style={{ flex: 1 }}>
                 <Button
@@ -75,7 +80,7 @@ export default function RiderDeliveries() {
                 key={o.id}
                 first={i === 0}
                 title={o.customer}
-                sub={`#${o.id} · ${o.area}`}
+                sub={`#${o.code} · ${o.area}`}
                 right={o.payment === 'on_delivery' ? `Collect ${naira(orderTotal(o))}` : 'Paid'}
                 rightSub={<Badge kind="amber">Pending</Badge>}
                 onPress={() => router.push(`/delivery/${o.id}`)}
@@ -104,7 +109,15 @@ export default function RiderDeliveries() {
 }
 
 const st = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
+  head: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+  },
   hi: { fontFamily: fonts.head, fontSize: 18, color: colors.navy },
   earned: { backgroundColor: colors.greenBg, borderRadius: 12, padding: 12 },
   earnedText: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.green },

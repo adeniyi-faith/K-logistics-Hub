@@ -12,12 +12,22 @@ import { colors, fonts } from '../theme';
 const HOME: Record<Role, '/admin' | '/rider' | '/staff'> = { admin: '/admin', rider: '/rider', staff: '/staff' };
 
 export default function SignIn() {
-  const { state, signInAs } = useStore();
+  const { state, mode, phase, signInAs, signIn } = useStore();
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
 
   if (state.session) return <Redirect href={HOME[state.session.role]} />;
+
+  const submit = async () => {
+    if (!login.trim() || !password) return setNote('Enter your email and password.');
+    setBusy(true);
+    setNote('');
+    const error = await signIn(login, password);
+    setBusy(false);
+    if (error) setNote(error);
+  };
 
   const openAs = (role: Role) => {
     signInAs(role);
@@ -38,31 +48,33 @@ export default function SignIn() {
               <Text style={st.title}>Welcome back</Text>
               <Muted>Sign in to run today's business.</Muted>
             </View>
-            <Field label="Phone number or email" value={login} onChangeText={setLogin} autoCapitalize="none" keyboardType="email-address" />
-            <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry />
-            <Button
-              title="Sign in"
-              kind="accent"
-              onPress={() =>
-                setNote('Real accounts come with the online database (next step). For now, use a demo button below.')
-              }
-            />
-            {note ? <Text style={st.note}>{note}</Text> : null}
+            {phase === 'loading' ? (
+              <Muted>Signed in. Getting your account ready on this phone. This needs internet the first time.</Muted>
+            ) : (
+              <>
+                <Field label="Email" value={login} onChangeText={setLogin} autoCapitalize="none" keyboardType="email-address" />
+                <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry />
+                <Button title={busy ? 'Signing in…' : 'Sign in'} kind="accent" onPress={submit} disabled={busy} />
+                {note ? <Text style={st.note}>{note}</Text> : null}
+              </>
+            )}
 
-            <View style={st.demo}>
-              <Text style={st.demoLabel}>DEMO — OPEN THE APP AS</Text>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <View style={{ flex: 1 }}>
-                  <Button title="Admin" kind="ghost" onPress={() => openAs('admin')} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Button title="Staff" kind="ghost" onPress={() => openAs('staff')} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Button title="Rider" kind="ghost" onPress={() => openAs('rider')} />
+            {mode === 'demo' ? (
+              <View style={st.demo}>
+                <Text style={st.demoLabel}>DEMO — OPEN THE APP AS</Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <View style={{ flex: 1 }}>
+                    <Button title="Admin" kind="ghost" onPress={() => openAs('admin')} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Button title="Staff" kind="ghost" onPress={() => openAs('staff')} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Button title="Rider" kind="ghost" onPress={() => openAs('rider')} />
+                  </View>
                 </View>
               </View>
-            </View>
+            ) : null}
           </Card>
 
           <View style={st.offline}>

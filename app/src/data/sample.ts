@@ -81,8 +81,10 @@ export function sampleState(day: string): AppState {
   ): Order => {
     const lines = items.map(([productId, qty]) => ({ productId, qty, unitPrice: price }));
     const total = lines.reduce((s, l) => s + l.qty * l.unitPrice, 0);
+    const code = `S-${day.slice(5).replace('-', '')}-${String(n).padStart(2, '0')}`;
     return {
-      id: `S-${day.slice(5).replace('-', '')}-${String(n).padStart(2, '0')}`,
+      id: code,
+      code,
       day,
       createdAt: at(day, created),
       customer,
@@ -98,37 +100,183 @@ export function sampleState(day: string): AppState {
             deliveredAt: at(day, deliveredAt),
             receivedBy,
             collected:
-              payment === 'transfer'
-                ? { method: 'paid_before' as const, amount: 0 }
-                : { method: 'cash' as const, amount: total },
+              payment === 'transfer' ? { method: 'paid_before' as const, amount: 0 } : { method: 'cash' as const, amount: total },
           }
         : {}),
     };
   };
 
   const orders: Order[] = [
-    order(11, 'Joy Pharmacy', '0806 222 1188', 'Choba', 'Choba Park, Port Harcourt', 'r1', [['p23', 3]], 'on_delivery', '08:10', '10:52', 'Joy'),
-    order(12, 'Peace Chemist', '0813 555 2040', 'Eleme', 'Eleme Junction, Port Harcourt', 'r1', [['p24', 2]], 'transfer', '08:25', '09:48', 'Peace'),
-    order(13, 'Blessing Ibe', '0905 777 3012', 'Rumuokoro', 'Rumuokoro Market Road, PH', 'r1', [['p17', 1]], 'on_delivery', '08:30', '09:05', 'Blessing'),
-    order(14, 'Mama Chioma Chemist', '0802 444 9090', 'D-Line', 'Ikwerre Road, D-Line, PH', 'r2', [['p14', 4]], 'transfer', '08:40', '11:20', 'Chioma'),
-    order(15, 'Divine Health Store', '0816 333 7766', 'GRA', 'Tombia Street, GRA Phase 2, PH', 'r2', [['p03', 3], ['p07', 2]], 'on_delivery', '09:00', '12:05', 'Divine'),
-    order(16, 'Ada Okafor', '0703 888 1245', 'Ada George', 'Ada George Road, PH', 'r3', [['p08', 1], ['p13', 2]], 'transfer', '09:15'),
-    order(17, 'St. Luke Pharmacy', '0809 121 4545', 'Trans-Amadi', 'Trans-Amadi Industrial Layout, PH', 'r3', [['p02', 4]], 'on_delivery', '09:40'),
-    order(18, 'Grace Herbal Store', '0803 111 2233', 'Rumuola', 'Rumuola Road, Port Harcourt', 'r1', [['p01', 6]], 'on_delivery', '10:05'),
-    order(19, 'Peace Chemist', '0813 555 2040', 'Eleme', 'Eleme Junction, Port Harcourt', 'r1', [['p20', 2]], 'on_delivery', '10:30'),
+    order(
+      11,
+      'Joy Pharmacy',
+      '0806 222 1188',
+      'Choba',
+      'Choba Park, Port Harcourt',
+      'r1',
+      [['p23', 3]],
+      'on_delivery',
+      '08:10',
+      '10:52',
+      'Joy',
+    ),
+    order(
+      12,
+      'Peace Chemist',
+      '0813 555 2040',
+      'Eleme',
+      'Eleme Junction, Port Harcourt',
+      'r1',
+      [['p24', 2]],
+      'transfer',
+      '08:25',
+      '09:48',
+      'Peace',
+    ),
+    order(
+      13,
+      'Blessing Ibe',
+      '0905 777 3012',
+      'Rumuokoro',
+      'Rumuokoro Market Road, PH',
+      'r1',
+      [['p17', 1]],
+      'on_delivery',
+      '08:30',
+      '09:05',
+      'Blessing',
+    ),
+    order(
+      14,
+      'Mama Chioma Chemist',
+      '0802 444 9090',
+      'D-Line',
+      'Ikwerre Road, D-Line, PH',
+      'r2',
+      [['p14', 4]],
+      'transfer',
+      '08:40',
+      '11:20',
+      'Chioma',
+    ),
+    order(
+      15,
+      'Divine Health Store',
+      '0816 333 7766',
+      'GRA',
+      'Tombia Street, GRA Phase 2, PH',
+      'r2',
+      [
+        ['p03', 3],
+        ['p07', 2],
+      ],
+      'on_delivery',
+      '09:00',
+      '12:05',
+      'Divine',
+    ),
+    order(
+      16,
+      'Ada Okafor',
+      '0703 888 1245',
+      'Ada George',
+      'Ada George Road, PH',
+      'r3',
+      [
+        ['p08', 1],
+        ['p13', 2],
+      ],
+      'transfer',
+      '09:15',
+    ),
+    order(
+      17,
+      'St. Luke Pharmacy',
+      '0809 121 4545',
+      'Trans-Amadi',
+      'Trans-Amadi Industrial Layout, PH',
+      'r3',
+      [['p02', 4]],
+      'on_delivery',
+      '09:40',
+    ),
+    order(
+      18,
+      'Grace Herbal Store',
+      '0803 111 2233',
+      'Rumuola',
+      'Rumuola Road, Port Harcourt',
+      'r1',
+      [['p01', 6]],
+      'on_delivery',
+      '10:05',
+    ),
+    order(
+      19,
+      'Peace Chemist',
+      '0813 555 2040',
+      'Eleme',
+      'Eleme Junction, Port Harcourt',
+      'r1',
+      [['p20', 2]],
+      'on_delivery',
+      '10:30',
+    ),
   ];
 
   let n = 0;
   const id = () => `m${++n}`;
   const moves: StockMove[] = [
-    { id: id(), day, productId: 'p01', kind: 'received', qty: 24, at: at(day, '08:00'), by: 'Kemi', batch: 'MT-0924', expiry: '2028-03', costPrice: 14000 },
-    { id: id(), day, productId: 'p03', kind: 'received', qty: 20, at: at(day, '08:00'), by: 'Kemi', batch: 'FB-0925', expiry: '2027-11', costPrice: 14000 },
-    { id: id(), day, productId: 'p06', kind: 'received', qty: 12, at: at(day, '08:05'), by: 'Kemi', batch: 'PX-0912', expiry: '2027-08', costPrice: 14000 },
+    {
+      id: id(),
+      day,
+      productId: 'p01',
+      kind: 'received',
+      qty: 24,
+      at: at(day, '08:00'),
+      by: 'Kemi',
+      batch: 'MT-0924',
+      expiry: '2028-03',
+      costPrice: 14000,
+    },
+    {
+      id: id(),
+      day,
+      productId: 'p03',
+      kind: 'received',
+      qty: 20,
+      at: at(day, '08:00'),
+      by: 'Kemi',
+      batch: 'FB-0925',
+      expiry: '2027-11',
+      costPrice: 14000,
+    },
+    {
+      id: id(),
+      day,
+      productId: 'p06',
+      kind: 'received',
+      qty: 12,
+      at: at(day, '08:05'),
+      by: 'Kemi',
+      batch: 'PX-0912',
+      expiry: '2027-08',
+      costPrice: 14000,
+    },
   ];
   for (const o of orders) {
     if (o.status !== 'delivered') continue;
     for (const it of o.items) {
-      moves.push({ id: id(), day, productId: it.productId, kind: 'delivered', qty: it.qty, at: o.deliveredAt!, by: o.riderId, orderId: o.id });
+      moves.push({
+        id: id(),
+        day,
+        productId: it.productId,
+        kind: 'delivered',
+        qty: it.qty,
+        at: o.deliveredAt!,
+        by: o.riderId,
+        orderId: o.id,
+      });
     }
   }
 
@@ -141,7 +289,14 @@ export function sampleState(day: string): AppState {
     moves,
     riders: [
       { id: 'r1', name: 'Emeka Obi', initials: 'EO', phone: '0803 456 7788', bike: 'Bike 1 · PHC-234KA', ratePerDelivery: 5000 },
-      { id: 'r2', name: 'Tunde Bello', initials: 'TB', phone: '0806 991 2210', bike: 'Bike 2 · PHC-118KB', ratePerDelivery: 5000 },
+      {
+        id: 'r2',
+        name: 'Tunde Bello',
+        initials: 'TB',
+        phone: '0806 991 2210',
+        bike: 'Bike 2 · PHC-118KB',
+        ratePerDelivery: 5000,
+      },
       { id: 'r3', name: 'Musa Ali', initials: 'MA', phone: '0810 334 9087', bike: 'Bike 3 · PHC-772KC', ratePerDelivery: 5000 },
     ],
     orders,
