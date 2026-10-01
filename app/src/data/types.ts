@@ -91,9 +91,19 @@ export type Order = {
   payment: 'transfer' | 'on_delivery';
   status: 'pending' | 'delivered' | 'failed';
   deliveredAt?: string;
+  /** The business day the delivery was recorded on (counts for that day's rider earnings). */
+  deliveredDay?: string;
   receivedBy?: string;
   collected?: { method: 'cash' | 'transfer' | 'paid_before'; amount: number };
   failReason?: string;
+  /** Delivery photo: a file on this phone, or its name in online storage. */
+  photo?: string;
+};
+
+/** Business settings Admin can change. */
+export type Settings = {
+  /** Riders must take a photo when confirming a delivery. */
+  requirePhoto: boolean;
 };
 
 export type Expense = { id: string; day: string; category: string; note: string; amount: number };
@@ -106,9 +116,10 @@ export type AppState = {
   /** The day the shop is currently recording ("YYYY-MM-DD"). */
   day: string;
   session: { role: Role; name: string; riderId?: string } | null;
+  settings: Settings;
   products: Product[];
-  /** Opening stock for the current day, per product id. */
-  opening: Record<string, number>;
+  /** Opening stock per day, then per product id: openings["2026-10-01"]["p01"]. */
+  openings: Record<string, Record<string, number>>;
   moves: StockMove[];
   riders: Rider[];
   customers: Customer[];
