@@ -11,6 +11,7 @@ import { deliveredOn, isLow, riderDay, stockFor } from '../../lib/stock';
 import { useAccess } from '../../lib/useAccess';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
+import { useWords } from '../../lib/words';
 
 /** Areas that aren't tabs, opened from the home screen. */
 const OTHER: { area: Area; icon: IconName; title: string; sub: string; href: string }[] = [
@@ -19,25 +20,28 @@ const OTHER: { area: Area; icon: IconName; title: string; sub: string; href: str
   { area: 'staffpay', icon: 'users', title: 'Staff & pay', sub: 'Salaries and payments', href: '/staff-pay' },
   { area: 'finance', icon: 'chart', title: 'Finance', sub: 'Profit by day, week and month', href: '/finance' },
   { area: 'reports', icon: 'file', title: 'Reports', sub: 'Filter and look back', href: '/reports' },
-  { area: 'settings', icon: 'sliders', title: 'Business settings', sub: 'Delivery photo on or off', href: '/settings' },
+  { area: 'settings', icon: 'sliders', title: 'Business settings', sub: 'Logo, lists and words', href: '/settings' },
 ];
 
 /** Staff home, built from what this person may use. */
 export default function StaffHome() {
   const { state } = useStore();
   const { canView, canEdit, can } = useAccess();
+  const w = useWords();
 
   const doneToday = state.orders.filter((o) => o.status === 'delivered' && deliveredOn(o) === state.day).length;
   const pending = state.orders.filter((o) => o.status === 'pending').length;
   const total = doneToday + pending;
   const lines = state.products.map((p) => ({ p, line: stockFor(state, p.id) }));
   const quick = [
-    canEdit('sales') && { icon: 'plus' as const, label: 'New sale', href: '/new-sale' },
+    canEdit('sales') && { icon: 'plus' as const, label: `New ${w.sale}`, href: '/new-sale' },
     canEdit('stock') && { icon: 'box' as const, label: 'Receive stock', href: '/receive-stock' },
     canView('customers') && { icon: 'users' as const, label: 'Customers', href: '/staff/customers' },
     canEdit('expenses') && { icon: 'receipt' as const, label: 'Add expense', href: '/add-expense' },
   ].filter(Boolean) as { icon: IconName; label: string; href: string }[];
-  const other = OTHER.filter((o) => (o.area === 'settings' ? canEdit(o.area) : canView(o.area)));
+  const other = OTHER.filter((o) => (o.area === 'settings' ? canEdit(o.area) : canView(o.area))).map((o) =>
+    o.area === 'riders' ? { ...o, title: `${w.Riders} & bikes`, sub: `${w.Riders}, bikes and earnings` } : o,
+  );
   const hidden = (['finance', 'staffpay', 'expenses'] as Area[]).filter((a) => !canView(a));
 
   return (
@@ -96,7 +100,7 @@ export default function StaffHome() {
 
         {canView('riders') ? (
           <Card style={{ paddingVertical: 8 }}>
-            <H2>Riders</H2>
+            <H2>{w.Riders}</H2>
             {state.riders.map((r, i) => {
               const now = riderNow(state, r);
               const d = riderDay(state, r.id);

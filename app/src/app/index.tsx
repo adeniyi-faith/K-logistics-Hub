@@ -1,8 +1,9 @@
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BusinessLogo } from '../components/BusinessLogo';
 import { Icon } from '../components/Icon';
 import { Button, Card, Field, Muted } from '../components/ui';
 import { Role } from '../data/types';
@@ -39,8 +40,8 @@ export default function SignIn() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={st.wrap}>
           <View style={st.brand}>
-            <Image source={require('../../assets/logo.jpg')} style={st.logo} accessibilityLabel="K-Logistics Hub logo" />
-            <Text style={st.brandName}>K-Logistics Hub</Text>
+            <BusinessLogo style={st.logo} />
+            <Text style={st.brandName}>{state.settings.businessName}</Text>
           </View>
 
           <Card style={{ gap: 16, padding: 20 }}>
@@ -90,7 +91,7 @@ export default function SignIn() {
 const st = StyleSheet.create({
   wrap: { flexGrow: 1, justifyContent: 'center', padding: 20, gap: 20, maxWidth: 480, width: '100%', alignSelf: 'center' },
   brand: { alignItems: 'center', gap: 10 },
-  logo: { width: 72, height: 72, borderRadius: 18 },
+  logo: { width: 72, height: 72, borderRadius: 18, backgroundColor: colors.white },
   brandName: { fontFamily: fonts.head, fontSize: 20, color: colors.white },
   title: { fontFamily: fonts.head, fontSize: 22, color: colors.navy },
   note: { fontFamily: fonts.body, fontSize: 13, color: colors.orangeText },

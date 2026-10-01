@@ -29,6 +29,12 @@ bucket_definitions:
       - SELECT * FROM order_items
       - SELECT * FROM expenses
 
+  # Only Admin phones get sync clashes (changes made on two phones), to pick a value.
+  admin:
+    parameters: SELECT id AS user_id FROM profiles WHERE id = request.user_id() AND role = 'admin' AND can_sign_in
+    data:
+      - SELECT * FROM sync_clashes
+
   # Rider phones only get their own deliveries, and products without cost prices.
   rider:
     parameters: SELECT rider_id FROM profiles WHERE id = request.user_id() AND role = 'rider' AND can_sign_in

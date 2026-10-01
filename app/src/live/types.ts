@@ -1,5 +1,5 @@
 import { Overrides, StaffRole } from '../data/access';
-import { AppState, Expense, Order, Rider, Settings, Staff } from '../data/types';
+import { AppState, Expense, Order, Product, Rider, Settings, Staff } from '../data/types';
 
 export type SyncInfo = {
   /** synced: all uploaded. offline: no connection. syncing: uploading or downloading now. */
@@ -45,6 +45,11 @@ export type AccessInput = { job: string; roleId: string; overrides: Overrides; c
 
 export type PriceInput = { productId: string; costPrice: number; sellPrice: number; lowAt: number };
 
+export type ProductInput = Omit<Product, 'id'>;
+
+/** Which value stays after a sync clash: this phone's ("mine") or the one already on the server ("theirs"). */
+export type ClashChoice = 'mine' | 'theirs';
+
 /** The real app: Supabase for accounts and the online database, PowerSync for the copy on the phone. */
 export type LiveEngine = {
   subscribe: (listener: (snap: LiveSnapshot) => void) => () => void;
@@ -58,12 +63,21 @@ export type LiveEngine = {
   createSale: (input: SaleInput) => Promise<string>;
   /** Copies each product's closing stock into the next day as opening stock, and moves the business to that day. */
   closeDay: () => Promise<void>;
+  /** A new logo is a photo file on this phone; it uploads by itself. */
   updateSettings: (settings: Settings) => Promise<void>;
+  /** Saves a new product and returns its id. */
+  addProduct: (input: ProductInput) => Promise<string>;
+  updateProduct: (id: string, changes: Partial<ProductInput>) => Promise<void>;
   /** The receipt, if any, is a photo file on this phone. */
   addExpense: (input: ExpenseInput) => Promise<void>;
   /** Saves a new rider and returns their id. */
   addRider: (input: RiderInput) => Promise<string>;
+  /** Admin, or a rider changing their own details. A new photo is a file on this phone. */
   updateRider: (id: string, changes: Partial<RiderInput>) => Promise<void>;
+  /** Needs internet. Returns an error message, or null when done. */
+  changePassword: (password: string) => Promise<string | null>;
+  /** Admin: keep one of the two values after a sync clash. */
+  resolveClash: (id: string, keep: ClashChoice) => Promise<void>;
   addStaff: (input: StaffInput) => Promise<void>;
   updateStaff: (id: string, changes: Partial<StaffInput>) => Promise<void>;
   /** Admin: give a staff member a role and any changes just for them. */

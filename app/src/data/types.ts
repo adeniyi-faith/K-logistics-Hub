@@ -59,6 +59,22 @@ export type Rider = {
   idNumber?: string;
   /** Day they joined, "YYYY-MM-DD". */
   joined?: string;
+  /** Rider's own details, which they can change themselves. */
+  phone2?: string;
+  kinName?: string;
+  kinPhone?: string;
+  kinRelation?: string;
+  /** Where to pay them: bank or wallet, account number and account name. */
+  payBank?: string;
+  payAccount?: string;
+  payName?: string;
+  /** The day the rider last changed where to pay them, so Admin can check it before paying. */
+  payChanged?: string;
+  /** Their photo: a file on this phone, or its name in online storage. */
+  photo?: string;
+  /** Something the rider asked Admin to change (name, ID or bike), and the day they asked. */
+  changeRequest?: string;
+  changeRequestAt?: string;
 };
 
 /** Someone on the payroll who is not a rider (riders are paid per delivery). */
@@ -92,7 +108,7 @@ export type Customer = {
   since: string;
 };
 
-/** Delivery areas from the design (editable in Business settings later). */
+/** Delivery areas from the design. Admin can change the list in Business settings. */
 export const AREAS = [
   'GRA',
   'Rumuola',
@@ -141,6 +157,23 @@ export type Order = {
 export type Settings = {
   /** Riders must take a photo when confirming a delivery. */
   requirePhoto: boolean;
+  businessName: string;
+  tagline: string;
+  location: string;
+  /** The logo: a file on this phone, or its name in online storage. Missing means the built-in logo. */
+  logo?: string;
+  expenseCategories: string[];
+  productGroups: string[];
+  /** What a unit can be called, e.g. bottle, box, pack. */
+  units: string[];
+  defaultUnit: string;
+  /** Low-stock alert for new products (each product can have its own). */
+  lowStockAt: number;
+  /** When off, a sale can't take more than what is in the store. */
+  allowZeroStock: boolean;
+  areas: string[];
+  /** The business's own words for "sale" and "rider". */
+  words: { sale: string; rider: string };
 };
 
 /** How often an expense comes up. It is a label for grouping; nothing repeats by itself. */
@@ -153,7 +186,7 @@ export const FREQUENCIES: { value: Frequency; label: string }[] = [
   { value: 'one_time', label: 'One-time' },
 ];
 
-/** Expense categories from the design (editable in Business settings later). */
+/** Expense categories from the design. Admin can change the list in Business settings. */
 export const EXPENSE_CATEGORIES = ['Fuel', 'Staff pay', 'Transport', 'Bike care', 'Repairs', 'Packaging', 'Other'] as const;
 
 export type Expense = {
@@ -175,6 +208,25 @@ export type Expense = {
   receipt?: string;
 };
 
+/**
+ * The same thing was changed on two phones while one was offline. The server kept the
+ * value that arrived first ("theirs"); Admin picks which one stays.
+ */
+export type Clash = {
+  id: string;
+  /** Which kind of record: products, customers, riders, staff, staff_roles or business. */
+  table: string;
+  rowId: string;
+  /** The column that clashed, e.g. "sell_price". */
+  field: string;
+  /** The value from the phone that uploaded last, and who saved it. */
+  mine: unknown;
+  mineBy: string;
+  /** The value already on the server. */
+  theirs: unknown;
+  at: string;
+};
+
 /** A change saved on this phone that has not been uploaded yet. */
 export type PendingChange = { id: string; at: string; label: string; /** The record this change saved. */ ref: string };
 
@@ -194,5 +246,7 @@ export type AppState = {
   customers: Customer[];
   orders: Order[];
   expenses: Expense[];
+  /** Sync clashes waiting for Admin to pick a value. */
+  clashes: Clash[];
   pending: PendingChange[];
 };
