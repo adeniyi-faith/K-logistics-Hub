@@ -3,24 +3,27 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '../components/Icon';
-import { Avatar, Badge, Button, Card, Chips, Field, IconTile, Muted, Row, Screen, Stat, TopBar } from '../components/ui';
+import { Badge, Button, Card, Chips, Field, IconTile, Muted, Row, Screen, Stat, TopBar } from '../components/ui';
 import { count, naira } from '../lib/format';
 import { bikeParts, riderNow } from '../lib/riders';
 import { riderDay } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
 import { useAccess } from '../lib/useAccess';
+import { useWords } from '../lib/words';
+import { RiderAvatar } from '../components/RiderAvatar';
 
 export default function Riders() {
   const { state } = useStore();
   const acc = useAccess();
+  const w = useWords();
   const [tab, setTab] = useState<'riders' | 'bikes'>('riders');
   const [search, setSearch] = useState('');
 
   if (!acc.canView('riders')) {
     return (
       <View style={{ flex: 1 }}>
-        <TopBar title="Riders & bikes" back />
+        <TopBar title={`${w.Riders} & bikes`} back />
         <Screen>
           <Muted>Only Admin and Staff can see this.</Muted>
         </Screen>
@@ -36,25 +39,25 @@ export default function Riders() {
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title="Riders & bikes" back />
+      <TopBar title={`${w.Riders} & bikes`} back />
       <Screen
         footer={
           acc.canEdit('riders') ? (
-            <Button title="Add rider" kind="accent" icon="plus" onPress={() => router.push('/add-rider')} />
+            <Button title={`Add ${w.rider}`} kind="accent" icon="plus" onPress={() => router.push('/add-rider')} />
           ) : undefined
         }
       >
         <Chips<'riders' | 'bikes'>
           full
           options={[
-            { value: 'riders', label: 'Riders' },
+            { value: 'riders', label: w.Riders },
             { value: 'bikes', label: 'Bikes' },
           ]}
           value={tab}
           onChange={setTab}
         />
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Stat label="Riders" value={String(state.riders.length)} />
+          <Stat label={w.Riders} value={String(state.riders.length)} />
           <Stat label="Out now" value={String(now.filter((x) => x.now.label === 'On delivery').length)} />
           <Stat label="Bikes in repair" value={String(state.riders.filter((r) => r.status === 'bike_repair').length)} />
         </View>
@@ -62,25 +65,25 @@ export default function Riders() {
         <Pressable onPress={() => router.push('/rider-earnings')} accessibilityRole="button" style={st.link}>
           <IconTile name="wallet" />
           <View style={{ flex: 1 }}>
-            <Text style={st.linkTitle}>Rider earnings by day</Text>
+            <Text style={st.linkTitle}>{w.Rider} earnings by day</Text>
             <Muted>
-              Today: {naira(earnedToday)} across {count(working, 'rider')}
+              Today: {naira(earnedToday)} across {count(working, w.rider)}
             </Muted>
           </View>
           <Icon name="chev" color={colors.muted} />
         </Pressable>
 
-        <Field label="Search" placeholder="Search rider or plate number" value={search} onChangeText={setSearch} />
+        <Field label="Search" placeholder={`Search ${w.rider} or plate number`} value={search} onChangeText={setSearch} />
 
         <Card style={{ paddingVertical: 4 }}>
-          {shown.length === 0 ? <Muted style={{ paddingVertical: 12 }}>No riders found.</Muted> : null}
+          {shown.length === 0 ? <Muted style={{ paddingVertical: 12 }}>No {w.riders} found.</Muted> : null}
           {shown.map(({ r, now: n }, i) => {
             const bike = bikeParts(r.bike);
             return tab === 'riders' ? (
               <Row
                 key={r.id}
                 first={i === 0}
-                lead={<Avatar initials={r.initials} />}
+                lead={<RiderAvatar rider={r} />}
                 title={r.name}
                 sub={[bike.name, bike.plate].filter(Boolean).join(' · ')}
                 rightSub={

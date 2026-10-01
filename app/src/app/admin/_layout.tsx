@@ -7,10 +7,12 @@ import { AskAiButton } from '../../components/AskAiButton';
 
 import { TabBarIcon, tabScreenOptions } from '../../components/TabBarIcon';
 import { useStore } from '../../store/AppStore';
+import { useWords } from '../../lib/words';
 
 export default function AdminTabs() {
   const { state } = useStore();
   const insets = useSafeAreaInsets();
+  const w = useWords();
   if (state.session?.role !== 'admin') return <Redirect href="/" />;
   return (
     <View style={{ flex: 1 }}>
@@ -25,7 +27,7 @@ export default function AdminTabs() {
         />
         <Tabs.Screen
           name="sales"
-          options={{ title: 'Sales', tabBarIcon: ({ focused }) => <TabBarIcon name="cart" focused={focused} /> }}
+          options={{ title: w.Sales, tabBarIcon: ({ focused }) => <TabBarIcon name="cart" focused={focused} /> }}
         />
         <Tabs.Screen
           name="customers"

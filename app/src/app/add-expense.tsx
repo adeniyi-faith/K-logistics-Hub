@@ -4,7 +4,7 @@ import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-nativ
 
 import { Icon } from '../components/Icon';
 import { Button, Chips, Field, Muted, Screen, TopBar } from '../components/ui';
-import { EXPENSE_CATEGORIES, Frequency, FREQUENCIES } from '../data/types';
+import { Frequency, FREQUENCIES } from '../data/types';
 import { categoryIcon } from '../lib/expenses';
 import { takeDeliveryPhoto } from '../lib/photo';
 import { dayLabel, naira } from '../lib/format';
@@ -20,7 +20,8 @@ export default function AddExpense() {
   const { state, mode, addExpense } = useStore();
   const acc = useAccess();
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState<string>('Fuel');
+  const categories = state.settings.expenseCategories;
+  const [category, setCategory] = useState<string>(categories[0] ?? 'Other');
   const [frequency, setFrequency] = useState<Frequency>('daily');
   const [bike, setBike] = useState('');
   const [day, setDay] = useState(state.day);
@@ -97,7 +98,7 @@ export default function AddExpense() {
         <View style={{ gap: 8 }}>
           <Text style={st.label}>Category</Text>
           <View style={st.grid}>
-            {EXPENSE_CATEGORIES.map((c) => {
+            {categories.map((c) => {
               const on = c === category;
               return (
                 <Pressable

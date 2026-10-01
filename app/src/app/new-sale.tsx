@@ -4,7 +4,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '../components/Icon';
 import { Button, Card, Chips, Field, H2, LinkText, Muted, Row, Screen, TopBar } from '../components/ui';
-import { AREAS, Order } from '../data/types';
+import { Order } from '../data/types';
+import { useWords } from '../lib/words';
 import { count, dayLabel, naira } from '../lib/format';
 import { lastRiderFor } from '../lib/sales';
 import { stockFor } from '../lib/stock';
@@ -18,6 +19,7 @@ type Line = { productId: string; qty: number };
 export default function NewSale() {
   const params = useLocalSearchParams<{ customer?: string; rider?: string }>();
   const { state, createSale } = useStore();
+  const w = useWords();
   const acc = useAccess();
 
   const [customerId, setCustomerId] = useState(params.customer ?? '');
@@ -74,8 +76,9 @@ export default function NewSale() {
     if (!picked && !(isNew && name.trim())) return setError('Pick a customer, or add a new one with their name.');
     if (!lines.length) return setError('Add at least one product.');
     const short = lines.find((l) => l.qty > available(l.productId));
-    if (short) return setError(`Not enough ${product(short.productId)?.name} in stock (${available(short.productId)} left).`);
-    if (!riderId) return setError('Pick a rider.');
+    if (short && !state.settings.allowZeroStock)
+      return setError(`Not enough ${product(short.productId)?.name} in stock (${available(short.productId)} left).`);
+    if (!riderId) return setError(`Pick a ${w.rider}.`);
     if (!area) return setError('Pick the delivery area.');
     setSaving(true);
     const id = await createSale({
@@ -98,11 +101,11 @@ export default function NewSale() {
   );
   const lastRider = last ? state.riders.find((r) => r.id === last.riderId) : null;
 
-  if (!acc.canEdit('sales')) return <NoAccess title="New sale" />;
+  if (!acc.canEdit('sales')) return <NoAccess title={`New ${w.sale}`} />;
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title="New sale" back />
+      <TopBar title={`New ${w.sale}`} back />
       <Screen
         footer={
           <View style={{ gap: 8 }}>
@@ -110,9 +113,13 @@ export default function NewSale() {
               <Text style={st.totalLabel}>Total</Text>
               <Text style={st.total}>{naira(total)}</Text>
             </View>
-            {payment === 'on_delivery' && total ? <Muted>Rider collects {naira(total)} on delivery.</Muted> : null}
+            {payment === 'on_delivery' && total ? (
+              <Muted>
+                {w.Rider} collects {naira(total)} on delivery.
+              </Muted>
+            ) : null}
             {error ? <Text style={st.error}>{error}</Text> : null}
-            <Button title={saving ? 'Saving…' : 'Save sale'} kind="accent" onPress={save} disabled={saving} />
+            <Button title={saving ? 'Saving…' : `Save ${w.sale}`} kind="accent" onPress={save} disabled={saving} />
           </View>
         }
       >
@@ -199,11 +206,11 @@ export default function NewSale() {
             <View style={st.hint}>
               <Text style={st.hintText}>
                 Last delivered to this customer by {lastRider.name} ({lastRider.bike.split(' · ')[0]}) on {dayLabel(last.day)}.
-                Same rider picked for you.
+                Same {w.rider} picked for you.
               </Text>
             </View>
           ) : null}
-          <Text style={st.label}>Rider & bike</Text>
+          <Text style={st.label}>{w.Rider} & bike</Text>
           <Chips
             value={riderId}
             onChange={setRiderId}
@@ -214,7 +221,11 @@ export default function NewSale() {
           />
           <Text style={st.label}>Delivery area</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <Chips value={area} onChange={setArea} options={AREAS.map((a) => ({ value: a, label: a }))} />
+            <Chips
+              value={area}
+              onChange={setArea}
+              options={[...new Set([...state.settings.areas, ...(area ? [area] : [])])].map((a) => ({ value: a, label: a }))}
+            />
           </ScrollView>
           <Field label="Address" value={address} onChangeText={setAddress} placeholder="Street and landmark" />
         </Card>

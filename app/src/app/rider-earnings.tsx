@@ -9,9 +9,11 @@ import { riderDay, shiftDay } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
 import { useAccess } from '../lib/useAccess';
+import { useWords } from '../lib/words';
 
 /** Rider earnings = deliveries completed × the rider's rate, day by day. */
 export default function RiderEarnings() {
+  const w = useWords();
   const { state } = useStore();
   const acc = useAccess();
   const [riderId, setRiderId] = useState(state.riders[0]?.id ?? '');
@@ -21,7 +23,7 @@ export default function RiderEarnings() {
   if (!acc.canView('riders')) {
     return (
       <View style={{ flex: 1 }}>
-        <TopBar title="Rider earnings" back />
+        <TopBar title={`${w.Rider} earnings`} back />
         <Screen>
           <Muted>Your own earnings are under History.</Muted>
         </Screen>
@@ -41,7 +43,7 @@ export default function RiderEarnings() {
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title="Rider earnings" back />
+      <TopBar title={`${w.Rider} earnings`} back />
       <Screen>
         <Chips<string>
           options={state.riders.map((r) => ({ value: r.id, label: r.name.split(' ')[0] }))}
@@ -95,7 +97,7 @@ export default function RiderEarnings() {
               onChange={setDay}
             />
           </View>
-          <Head a="Rider" b="Deliveries" c="Earnings" />
+          <Head a={w.Rider} b="Deliveries" c="Earnings" />
           {all.map((x, i) => (
             <Line key={x.r.id} a={x.r.name} b={String(x.delivered)} c={naira(x.earned)} first={i === 0} />
           ))}

@@ -19,7 +19,8 @@ import {
 import { createClient, Session } from '@supabase/supabase-js';
 
 import { DEFAULT_ROLES, parseJson, withOverrides } from '../data/access';
-import { AppState, Customer, Order, PendingChange, Product, Rider, Role, Staff, StockMove } from '../data/types';
+import { DEFAULT_SETTINGS, withDefaults } from '../data/settings';
+import { AppState, Clash, Customer, Order, PendingChange, Product, Rider, Role, Settings, Staff, StockMove } from '../data/types';
 import { uuid } from '../lib/id';
 import { nextOrderCode } from '../lib/sales';
 import { closingStock, nextDay } from '../lib/stock';
@@ -32,36 +33,66 @@ import { LiveEngine, LiveSnapshot, SyncInfo } from './types';
 // ------------------------------------------------------------------ schema
 // Must match supabase/migrations (PowerSync adds the "id" column itself).
 
+// Records people edit (rather than add) keep the value from before each change, so the
+// server can tell when two phones changed the same thing (a "sync clash").
+const CLASH_CHECKED = { trackPrevious: { onlyWhenChanged: true } };
+
 const schema = new Schema({
-  business: new Table({ name: column.text, current_day: column.text, require_photo: column.integer }),
-  riders: new Table({
-    name: column.text,
-    initials: column.text,
-    phone: column.text,
-    bike: column.text,
-    rate_per_delivery: column.integer,
-    status: column.text,
-    status_since: column.text,
-    address: column.text,
-    bike_model: column.text,
-    bike_colour: column.text,
-    id_type: column.text,
-    id_number: column.text,
-    joined: column.text,
-  }),
-  staff: new Table({
-    name: column.text,
-    initials: column.text,
-    job: column.text,
-    phone: column.text,
-    pay: column.integer,
-    pay_every: column.text,
-    active: column.integer,
-    role_id: column.text,
-    overrides: column.text,
-    // The role plus this person's changes, worked out on save so the server can check it.
-    access: column.text,
-  }),
+  business: new Table(
+    {
+      name: column.text,
+      current_day: column.text,
+      require_photo: column.integer,
+      // The rest of the business settings, as JSON text (see data/settings.ts).
+      settings: column.text,
+    },
+    CLASH_CHECKED,
+  ),
+  riders: new Table(
+    {
+      name: column.text,
+      initials: column.text,
+      phone: column.text,
+      bike: column.text,
+      rate_per_delivery: column.integer,
+      status: column.text,
+      status_since: column.text,
+      address: column.text,
+      bike_model: column.text,
+      bike_colour: column.text,
+      id_type: column.text,
+      id_number: column.text,
+      joined: column.text,
+      phone2: column.text,
+      kin_name: column.text,
+      kin_phone: column.text,
+      kin_relation: column.text,
+      pay_bank: column.text,
+      pay_account: column.text,
+      pay_name: column.text,
+      pay_changed: column.text,
+      photo_path: column.text,
+      change_request: column.text,
+      change_request_at: column.text,
+    },
+    CLASH_CHECKED,
+  ),
+  staff: new Table(
+    {
+      name: column.text,
+      initials: column.text,
+      job: column.text,
+      phone: column.text,
+      pay: column.integer,
+      pay_every: column.text,
+      active: column.integer,
+      role_id: column.text,
+      overrides: column.text,
+      // The role plus this person's changes, worked out on save so the server can check it.
+      access: column.text,
+    },
+    CLASH_CHECKED,
+  ),
   profiles: new Table({
     name: column.text,
     role: column.text,
@@ -70,26 +101,32 @@ const schema = new Schema({
     can_sign_in: column.integer,
   }),
   // Access is kept as JSON text (see data/access.ts).
-  staff_roles: new Table({ name: column.text, summary: column.text, access: column.text }),
-  products: new Table({
-    name: column.text,
-    product_group: column.text,
-    unit: column.text,
-    pack: column.text,
-    cost_price: column.integer,
-    sell_price: column.integer,
-    low_at: column.integer,
-    nafdac: column.text,
-    supplier: column.text,
-    active: column.integer,
-  }),
-  customers: new Table({
-    name: column.text,
-    phone: column.text,
-    area: column.text,
-    address: column.text,
-    created_at: column.text,
-  }),
+  staff_roles: new Table({ name: column.text, summary: column.text, access: column.text }, CLASH_CHECKED),
+  products: new Table(
+    {
+      name: column.text,
+      product_group: column.text,
+      unit: column.text,
+      pack: column.text,
+      cost_price: column.integer,
+      sell_price: column.integer,
+      low_at: column.integer,
+      nafdac: column.text,
+      supplier: column.text,
+      active: column.integer,
+    },
+    CLASH_CHECKED,
+  ),
+  customers: new Table(
+    {
+      name: column.text,
+      phone: column.text,
+      area: column.text,
+      address: column.text,
+      created_at: column.text,
+    },
+    CLASH_CHECKED,
+  ),
   day_openings: new Table({ day: column.text, product_id: column.text, opening: column.integer }),
   orders: new Table({
     code: column.text,
@@ -143,7 +180,23 @@ const schema = new Schema({
     payee: column.text,
     receipt_path: column.text,
   }),
+  // Values that clashed, for Admin to pick from. mine and theirs are JSON text.
+  sync_clashes: new Table({
+    table_name: column.text,
+    row_id: column.text,
+    field: column.text,
+    mine: column.text,
+    mine_by: column.text,
+    theirs: column.text,
+    at: column.text,
+    resolved: column.integer,
+  }),
 });
+
+/** Tables whose changes go through the server's clash check (save_change in the migrations). */
+const CLASH_TABLES = ['business', 'riders', 'staff', 'staff_roles', 'products', 'customers'];
+/** Columns kept as true/false on the server but 1/0 on the phone. */
+const YES_NO = ['require_photo', 'active'];
 
 const TABLES = Object.keys(schema.props);
 
@@ -159,6 +212,8 @@ const LABELS: Record<string, string> = {
   profiles: 'Sign-in',
   order_items: 'Order item',
   day_openings: 'Opening stock',
+  business: 'Business settings',
+  sync_clashes: 'Sync clash choice',
 };
 
 // Postgres error codes that will never succeed on retry (bad data, or not allowed).
@@ -187,11 +242,20 @@ export function createLiveEngine(): LiveEngine {
         for (const op of tx.crud) {
           const table = supabase.from(op.table);
           const result =
-            op.op === UpdateType.PUT
-              ? await table.upsert({ ...op.opData, id: op.id })
-              : op.op === UpdateType.PATCH
-                ? await table.update(op.opData ?? {}).eq('id', op.id)
-                : await table.delete().eq('id', op.id);
+            op.op === UpdateType.PATCH && CLASH_TABLES.includes(op.table) && op.previousValues
+              ? // The server saves what nobody else changed meanwhile, and records a clash for the rest.
+                await supabase.rpc('save_change', {
+                  p_table: op.table,
+                  p_id: op.id,
+                  p_new: op.opData ?? {},
+                  p_old: op.previousValues,
+                  p_by: snap.state.session?.name ?? '',
+                })
+              : op.op === UpdateType.PUT
+                ? await table.upsert({ ...op.opData, id: op.id })
+                : op.op === UpdateType.PATCH
+                  ? await table.update(op.opData ?? {}).eq('id', op.id)
+                  : await table.delete().eq('id', op.id);
           if (result.error) throw result.error;
         }
         await tx.complete();
@@ -324,7 +388,55 @@ export function createLiveEngine(): LiveEngine {
       if (photoName) uploadWaitingPhotos(supabase).catch(() => {});
     },
     async updateSettings(settings) {
-      await db.execute('UPDATE business SET require_photo = ?', [settings.requirePhoto ? 1 : 0]);
+      let logo = settings.logo;
+      // A new logo is a photo on this phone: keep it, and upload it when there's internet.
+      if (logo && logo !== snap.state.settings.logo) logo = await keepPhoto(`logo-${uuid()}`, logo);
+      const { requirePhoto, ...rest } = { ...settings, logo };
+      await db.execute('UPDATE business SET require_photo = ?, name = ?, settings = ?', [
+        requirePhoto ? 1 : 0,
+        settings.businessName,
+        JSON.stringify(rest),
+      ]);
+      if (logo !== snap.state.settings.logo) uploadWaitingPhotos(supabase).catch(() => {});
+    },
+    async addProduct(p) {
+      const id = uuid();
+      await db.execute(
+        `INSERT INTO products (id, name, product_group, unit, pack, cost_price, sell_price, low_at, nafdac, supplier, active)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        [id, p.name, p.group, p.unit, p.pack, p.costPrice, p.sellPrice, p.lowAt, p.nafdac, p.supplier],
+      );
+      return id;
+    },
+    async updateProduct(id, p) {
+      await updateRow('products', id, {
+        name: p.name,
+        product_group: p.group,
+        unit: p.unit,
+        pack: p.pack,
+        cost_price: p.costPrice,
+        sell_price: p.sellPrice,
+        low_at: p.lowAt,
+        nafdac: p.nafdac,
+        supplier: p.supplier,
+      });
+    },
+    async changePassword(password) {
+      const { error } = await supabase.auth.updateUser({ password });
+      return error ? 'The password could not be changed. You need internet for this; please try again.' : null;
+    },
+    async resolveClash(id, keep) {
+      const c = snap.state.clashes.find((x) => x.id === id);
+      if (!c) return;
+      // Only ever write to a real column of a table that can clash.
+      const known = schema.tables.find((t) => t.name === c.table)?.columns.some((col) => col.name === c.field);
+      await db.writeTransaction(async (tx) => {
+        if (keep === 'mine' && CLASH_TABLES.includes(c.table) && known) {
+          const v = YES_NO.includes(c.field) ? (c.mine ? 1 : 0) : c.mine;
+          await tx.execute(`UPDATE ${c.table} SET ${c.field} = ? WHERE id = ?`, [v ?? null, c.rowId]);
+        }
+        await tx.execute('UPDATE sync_clashes SET resolved = 1 WHERE id = ?', [id]);
+      });
     },
     async addExpense({ day, category, note, amount, frequency, bike, payee, receipt }) {
       const id = uuid();
@@ -363,6 +475,10 @@ export function createLiveEngine(): LiveEngine {
       return id;
     },
     async updateRider(id, changes) {
+      const before = snap.state.riders.find((r) => r.id === id);
+      // A new photo is a file on this phone: keep it, and upload it when there's internet.
+      const photo =
+        changes.photo && changes.photo !== before?.photo ? await keepPhoto(`rider-${uuid()}`, changes.photo) : undefined;
       const cols: Record<string, unknown> = {
         name: changes.name,
         initials: changes.name ? initialsOf(changes.name) : undefined,
@@ -376,8 +492,20 @@ export function createLiveEngine(): LiveEngine {
         bike_colour: changes.bikeColour,
         id_type: changes.idType,
         id_number: changes.idNumber,
+        phone2: changes.phone2,
+        kin_name: changes.kinName,
+        kin_phone: changes.kinPhone,
+        kin_relation: changes.kinRelation,
+        pay_bank: changes.payBank,
+        pay_account: changes.payAccount,
+        pay_name: changes.payName,
+        pay_changed: changes.payChanged,
+        photo_path: photo,
+        change_request: changes.changeRequest,
+        change_request_at: changes.changeRequestAt,
       };
       await updateRow('riders', id, cols);
+      if (photo) uploadWaitingPhotos(supabase).catch(() => {});
     },
     async addStaff(input) {
       const role = snap.state.roles.find((r) => r.id === input.roleId);
@@ -545,7 +673,7 @@ function emptyState(): AppState {
     version: 1,
     day: today(),
     session: null,
-    settings: { requirePhoto: false },
+    settings: DEFAULT_SETTINGS,
     products: [],
     openings: {},
     moves: [],
@@ -555,6 +683,7 @@ function emptyState(): AppState {
     customers: [],
     orders: [],
     expenses: [],
+    clashes: [],
     pending: [],
   };
 }
@@ -581,9 +710,12 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
   if (!profile) return { phase: 'loading', state, sync };
   if (!profile.can_sign_in) return { phase: 'signedOut', state, sync };
 
-  const business = await db.getOptional<Row>('SELECT current_day, require_photo FROM business LIMIT 1');
+  const business = await db.getOptional<Row>('SELECT current_day, require_photo, settings FROM business LIMIT 1');
   state.day = business?.current_day ?? today();
-  state.settings = { requirePhoto: Boolean(business?.require_photo) };
+  state.settings = withDefaults({
+    ...parseJson<Partial<Settings>>(business?.settings, {}),
+    requirePhoto: Boolean(business?.require_photo),
+  });
   state.session = {
     role: profile.role as Role,
     name: String(profile.name ?? '').split(' ')[0],
@@ -591,19 +723,22 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
     staffId: profile.staff_id ?? undefined,
   };
 
-  const [products, openings, moves, riders, customers, orders, items, expenses, staff, roles, logins] = await Promise.all([
-    db.getAll<Row>('SELECT * FROM products WHERE active IS NULL OR active = 1 ORDER BY name'),
-    db.getAll<Row>('SELECT day, product_id, opening FROM day_openings'),
-    db.getAll<Row>('SELECT * FROM stock_moves'),
-    db.getAll<Row>('SELECT * FROM riders ORDER BY name'),
-    db.getAll<Row>('SELECT * FROM customers ORDER BY name'),
-    db.getAll<Row>('SELECT * FROM orders ORDER BY created_at'),
-    db.getAll<Row>('SELECT * FROM order_items'),
-    db.getAll<Row>('SELECT * FROM expenses'),
-    db.getAll<Row>('SELECT * FROM staff ORDER BY name'),
-    db.getAll<Row>('SELECT * FROM staff_roles ORDER BY name'),
-    db.getAll<Row>('SELECT staff_id, can_sign_in FROM profiles WHERE staff_id IS NOT NULL'),
-  ]);
+  const [products, openings, moves, riders, customers, orders, items, expenses, staff, roles, logins, clashes] =
+    await Promise.all([
+      db.getAll<Row>('SELECT * FROM products WHERE active IS NULL OR active = 1 ORDER BY name'),
+      db.getAll<Row>('SELECT day, product_id, opening FROM day_openings'),
+      db.getAll<Row>('SELECT * FROM stock_moves'),
+      db.getAll<Row>('SELECT * FROM riders ORDER BY name'),
+      db.getAll<Row>('SELECT * FROM customers ORDER BY name'),
+      db.getAll<Row>('SELECT * FROM orders ORDER BY created_at'),
+      db.getAll<Row>('SELECT * FROM order_items'),
+      db.getAll<Row>('SELECT * FROM expenses'),
+      db.getAll<Row>('SELECT * FROM staff ORDER BY name'),
+      db.getAll<Row>('SELECT * FROM staff_roles ORDER BY name'),
+      db.getAll<Row>('SELECT staff_id, can_sign_in FROM profiles WHERE staff_id IS NOT NULL'),
+      // Only Admin phones download these (see powersync/sync-rules.yaml).
+      db.getAll<Row>('SELECT * FROM sync_clashes WHERE resolved IS NULL OR resolved = 0 ORDER BY at'),
+    ]);
 
   state.products = products.map(
     (p): Product => ({
@@ -653,6 +788,17 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
       idType: r.id_type ?? undefined,
       idNumber: r.id_number ?? undefined,
       joined: r.joined ?? undefined,
+      phone2: r.phone2 ?? undefined,
+      kinName: r.kin_name ?? undefined,
+      kinPhone: r.kin_phone ?? undefined,
+      kinRelation: r.kin_relation ?? undefined,
+      payBank: r.pay_bank ?? undefined,
+      payAccount: r.pay_account ?? undefined,
+      payName: r.pay_name ?? undefined,
+      payChanged: r.pay_changed ?? undefined,
+      photo: r.photo_path ?? undefined,
+      changeRequest: r.change_request ?? undefined,
+      changeRequestAt: r.change_request_at ?? undefined,
     }),
   );
   state.staff = staff.map(
@@ -735,6 +881,18 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
     payee: e.payee ?? undefined,
     receipt: e.receipt_path ?? undefined,
   }));
+  state.clashes = clashes.map(
+    (c): Clash => ({
+      id: c.id,
+      table: c.table_name ?? '',
+      rowId: c.row_id ?? '',
+      field: c.field ?? '',
+      mine: parseJson<unknown>(c.mine, null),
+      mineBy: c.mine_by ?? '',
+      theirs: parseJson<unknown>(c.theirs, null),
+      at: c.at ?? '',
+    }),
+  );
 
   return { phase: 'ready', state, sync };
 }
