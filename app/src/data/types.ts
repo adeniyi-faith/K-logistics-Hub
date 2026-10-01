@@ -91,6 +91,8 @@ export type Order = {
   payment: 'transfer' | 'on_delivery';
   status: 'pending' | 'delivered' | 'failed';
   deliveredAt?: string;
+  /** The business day the delivery was recorded on (counts for that day's rider earnings). */
+  deliveredDay?: string;
   receivedBy?: string;
   collected?: { method: 'cash' | 'transfer' | 'paid_before'; amount: number };
   failReason?: string;
@@ -107,8 +109,8 @@ export type AppState = {
   day: string;
   session: { role: Role; name: string; riderId?: string } | null;
   products: Product[];
-  /** Opening stock for the current day, per product id. */
-  opening: Record<string, number>;
+  /** Opening stock per day, then per product id: openings["2026-10-01"]["p01"]. */
+  openings: Record<string, Record<string, number>>;
   moves: StockMove[];
   riders: Rider[];
   customers: Customer[];

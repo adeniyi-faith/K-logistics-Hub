@@ -5,7 +5,7 @@ import { Icon } from '../../components/Icon';
 import { IconName } from '../../components/icons';
 import { Card, H2, LinkText, Row, Screen, Stat, TopBar } from '../../components/ui';
 import { greeting, longDay, naira } from '../../lib/format';
-import { dayMoney, isLow, orderUnits, stockFor } from '../../lib/stock';
+import { dayMoney, deliveredOn, isLow, orderUnits, stockFor } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
 
@@ -19,9 +19,9 @@ export default function AdminHome() {
   const deliveredUnits = lines.reduce((s, x) => s + x.line.delivered, 0);
   const low = lines.filter((x) => isLow(x.p, x.line));
 
-  const todays = state.orders.filter((o) => o.day === state.day);
-  const delivered = todays.filter((o) => o.status === 'delivered');
-  const pending = todays.filter((o) => o.status === 'pending');
+  const delivered = state.orders.filter((o) => o.status === 'delivered' && deliveredOn(o) === state.day);
+  // Pending deliveries carry over from earlier days until they are done.
+  const pending = state.orders.filter((o) => o.status === 'pending');
   const customersServed = new Set(delivered.map((o) => o.customer)).size;
   const ridersOut = new Set(pending.map((o) => o.riderId)).size;
 
@@ -48,7 +48,7 @@ export default function AdminHome() {
         </View>
 
         <Card>
-          <H2>Today's overview</H2>
+          <H2 right={<LinkText onPress={() => router.push('/day-record')}>Day record</LinkText>}>Today's overview</H2>
           <View style={st.grid}>
             <Stat label="Products delivered" value={`${deliveredUnits} units`} />
             <Stat label="Customers served" value={String(customersServed)} />
@@ -86,6 +86,14 @@ export default function AdminHome() {
             {ridersOut} of {state.riders.length} riders out
           </Text>
         </Card>
+
+        <Pressable onPress={() => router.push('/day-record')} accessibilityRole="button" style={st.close}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={st.closeTitle}>Close today's record</Text>
+            <Text style={st.muted}>Closing stock becomes tomorrow's opening stock</Text>
+          </View>
+          <Icon name="chev" color={colors.navy} />
+        </Pressable>
       </Screen>
     </View>
   );
@@ -149,4 +157,14 @@ const st = StyleSheet.create({
   quickLabel: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.navy, textAlign: 'center' },
   soon: { fontFamily: fonts.body, fontSize: 10, color: colors.muted },
   muted: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },
+  close: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.orangeBg,
+    borderRadius: 16,
+    padding: 16,
+    minHeight: 44,
+  },
+  closeTitle: { fontFamily: fonts.head, fontSize: 16, color: colors.navy },
 });

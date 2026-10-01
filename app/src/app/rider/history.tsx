@@ -2,7 +2,7 @@ import { View } from 'react-native';
 
 import { Badge, Card, H2, Muted, Row, Screen, Stat, TopBar } from '../../components/ui';
 import { clock, dayLabel, naira } from '../../lib/format';
-import { riderDay } from '../../lib/stock';
+import { deliveredOn, riderDay } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 
 export default function RiderHistory() {
@@ -11,7 +11,7 @@ export default function RiderHistory() {
   const mine = state.orders
     .filter((o) => o.riderId === riderId && o.status !== 'pending')
     .sort((a, b) => (b.deliveredAt ?? '').localeCompare(a.deliveredAt ?? ''));
-  const days = [...new Set(mine.map((o) => o.day))];
+  const days = [...new Set(mine.map(deliveredOn))];
   const totals = days.map((d) => ({ day: d, ...riderDay(state, riderId, d) }));
   const name = new Map(state.products.map((p) => [p.id, p.name]));
 
@@ -37,7 +37,7 @@ export default function RiderHistory() {
           <Card key={d} style={{ paddingVertical: 8 }}>
             <H2>{dayLabel(d)}</H2>
             {mine
-              .filter((o) => o.day === d)
+              .filter((o) => deliveredOn(o) === d)
               .map((o, i) => (
                 <Row
                   key={o.id}
