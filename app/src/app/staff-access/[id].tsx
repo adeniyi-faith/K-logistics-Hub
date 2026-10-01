@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import { AccessEditor } from '../../components/AccessEditor';
+import { SwitchRow } from '../../components/SwitchRow';
 import { Avatar, Badge, Button, Card, Chips, Field, H2, LinkText, Muted, Screen, TopBar } from '../../components/ui';
 import { Access, changeCount, describeChanges, NO_ACCESS, overridesFrom, withOverrides } from '../../data/access';
 import { useStore } from '../../store/AppStore';
@@ -92,22 +93,16 @@ export default function StaffAccess() {
 
         <Card>
           <H2>Sign-in</H2>
-          <View style={st.switchRow}>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text style={st.title}>Can sign in</Text>
-              <Muted>
-                {person.canSignIn === undefined
-                  ? 'No sign-in account is linked yet (setup guide, step 3).'
-                  : 'Turn off to block access as soon as their phone is online.'}
-              </Muted>
-            </View>
-            <Switch
-              value={canSignIn}
-              onValueChange={setCanSignIn}
-              accessibilityLabel="Can sign in"
-              trackColor={{ true: colors.green }}
-            />
-          </View>
+          <SwitchRow
+            label="Can sign in"
+            sub={
+              person.canSignIn === undefined
+                ? 'No sign-in account is linked yet (setup guide, step 3).'
+                : 'Turn off to block access as soon as their phone is online.'
+            }
+            value={canSignIn}
+            onChange={setCanSignIn}
+          />
           <Muted>To reset a password, use Supabase: Authentication, Users, then the person's menu.</Muted>
         </Card>
       </Screen>
@@ -121,5 +116,4 @@ const st = StyleSheet.create({
   title: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.navy },
   note: { gap: 6, padding: 12, borderRadius: 12, backgroundColor: colors.orangeBg },
   noteText: { fontFamily: fonts.body, fontSize: 13, color: colors.navy, lineHeight: 18 },
-  switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 });

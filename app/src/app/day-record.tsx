@@ -116,7 +116,7 @@ export default function DayRecord() {
         <Card>
           <H2>Stock by product</H2>
           <View style={st.tr}>
-            <Text style={[st.th, { flex: 1 }]}>Product</Text>
+            <Text style={[st.th, st.name]}>Product</Text>
             <Text style={st.th}>Open</Text>
             <Text style={st.th}>In</Text>
             <Text style={st.th}>Out</Text>
@@ -124,7 +124,7 @@ export default function DayRecord() {
           </View>
           {lines.map(({ p, line }) => (
             <Pressable key={p.id} style={st.tr} onPress={() => router.push(`/product/${p.id}`)}>
-              <Text style={[st.td, { flex: 1 }]} numberOfLines={1}>
+              <Text style={[st.td, st.name]} numberOfLines={1}>
                 {p.name}
               </Text>
               <Text style={st.td}>{line.opening}</Text>
@@ -151,4 +151,5 @@ const st = StyleSheet.create({
   th: { width: 44, textAlign: 'right', fontFamily: fonts.bodyBold, fontSize: 12, color: colors.muted },
   td: { width: 44, textAlign: 'right', fontFamily: fonts.body, fontSize: 14, color: colors.navy },
   tdStrong: { fontFamily: fonts.bodyBold },
+  name: { flex: 1, width: undefined, textAlign: 'left' },
 });

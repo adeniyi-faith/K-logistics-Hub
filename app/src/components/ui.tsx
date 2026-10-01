@@ -1,7 +1,17 @@
 // Shared building blocks that match design/generator/lib.py.
 import { router } from 'expo-router';
 import { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TextInputProps,
+  useWindowDimensions,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useStore } from '../store/AppStore';
@@ -36,6 +46,7 @@ export function SyncPill() {
       onPress={() => router.push('/sync')}
       accessibilityRole="button"
       accessibilityLabel={`${look.text}. ${sync.waiting} changes waiting to upload`}
+      hitSlop={8}
       style={[s.pill, { backgroundColor: look.bg }]}
     >
       <Icon name={look.icon} size={16} color={look.fg} />
@@ -126,6 +137,8 @@ export function Button({
     ghost: { bg: colors.white, fg: colors.navy, line: colors.inputLine },
     danger: { bg: colors.white, fg: colors.red, line: '#F1C4BF' },
   }[kind];
+  // On small phones two buttons side by side are tight, so the text is a little smaller to stay on one line.
+  const small = useWindowDimensions().width < 400;
   return (
     <Pressable
       onPress={onPress}
@@ -136,17 +149,24 @@ export function Button({
         { backgroundColor: look.bg, borderColor: look.line, opacity: disabled ? 0.45 : pressed ? 0.85 : 1 },
       ]}
     >
-      {icon ? <Icon name={icon} size={20} color={look.fg} /> : null}
-      <Text style={[s.btnText, { color: look.fg }]}>{title}</Text>
+      {icon ? <Icon name={icon} size={small ? 18 : 20} color={look.fg} /> : null}
+      <Text style={[s.btnText, { color: look.fg }, small && { fontSize: 15 }]}>{title}</Text>
     </Pressable>
   );
+}
+
+function statSize(value: string) {
+  return value.length <= 6 ? 20 : value.length <= 8 ? 16 : 14;
 }
 
 export function Stat({ label, value, note, noteColor }: { label: string; value: string; note?: string; noteColor?: string }) {
   return (
     <View style={s.stat}>
       <Text style={s.statLabel}>{label}</Text>
-      <Text style={s.statValue}>{value}</Text>
+      {/* Long amounts (e.g. ₦1,010,500) get smaller text so they stay on one line on small phones. */}
+      <Text style={[s.statValue, { fontSize: statSize(value) }]} numberOfLines={1} adjustsFontSizeToFit>
+        {value}
+      </Text>
       {note ? <Text style={[s.statNote, { color: noteColor ?? colors.muted }]}>{note}</Text> : null}
     </View>
   );
@@ -269,7 +289,7 @@ export const s = StyleSheet.create({
   back: { width: 44, height: 44, marginLeft: -10, alignItems: 'center', justifyContent: 'center' },
   topTitle: { fontFamily: fonts.head, fontSize: 20, color: colors.navy },
   topSub: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, minHeight: 32, borderRadius: 999 },
   pillText: { fontFamily: fonts.bodyBold, fontSize: 12 },
   card: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: 16, padding: 16, gap: 12 },
   h2Row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
@@ -279,7 +299,7 @@ export const s = StyleSheet.create({
   badgeText: { fontFamily: fonts.bodyBold, fontSize: 12 },
   btn: {
     minHeight: 52,
-    paddingHorizontal: 18,
+    paddingHorizontal: 12,
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',

@@ -65,7 +65,8 @@ export function ListEditor({
                   onPress={() => onChange(items.filter((x) => x !== t))}
                   accessibilityRole="button"
                   accessibilityLabel={`Remove ${t}`}
-                  hitSlop={10}
+                  hitSlop={8}
+                  style={st.remove}
                 >
                   <Icon name="x" size={14} color={colors.muted} />
                 </Pressable>
@@ -91,6 +92,8 @@ const st = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
   },
+  // A bigger tap area around the small ×, without making the chip taller.
+  remove: { padding: 6, margin: -6 },
   chipText: { fontFamily: fonts.bodyBold, fontSize: 13, color: colors.navy },
   addRow: { flexDirection: 'row', gap: 8 },
   input: {
