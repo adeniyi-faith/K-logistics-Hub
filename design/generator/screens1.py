@@ -59,13 +59,13 @@ S["Dashboard"] = ("Admin dashboard", 1260, dash_header + f'''
 <div><div style="font-size: 12px; color: {MUTED}">Profit</div><div style="font-weight: 700; color: {GREEN}">₦378,500</div></div>
 </div></section>
 <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
-{quick("cart", "New sale", "NewSale.dc.html")}{quick("box", "Receive stock", "ReceiveStock.dc.html")}{quick("receipt", "Add expense", "AddExpense.dc.html")}{quick("wallet", "Take payment", "CustomerProfile.dc.html")}
+{quick("cart", "New sale", "NewSale.dc.html")}{quick("box", "Receive stock", "ReceiveStock.dc.html")}{quick("receipt", "Add expense", "AddExpense.dc.html")}{quick("truck", "Delivered", "Deliveries.dc.html")}
 </div>
 {card(h2("Today's overview", link("Day record", "DailyRecord.dc.html")) + grid([
     stat("Products delivered", "56", "units", None),
     stat("Customers served", "14"),
     stat("Pending deliveries", "5", "2 are late", "amber"),
-    stat("Customers owe you", "₦494,500", "4 customers", "amber"),
+    stat("Delivered orders", "13", "see proof", None),
 ]))}
 {card(h2("Inventory", link("See stock", "Inventory.dc.html")) + grid([
     stat("Current stock", "612", "units in store"),
@@ -123,7 +123,7 @@ S["SyncCenter"] = ("Sync centre", 900, topbar("Sync", "Dashboard.dc.html", sync=
 </section>
 {card(h2("Waiting to upload", badge("3", "amber")) + qitem("cart", "New sale #S-0930-18", "Grace Herbal Store · ₦129,000", "11:05")
       .replace("border-top: 1px solid " + LINE + "; ", "") + qitem("receipt", "Expense · Fuel", "₦15,000 · Daily", "11:12")
-      + qitem("wallet", "Payment received", "Blessing Ibe · ₦21,500", "11:20"), gap=0)}
+      + qitem("check", "Delivery confirmed #S-0930-14", "Joy Pharmacy · Emeka", "11:20"), gap=0)}
 {card(h2("Needs your decision", badge("1", "red")) + f"""
 <div style="font-size: 14px; line-height: 1.45">Glow Serum stock was changed on two phones while one was offline.</div>
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">

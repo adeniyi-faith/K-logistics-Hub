@@ -2,50 +2,14 @@
   "v": 3,
   "attachments": {},
   "boards": {
-    "AddExpense.dc.html": {
-      "h": 980,
+    "Main.dc.html": {
+      "h": 844,
       "is_interactive": true,
       "radius": 28,
-      "title": "Add expense",
+      "title": "Sign in",
       "w": 390,
-      "x": 470,
-      "y": 8880
-    },
-    "CloseDay.dc.html": {
-      "h": 960,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Close the day",
-      "w": 390,
-      "x": 1880,
-      "y": 5620
-    },
-    "CustomerProfile.dc.html": {
-      "h": 1120,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Customer profile",
-      "w": 390,
-      "x": 1410,
-      "y": 7360
-    },
-    "Customers.dc.html": {
-      "h": 900,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Customers",
-      "w": 390,
-      "x": 940,
-      "y": 7360
-    },
-    "DailyRecord.dc.html": {
-      "h": 1340,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Daily record",
-      "w": 390,
-      "x": 1410,
-      "y": 5620
+      "x": 0,
+      "y": 240
     },
     "Dashboard.dc.html": {
       "h": 1260,
@@ -56,49 +20,13 @@
       "x": 470,
       "y": 240
     },
-    "DeliveryDetail.dc.html": {
-      "h": 1060,
+    "SyncCenter.dc.html": {
+      "h": 900,
       "is_interactive": true,
       "radius": 28,
-      "title": "Confirm delivery",
+      "title": "Sync centre",
       "w": 390,
-      "x": 470,
-      "y": 12380
-    },
-    "Expenses.dc.html": {
-      "h": 1000,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Expenses",
-      "w": 390,
-      "x": 0,
-      "y": 8880
-    },
-    "Finance.dc.html": {
-      "h": 1300,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Finance",
-      "w": 390,
-      "x": 0,
-      "y": 10680
-    },
-    "Inventory.dc.html": {
-      "h": 1010,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Inventory",
-      "w": 390,
-      "x": 0,
-      "y": 5620
-    },
-    "Main.dc.html": {
-      "h": 844,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Sign in",
-      "w": 390,
-      "x": 0,
+      "x": 940,
       "y": 240
     },
     "More.dc.html": {
@@ -110,105 +38,6 @@
       "x": 1410,
       "y": 240
     },
-    "NewSale.dc.html": {
-      "h": 1120,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "New sale",
-      "w": 390,
-      "x": 470,
-      "y": 7360
-    },
-    "OnboardRider.dc.html": {
-      "h": 1400,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Onboard a rider",
-      "w": 390,
-      "x": 1880,
-      "y": 8880
-    },
-    "ProductDetail.dc.html": {
-      "h": 1280,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Product detail",
-      "w": 390,
-      "x": 470,
-      "y": 5620
-    },
-    "ReceiveStock.dc.html": {
-      "h": 1000,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Receive stock",
-      "w": 390,
-      "x": 940,
-      "y": 5620
-    },
-    "Reports.dc.html": {
-      "h": 1120,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Reports",
-      "w": 390,
-      "x": 470,
-      "y": 10680
-    },
-    "RiderHistory.dc.html": {
-      "h": 900,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Rider history",
-      "w": 390,
-      "x": 940,
-      "y": 12380
-    },
-    "RiderHome.dc.html": {
-      "h": 1000,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Rider deliveries",
-      "w": 390,
-      "x": 0,
-      "y": 12380
-    },
-    "RiderProfile.dc.html": {
-      "h": 960,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Rider profile",
-      "w": 390,
-      "x": 1410,
-      "y": 12380
-    },
-    "Riders.dc.html": {
-      "h": 940,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Riders and bikes",
-      "w": 390,
-      "x": 1410,
-      "y": 8880
-    },
-    "Roles.dc.html": {
-      "h": 1180,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Staff roles",
-      "w": 390,
-      "x": 940,
-      "y": 3580
-    },
-    "Sales.dc.html": {
-      "h": 1060,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Sales and deliveries",
-      "w": 390,
-      "x": 0,
-      "y": 7360
-    },
     "Settings.dc.html": {
       "h": 1440,
       "is_interactive": true,
@@ -218,23 +47,14 @@
       "x": 1880,
       "y": 240
     },
-    "Staff.dc.html": {
-      "h": 1040,
+    "StyleGuide.dc.html": {
+      "h": 1200,
       "is_interactive": true,
       "radius": 28,
-      "title": "Staff and payments",
+      "title": "Style guide",
       "w": 390,
-      "x": 940,
-      "y": 8880
-    },
-    "StaffAccess.dc.html": {
-      "h": 1640,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Edit staff access",
-      "w": 390,
-      "x": 470,
-      "y": 3580
+      "x": 2350,
+      "y": 240
     },
     "StaffHome.dc.html": {
       "h": 1000,
@@ -254,24 +74,6 @@
       "x": 470,
       "y": 2080
     },
-    "StyleGuide.dc.html": {
-      "h": 1200,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Style guide",
-      "w": 390,
-      "x": 2350,
-      "y": 240
-    },
-    "SyncCenter.dc.html": {
-      "h": 900,
-      "is_interactive": true,
-      "radius": 28,
-      "title": "Sync centre",
-      "w": 390,
-      "x": 940,
-      "y": 240
-    },
     "Users.dc.html": {
       "h": 1240,
       "is_interactive": true,
@@ -281,6 +83,240 @@
       "x": 0,
       "y": 3580
     },
+    "StaffAccess.dc.html": {
+      "h": 1640,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Edit staff access",
+      "w": 390,
+      "x": 470,
+      "y": 3580
+    },
+    "Roles.dc.html": {
+      "h": 1180,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Staff roles",
+      "w": 390,
+      "x": 940,
+      "y": 3580
+    },
+    "Inventory.dc.html": {
+      "h": 1010,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Inventory",
+      "w": 390,
+      "x": 0,
+      "y": 5620
+    },
+    "StockReceived.dc.html": {
+      "x": 470,
+      "y": 5620,
+      "w": 390,
+      "h": 1360,
+      "title": "Stock received",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "ProductDetail.dc.html": {
+      "h": 1280,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Product detail",
+      "w": 390,
+      "x": 940,
+      "y": 5620
+    },
+    "ReceiveStock.dc.html": {
+      "h": 1000,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Receive stock",
+      "w": 390,
+      "x": 1410,
+      "y": 5620
+    },
+    "DailyRecord.dc.html": {
+      "h": 1560,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Daily record",
+      "w": 390,
+      "x": 1880,
+      "y": 5620
+    },
+    "CloseDay.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Close the day",
+      "w": 390,
+      "x": 2350,
+      "y": 5620
+    },
+    "Sales.dc.html": {
+      "h": 1120,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Sales and deliveries",
+      "w": 390,
+      "x": 0,
+      "y": 7580
+    },
+    "Deliveries.dc.html": {
+      "x": 470,
+      "y": 7580,
+      "w": 390,
+      "h": 1300,
+      "title": "Delivered orders",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "DeliveryProof.dc.html": {
+      "x": 940,
+      "y": 7580,
+      "w": 390,
+      "h": 1300,
+      "title": "Delivery proof",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "NewSale.dc.html": {
+      "h": 1100,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "New sale",
+      "w": 390,
+      "x": 1410,
+      "y": 7580
+    },
+    "Customers.dc.html": {
+      "h": 860,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Customers",
+      "w": 390,
+      "x": 1880,
+      "y": 7580
+    },
+    "CustomerProfile.dc.html": {
+      "h": 1180,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Customer profile",
+      "w": 390,
+      "x": 2350,
+      "y": 7580
+    },
+    "Expenses.dc.html": {
+      "h": 1000,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Expenses",
+      "w": 390,
+      "x": 0,
+      "y": 9280
+    },
+    "AddExpense.dc.html": {
+      "h": 980,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Add expense",
+      "w": 390,
+      "x": 470,
+      "y": 9280
+    },
+    "Staff.dc.html": {
+      "h": 1040,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Staff and payments",
+      "w": 390,
+      "x": 940,
+      "y": 9280
+    },
+    "Riders.dc.html": {
+      "h": 1020,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Riders and bikes",
+      "w": 390,
+      "x": 1410,
+      "y": 9280
+    },
+    "RiderEarnings.dc.html": {
+      "x": 1880,
+      "y": 9280,
+      "w": 390,
+      "h": 1200,
+      "title": "Rider earnings",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "OnboardRider.dc.html": {
+      "h": 1400,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Onboard a rider",
+      "w": 390,
+      "x": 2350,
+      "y": 9280
+    },
+    "Finance.dc.html": {
+      "h": 1300,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Finance",
+      "w": 390,
+      "x": 0,
+      "y": 11080
+    },
+    "Reports.dc.html": {
+      "h": 1120,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Reports",
+      "w": 390,
+      "x": 470,
+      "y": 11080
+    },
+    "RiderHome.dc.html": {
+      "h": 1060,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Rider deliveries",
+      "w": 390,
+      "x": 0,
+      "y": 12780
+    },
+    "DeliveryDetail.dc.html": {
+      "h": 1060,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Confirm delivery",
+      "w": 390,
+      "x": 470,
+      "y": 12780
+    },
+    "RiderHistory.dc.html": {
+      "h": 1240,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Rider history",
+      "w": 390,
+      "x": 940,
+      "y": 12780
+    },
+    "RiderProfile.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "radius": 28,
+      "title": "Rider profile",
+      "w": 390,
+      "x": 1410,
+      "y": 12780
+    },
     "RiderEditProfile.dc.html": {
       "h": 1500,
       "is_interactive": true,
@@ -288,7 +324,7 @@
       "title": "Rider edit profile",
       "w": 390,
       "x": 1880,
-      "y": 12380
+      "y": 12780
     }
   },
   "createdOnFiles": {
@@ -300,45 +336,13 @@
     "view": "canvas"
   },
   "notes": {
-    "access": {
+    "start": {
       "kind": "title1",
-      "maxW": 1330,
-      "text": "Access control (Admin)",
+      "maxW": 2740,
+      "text": "Start, home & settings",
       "w": 240,
       "x": 0,
-      "y": 3340
-    },
-    "fin": {
-      "kind": "title1",
-      "maxW": 860,
-      "text": "Finance & reports",
-      "w": 240,
-      "x": 0,
-      "y": 10440
-    },
-    "money": {
-      "kind": "title1",
-      "maxW": 2270,
-      "text": "Expenses, staff & riders",
-      "w": 240,
-      "x": 0,
-      "y": 8640
-    },
-    "rider": {
-      "kind": "title1",
-      "maxW": 2270,
-      "text": "Rider app",
-      "w": 240,
-      "x": 0,
-      "y": 12140
-    },
-    "sales": {
-      "kind": "title1",
-      "maxW": 1800,
-      "text": "Sales, deliveries & customers",
-      "w": 240,
-      "x": 0,
-      "y": 7120
+      "y": 0
     },
     "staff": {
       "kind": "title1",
@@ -348,21 +352,53 @@
       "x": 0,
       "y": 1840
     },
-    "start": {
+    "access": {
       "kind": "title1",
-      "maxW": 2740,
-      "text": "Start, home & settings",
+      "maxW": 1330,
+      "text": "Access control (Admin)",
       "w": 240,
       "x": 0,
-      "y": 0
+      "y": 3340
     },
     "stock": {
       "kind": "title1",
-      "maxW": 2270,
+      "maxW": 2740,
       "text": "Stock & daily record",
       "w": 240,
       "x": 0,
       "y": 5380
+    },
+    "sales": {
+      "kind": "title1",
+      "maxW": 2740,
+      "text": "Sales, deliveries & customers",
+      "w": 240,
+      "x": 0,
+      "y": 7340
+    },
+    "money": {
+      "kind": "title1",
+      "maxW": 2740,
+      "text": "Expenses, staff & riders",
+      "w": 240,
+      "x": 0,
+      "y": 9040
+    },
+    "fin": {
+      "kind": "title1",
+      "maxW": 860,
+      "text": "Finance & reports",
+      "w": 240,
+      "x": 0,
+      "y": 10840
+    },
+    "rider": {
+      "kind": "title1",
+      "maxW": 2270,
+      "text": "Rider app",
+      "w": 240,
+      "x": 0,
+      "y": 12540
     }
   },
   "order": [
@@ -378,11 +414,14 @@
     "StaffAccess.dc.html",
     "Roles.dc.html",
     "Inventory.dc.html",
+    "StockReceived.dc.html",
     "ProductDetail.dc.html",
     "ReceiveStock.dc.html",
     "DailyRecord.dc.html",
     "CloseDay.dc.html",
     "Sales.dc.html",
+    "Deliveries.dc.html",
+    "DeliveryProof.dc.html",
     "NewSale.dc.html",
     "Customers.dc.html",
     "CustomerProfile.dc.html",
@@ -390,6 +429,7 @@
     "AddExpense.dc.html",
     "Staff.dc.html",
     "Riders.dc.html",
+    "RiderEarnings.dc.html",
     "OnboardRider.dc.html",
     "Finance.dc.html",
     "Reports.dc.html",

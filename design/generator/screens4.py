@@ -35,7 +35,7 @@ S["StaffProfile"] = ("My access", 1100, topbar("Me", sync="offline") + main(f'''
       + can("Expenses", "View") + can("Reports", "View") + can("Finance &amp; profit", "Off") + can("Staff &amp; pay", "Off") + can("Business settings", "Off"), gap=0)}
 {card(h2("Extra permissions") + "".join(
     f'<div style="display: flex; align-items: center; gap: 10px; font-size: 14px; min-height: 32px">{ic("check" if ok else "x", 18, GREEN if ok else "#9AA3B5", 2.2)}<span style="color: {NAVY if ok else MUTED}">{t}</span></div>'
-    for t, ok in [("Record customer payments", True), ("Give discounts up to 5%", True), ("Close the day", True), ("See cost prices and profit", False), ("Cancel a saved sale", False), ("Export reports", False)]), gap=4)}
+    for t, ok in [("Confirm cash collected", True), ("Give discounts up to 5%", True), ("Close the day", True), ("See cost prices and profit", False), ("Cancel a saved sale", False), ("Export reports", False)]), gap=4)}
 {note("Need more access? Ask Kasim. Changes reach your phone the next time it syncs.", "shield", "blue")}
 {card(h2("My pay") + kv("Rate", "₦150,000 per month") + kv("Paid for September", "₦150,000"), gap=10)}
 {btn("Sign out", "Main.dc.html", "danger", "logout")}
@@ -81,12 +81,12 @@ S["StaffAccess"] = ("Edit staff access", 1640, topbar("Kemi's access", "Users.dc
       + note("Kemi has 2 changes from the Manager role: <b>Close the day</b> turned on, <b>Reports</b> set to view only.", "sliders", "amber"))}
 {card(h2("What Kemi can use") + f'<div style="font-size: 12px; color: {MUTED}">Off = hidden · View = look only · Edit = add and change</div>'
       + level("Stock", "Products, receive stock, counts", "Edit", True) + level("Sales &amp; deliveries", "New sales, assign riders", "Edit")
-      + level("Customers", "Profiles and balances", "Edit") + level("Riders &amp; bikes", "Onboard, status, bikes", "Edit")
+      + level("Customers", "Profiles and order history", "Edit") + level("Riders &amp; bikes", "Onboard, status, bikes", "Edit")
       + level("Expenses", "Fuel, repairs, packaging", "View") + level("Staff &amp; pay", "Salaries and payments", "Off")
       + level("Finance &amp; profit", "Sales, costs, profit", "Off") + level("Reports", "Filter and export", "View")
       + level("Business settings", "Logo, categories, areas", "Off"), gap=0)}
 {card(h2("Extra permissions") + toggle("See cost prices and profit", False, "Hides cost and profit on every screen")
-      + toggle("Give discounts", True, "Up to 5% off the selling price") + toggle("Record customer payments", True)
+      + toggle("Give discounts", True, "Up to 5% off the selling price") + toggle("Confirm cash collected", True)
       + toggle("Cancel or change a saved sale", False, "Only Admin can do this for now") + toggle("Close the day", True, "Changed from the Manager role")
       + toggle("Export reports", False) + toggle("Decide sync clashes", False, "When two phones change the same thing"), gap=2)}
 {card(h2("Sign-in") + toggle("Can sign in", True, "Turn off to block access at once") + btn("Reset password", None, "ghost", "lock"), gap=10)}

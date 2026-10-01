@@ -28,6 +28,7 @@ def prod_row(p, first=False):
 
 
 S["Inventory"] = ("Inventory", 1010, topbar("Stock", sync="offline", right=f'<a href="#" aria-label="Add product" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid {LINE}">{ic("plus", 22)}</a>') + main(f'''
+{seglinks([("In store", "Inventory.dc.html"), ("Received", "StockReceived.dc.html")], "In store")}
 {searchbar("Search products")}
 {chips(["All (27)", "Low stock (3)", "Capsules", "Teas", "Skin care"], "All (27)")}
 <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
@@ -86,7 +87,7 @@ S["ReceiveStock"] = ("Receive stock", 1000, topbar("Receive stock", "Inventory.d
 {grid([field("Batch no.", "MT-0930", fid="rs-batch"), field("Expiry date", "Sep 2028", icon="calendar", fid="rs-exp")], 2, 10)}
 {field("Date received", "Today, 30 Sep 2026", icon="calendar", fid="rs-date")}
 {card(kv("Total cost", "₦336,000", True), pad=14)}
-<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">{btn("Save stock", "ProductDetail.dc.html", "accent", "check")}
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">{btn("Save stock", "StockReceived.dc.html", "accent", "check")}
 <div style="font-size: 12px; color: {MUTED}; text-align: center">Saved on this phone first. Uploads when you're online.</div></div>
 '''))
 
@@ -103,12 +104,13 @@ per_prod = "".join(
     f'<span style="font-weight: 700">{p[0].replace(" herbal tea", "").replace(" Power Duo", "").replace(" tea", "")}</span><span>{p[2]}</span><span style="color: {GREEN}">+{p[3]}</span><span style="color: {RED}">−{p[4]}</span><span style="font-weight: 700">{p[5]}</span></div>'
     for p in PRODUCTS)
 
-S["DailyRecord"] = ("Daily record", 1340, topbar("Daily record", "More.dc.html", sync="offline", right=f'<a href="#" aria-label="Pick a date" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center">{ic("calendar", 22)}</a>') + main(f'''
+S["DailyRecord"] = ("Daily record", 1560, topbar("Daily record", "More.dc.html", sync="offline", right=f'<a href="#" aria-label="Pick a date" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center">{ic("calendar", 22)}</a>') + main(f'''
 <div style="display: flex; gap: 6px">{daychip("THU", "24")}{daychip("FRI", "25")}{daychip("SAT", "26")}{daychip("SUN", "27")}{daychip("MON", "28")}{daychip("TUE", "29")}{daychip("WED", "30", True, False)}</div>
 <div style="display: flex; align-items: center; justify-content: space-between"><div style="font-family: {HEAD}; font-size: 18px; font-weight: 600">Wednesday, 30 Sep</div>{badge("Day open", "amber")}</div>
 {card(h2("What came in, what went out") + grid([stat("Received", "+66", "units"), stat("Delivered", "−56", "units"), stat("Remaining", "612", "units")], 3, 8))}
-{card(h2("Money") + kv("Total sales", "₦1,204,000", True) + kv("Cost of goods sold", "₦784,000") + kv("Expenses", "₦41,500") + f'<div style="border-top: 1px solid {LINE}"></div>' + kv("Profit", "₦378,500", True, GREEN) + kv("Still owed by customers", "₦494,500", True, ORANGE_TXT), gap=10)}
-{card(h2("Deliveries") + grid([stat("Completed", "13"), stat("Pending", "5", "carry over if not done", "amber")]))}
+{card(h2("Money") + kv("Total sales", "₦1,204,000", True) + kv("Cost of goods sold", "₦784,000") + kv("Expenses", "₦41,500") + f'<div style="border-top: 1px solid {LINE}"></div>' + kv("Profit", "₦378,500", True, GREEN), gap=10)}
+{card(h2("Deliveries", link("Delivered orders", "Deliveries.dc.html")) + grid([stat("Completed", "13"), stat("Pending", "5", "carry over if not done", "amber")]))}
+{card(h2("Rider earnings", link("By day", "RiderEarnings.dc.html")) + kv("Emeka Obi · 3 deliveries", "₦15,000") + kv("Sadiq Bello · 4 deliveries", "₦20,000") + kv("Tolu Ade · 4 deliveries", "₦20,000") + kv("Chinedu Eze · 2 deliveries", "₦10,000") + f'<div style="border-top: 1px solid {LINE}"></div>' + kv("All riders", "₦65,000", True), gap=10)}
 {card(h2("Stock by product") + f"""<div style="display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr 1fr; font-size: 12px; color: {MUTED}; font-weight: 700"><span>Product</span><span>Open</span><span>In</span><span>Out</span><span>Close</span></div>{per_prod}<div style="padding-top: 9px; border-top: 1px solid {LINE}; font-size: 13px; color: {MUTED}">+ 19 more products</div>""", gap=4)}
 {btn("Review and close day", "CloseDay.dc.html", "primary", "clip")}
 '''))
@@ -132,81 +134,99 @@ S["CloseDay"] = ("Close the day", 960, topbar("Close 30 Sep", "DailyRecord.dc.ht
 '''))
 
 # ---------------- Sales ----------------
-def sale_card(no, cust, items, amt, rider, dstat, pay, owe=None, unsynced=False, first=False):
+def sale_card(no, cust, area, items, amt, rider, dstat, pay, unsynced=False, href="CustomerProfile.dc.html"):
     dk = {"Delivered": "green", "Pending": "amber", "On the way": "blue"}[dstat]
-    pk = {"Paid": "green", "Unpaid": "red", "Part paid": "amber"}[pay]
-    o = f'<span style="font-size: 13px; color: {RED}; font-weight: 700">Owes {owe}</span>' if owe else ""
+    pk = {"Paid · Transfer": "green", "Pay on delivery": "blue", "Paid · Cash": "green"}[pay]
     u = pending_dot() if unsynced else ""
-    return (f'<a href="CustomerProfile.dc.html" style="display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 1px solid {LINE}; border-radius: 16px; padding: 14px; color: {NAVY}">'
+    return (f'<a href="{href}" style="display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 1px solid {LINE}; border-radius: 16px; padding: 14px; color: {NAVY}">'
             f'<div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 12px; color: {MUTED}; font-weight: 700">{no}</span>{u}{badge(dstat, dk)}</div>'
-            f'<div style="display: flex; justify-content: space-between; gap: 8px"><div><div style="font-weight: 700; font-size: 16px">{cust}</div><div style="font-size: 13px; color: {MUTED}">{items}</div></div>'
+            f'<div style="display: flex; justify-content: space-between; gap: 8px"><div><div style="font-weight: 700; font-size: 16px">{cust}</div>'
+            f'<div style="display: flex; align-items: center; gap: 4px; font-size: 13px; color: {MUTED}">{ic("pin", 14)}{area}</div>'
+            f'<div style="font-size: 13px; color: {MUTED}">{items}</div></div>'
             f'<div style="font-family: {HEAD}; font-size: 17px; font-weight: 600; white-space: nowrap">{amt}</div></div>'
             f'<div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid {LINE}">'
-            f'<span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: {MUTED}">{ic("bike", 16)}{rider}</span>'
-            f'<span style="display: flex; align-items: center; gap: 8px">{o}{badge(pay, pk)}</span></div></a>')
+            f'<span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: {MUTED}">{ic("bike", 16)}{rider}</span>{badge(pay, pk)}</div></a>')
 
 
-S["Sales"] = ("Sales and deliveries", 1060, topbar("Sales & deliveries", sync="offline") + main(f'''
-{segmented(["Sales", "Deliveries", "Payments"], "Sales")}
-<div style="display: flex; align-items: center; gap: 8px"><button type="button" style="display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid {LINE}; background: #FFFFFF; font-weight: 700; font-size: 14px">{ic("calendar", 18)}Today, 30 Sep{ic("down", 16)}</button>
-<button type="button" style="display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid {LINE}; background: #FFFFFF; font-weight: 700; font-size: 14px">{ic("filter", 16)}All riders</button></div>
-<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">{stat("Sales", "18")}{stat("Value", "₦1.20m")}{stat("Owed", "₦494.5k", "", None)}</div>
-{sale_card("#S-0930-18 · 11:05", "Grace Herbal Store", "Mullein herbal tea × 6", "₦129,000", "Emeka · Bike 1", "Pending", "Unpaid", "₦129,000", True)}
-{sale_card("#S-0930-17 · 10:40", "Wellness Pharmacy", "Orafix × 4 · Sabana Pro × 4", "₦172,000", "Sadiq · Bike 2", "Delivered", "Paid")}
-{sale_card("#S-0930-16 · 10:12", "Divine Health Store", "Fibnova × 5", "₦107,500", "Tolu · Bike 3", "On the way", "Part paid", "₦64,500")}
-{sale_card("#S-0930-15 · 09:30", "Mama Chioma Chemist", "Kidney Support tea × 5", "₦107,500", "Chinedu · Bike 4", "Delivered", "Unpaid", "₦107,500")}
-''') + fab("NewSale.dc.html", "New sale") + tabbar("admin", "Sales"))
+FILTER_BTN = f'display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid {LINE}; background: #FFFFFF; font-weight: 700; font-size: 14px'
 
-S["NewSale"] = ("New sale", 1120, topbar("New sale", "Sales.dc.html", sync="offline") + main(f'''
-<div style="display: flex; flex-direction: column; gap: 6px">
-{field("Customer", "Grace Herbal Store", icon="user", select=True, fid="ns-cust")}
-<div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: {ORANGE_TXT}; font-weight: 700">{ic("alert", 16, ORANGE_TXT)}Owes ₦0 right now · Sometimes buys on credit</div></div>
-{card(h2("Items", link("+ Add product", "#")) + f"""
-<div style="display: flex; align-items: center; gap: 12px">{icon_tile("box", "#EEF1F8", NAVY)}
-<div style="flex-grow: 1"><div style="font-weight: 700">Mullein herbal tea</div><div style="font-size: 12px; color: {MUTED}">₦21,500 each · 55 in stock</div></div>
-<div style="display: flex; align-items: center; gap: 4px; border: 1px solid #C9CFDB; border-radius: 12px">
-<button type="button" aria-label="Less" style="width: 40px; height: 40px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center">{ic("minus", 18)}</button>
-<span style="min-width: 20px; text-align: center; font-weight: 700; font-size: 16px">6</span>
-<button type="button" aria-label="More" style="width: 40px; height: 40px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center">{ic("plus", 18)}</button></div></div>
-<div style="display: flex; justify-content: space-between; font-size: 14px; padding-top: 10px; border-top: 1px solid {LINE}"><span style="color: {MUTED}">6 × ₦21,500</span><b>₦129,000</b></div>""")}
-{card(h2("Delivery") + field("Rider & bike", "Emeka Obi · Bike 1 (PHC-234KA)", icon="bike", select=True, fid="ns-rider") + field("Deliver on", "Today, 30 Sep", icon="calendar", fid="ns-date") + field("Delivery address", "Rumuola Road, Port Harcourt", icon="pin", fid="ns-addr"))}
-{card(h2("Payment") + segmented(["Paid in full", "Part paid", "Not paid"], "Not paid") + field("Amount paid now", "₦0", fid="ns-paid") +
-      f'<div style="border-top: 1px solid {LINE}"></div>' + kv("Total", "₦129,000", True) + kv("Paid", "₦0") + kv("Customer will owe", "₦129,000", True, RED), gap=10)}
-{btn("Save sale", "Sales.dc.html", "accent", "check")}
-'''))
+S["Sales"] = ("Sales and deliveries", 1120, topbar("Sales & deliveries", sync="offline") + main(
+    seglinks([("All orders", "Sales.dc.html"), ("Delivered", "Deliveries.dc.html")], "All orders")
+    + f'<div style="display: flex; align-items: center; gap: 8px"><button type="button" style="{FILTER_BTN}">{ic("calendar", 18)}Today, 30/09/2026{ic("down", 16)}</button>'
+    + f'<button type="button" style="{FILTER_BTN}">{ic("filter", 16)}All riders</button></div>'
+    + f'<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">{stat("Orders", "18")}{stat("Value", "₦1.20m")}{stat("Delivered", "13", "5 pending", "amber")}</div>'
+    + sale_card("#S-0930-18 · 11:05", "Grace Herbal Store", "Rumuola", "Mullein herbal tea × 6", "₦129,000", "Emeka · Bike 1", "Pending", "Pay on delivery", True)
+    + sale_card("#S-0930-17 · 10:40", "Wellness Pharmacy", "GRA Phase 2", "Orafix × 4 · Sabana Pro × 4", "₦172,000", "Sadiq · Bike 2", "Delivered", "Paid · Transfer", href="DeliveryProof.dc.html")
+    + sale_card("#S-0930-16 · 10:12", "Divine Health Store", "Trans-Amadi", "Fibnova × 5", "₦107,500", "Tolu · Bike 3", "On the way", "Pay on delivery")
+    + sale_card("#S-0930-15 · 09:30", "Mama Chioma Chemist", "Mile 1", "Kidney Support tea × 5", "₦107,500", "Chinedu · Bike 4", "Delivered", "Paid · Cash", href="DeliveryProof.dc.html")
+) + fab("NewSale.dc.html", "New sale") + tabbar("admin", "Sales"))
+
+STEP_BTN = 'width: 40px; height: 40px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center'
+ITEM = (f'<div style="display: flex; align-items: center; gap: 12px">{icon_tile("box", "#EEF1F8", NAVY)}'
+        f'<div style="flex-grow: 1"><div style="font-weight: 700">Mullein herbal tea</div><div style="font-size: 12px; color: {MUTED}">₦21,500 each · 55 in stock</div></div>'
+        f'<div style="display: flex; align-items: center; gap: 4px; border: 1px solid #C9CFDB; border-radius: 12px">'
+        f'<button type="button" aria-label="Less" style="{STEP_BTN}">{ic("minus", 18)}</button>'
+        f'<span style="min-width: 20px; text-align: center; font-weight: 700; font-size: 16px">6</span>'
+        f'<button type="button" aria-label="More" style="{STEP_BTN}">{ic("plus", 18)}</button></div></div>'
+        f'<div style="display: flex; justify-content: space-between; font-size: 14px; padding-top: 10px; border-top: 1px solid {LINE}"><span style="color: {MUTED}">6 × ₦21,500</span><b>₦129,000</b></div>')
+
+S["NewSale"] = ("New sale", 1100, topbar("New sale", "Sales.dc.html", sync="offline") + main(
+    field("Customer", "Grace Herbal Store", icon="user", select=True, fid="ns-cust")
+    + card(h2("Items", link("+ Add product", "#")) + ITEM)
+    + card(h2("Delivery") + note("Last delivered to this customer by <b>Emeka Obi (Bike 1)</b> on 25/09/2026. Same rider picked for you.", "bike", "blue")
+           + field("Rider & bike", "Emeka Obi · Bike 1 (PHC-234KA)", icon="bike", select=True, fid="ns-rider")
+           + field("Deliver on", "Today, 30/09/2026", icon="calendar", fid="ns-date")
+           + field("Delivery area & address", "Rumuola · Rumuola Road, Port Harcourt", icon="pin", fid="ns-addr"))
+    + card(h2("Payment") + segmented(["Paid by transfer", "Pay on delivery"], "Pay on delivery")
+           + f'<div style="border-top: 1px solid {LINE}"></div>' + kv("Total", "₦129,000", True) + kv("Rider collects on delivery", "₦129,000", True, BLUE), gap=10)
+    + btn("Save sale", "Sales.dc.html", "accent", "check")
+))
+
 
 # ---------------- Customers ----------------
-def cust_row(init, name, phone, owes, first=False):
-    r = badge("Owes " + owes, "red") if owes else badge("Paid up", "green")
-    return row(avatar(init), name, phone, "", r, "CustomerProfile.dc.html", border=not first)
+def cust_row(init, name, sub, last, first=False):
+    return row(avatar(init), name, sub, "", f'<span style="font-size: 12px; color: {MUTED}">Last order {last}</span>', "CustomerProfile.dc.html", border=not first)
 
 
-S["Customers"] = ("Customers", 900, topbar("Customers", sync="offline", right=f'<a href="#" aria-label="Add customer" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid {LINE}">{ic("plus", 22)}</a>') + main(f'''
-{searchbar("Search name or phone")}
-<section style="background: {NAVY}; color: #FFFFFF; border-radius: 18px; padding: 16px; display: flex; justify-content: space-between; align-items: center">
-<div><div style="font-size: 13px; color: #B8C3DB">Customers owe you</div><div style="font-family: {HEAD}; font-size: 26px; font-weight: 700">₦494,500</div></div>
-<div style="text-align: right"><div style="font-size: 13px; color: #B8C3DB">Owing</div><div style="font-weight: 700; font-size: 18px">4 of 32</div></div></section>
-{chips(["All", "Owing", "Paid up"], "All")}
-{card(cust_row("DH", "Divine Health Store", "Trans-Amadi · 0816 222 3344", "₦215,000", True) + cust_row("GH", "Grace Herbal Store", "Rumuola · 0803 111 2233", "₦129,000") +
-      cust_row("MC", "Mama Chioma Chemist", "Mile 1 · 0706 555 6677", "₦107,500") + cust_row("BI", "Blessing Ibe", "Rumuokoro · 0809 444 1100", "₦43,000") +
-      cust_row("WP", "Wellness Pharmacy", "GRA Phase 2 · 0812 345 6789", None) + cust_row("PC", "Peace Chemist", "Eleme · 0805 888 7766", None), pad=14, gap=0, extra="; padding-top: 2px; padding-bottom: 2px")}
-''') + tabbar("admin", "Customers"))
+S["Customers"] = ("Customers", 860, topbar("Customers", sync="offline", right=f'<a href="#" aria-label="Add customer" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid {LINE}">{ic("plus", 22)}</a>') + main(
+    searchbar("Search name, phone or area")
+    + f'<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">{stat("Customers", "32")}{stat("Ordered this week", "21")}</div>'
+    + chips(["All", "This week", "By area"], "All")
+    + card(cust_row("GH", "Grace Herbal Store", "Rumuola · 0803 111 2233", "30/09", True) + cust_row("WP", "Wellness Pharmacy", "GRA Phase 2 · 0812 345 6789", "30/09")
+           + cust_row("DH", "Divine Health Store", "Trans-Amadi · 0816 222 3344", "30/09") + cust_row("MC", "Mama Chioma Chemist", "Mile 1 · 0706 555 6677", "30/09")
+           + cust_row("BI", "Blessing Ibe", "Rumuokoro · 0809 444 1100", "30/09") + cust_row("PC", "Peace Chemist", "Eleme · 0805 888 7766", "29/09"),
+           pad=14, gap=0, extra="; padding-top: 2px; padding-bottom: 2px")
+) + tabbar("admin", "Customers"))
 
-S["CustomerProfile"] = ("Customer profile", 1120, topbar("Grace Herbal Store", "Customers.dc.html", sub="Customer since Jan 2026", sync="offline") + main(f'''
-<div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: {MUTED}">
-<span style="display: flex; align-items: center; gap: 8px">{ic("phone", 16)}0803 111 2233</span>
-<span style="display: flex; align-items: center; gap: 8px">{ic("pin", 16)}Rumuola Road, Port Harcourt</span></div>
-<section style="background: #FFFFFF; border: 1px solid {LINE}; border-radius: 18px; overflow: hidden; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
-<div style="padding: 14px 12px"><div style="font-size: 12px; color: {MUTED}; font-weight: 700">BOUGHT</div><div style="font-family: {HEAD}; font-size: 17px; font-weight: 600">₦1,354,500</div></div>
-<div style="padding: 14px 12px; border-left: 1px solid {LINE}"><div style="font-size: 12px; color: {MUTED}; font-weight: 700">PAID</div><div style="font-family: {HEAD}; font-size: 17px; font-weight: 600; color: {GREEN}">₦1,225,500</div></div>
-<div style="padding: 14px 12px; border-left: 1px solid {LINE}; background: {RED_BG}"><div style="font-size: 12px; color: {RED}; font-weight: 700">OWES</div><div style="font-family: {HEAD}; font-size: 17px; font-weight: 600; color: {RED}">₦129,000</div></div>
-</section>
-<div style="display: flex; gap: 8px">{btn("Record payment", None, "accent", "wallet")}{btn("New sale", "NewSale.dc.html", "ghost", "cart")}</div>
-{segmented(["History", "Products", "Payments"], "History")}
-{card(
-    row(icon_tile("cart"), "Mullein herbal tea × 6", "30 Sep · #S-0930-18 · Emeka", "₦129,000", f'<span style="font-size: 12px; color: {RED}; font-weight: 700">Balance ₦129,000</span>', border=False) +
-    row(icon_tile("wallet", GREEN_BG, GREEN), "Payment · Transfer", "27 Sep · received by Kemi", "−₦172,000", f'<span style="font-size: 12px; color: {MUTED}; font-weight: 700">Balance ₦0</span>') +
-    row(icon_tile("cart"), "Orafix × 4 · Fibnova × 4", "25 Sep · #S-0925-07 · Sadiq", "₦172,000", f'<span style="font-size: 12px; color: {MUTED}; font-weight: 700">Balance ₦172,000</span>') +
-    row(icon_tile("wallet", GREEN_BG, GREEN), "Payment · Cash", "22 Sep · collected by Tolu", "−₦86,000", f'<span style="font-size: 12px; color: {MUTED}; font-weight: 700">Balance ₦0</span>'), pad=14, gap=0, extra="; padding-top: 2px; padding-bottom: 2px")}
-{card(h2("Most bought") + kv("Mullein herbal tea", "24 boxes · ₦516,000") + kv("Orafix Power Duo", "15 packs · ₦322,500") + kv("Fibnova", "14 packs · ₦301,000") + kv("Kidney Support tea", "10 boxes · ₦215,000"), gap=10)}
-'''))
+
+def dhist(date, items, rider, area, status="Delivered", first=False):
+    k = "green" if status == "Delivered" else "amber"
+    bd = "" if first else f"border-top: 1px solid {LINE}; "
+    return (f'<a href="DeliveryProof.dc.html" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 0; {bd}color: {NAVY}">'
+            f'<div style="display: flex; justify-content: space-between; align-items: center"><b style="font-size: 15px">{date}</b>{badge(status, k)}</div>'
+            f'<div style="font-size: 14px">{items}</div>'
+            f'<div style="display: flex; gap: 12px; font-size: 13px; color: {MUTED}"><span style="display: flex; align-items: center; gap: 4px">{ic("bike", 15)}{rider}</span>'
+            f'<span style="display: flex; align-items: center; gap: 4px">{ic("pin", 15)}{area}</span></div></a>')
+
+
+TRI = 'padding: 14px 12px'
+S["CustomerProfile"] = ("Customer profile", 1180, topbar("Grace Herbal Store", "Customers.dc.html", sub="Customer since Jan 2026", sync="offline") + main(
+    f'<div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: {MUTED}">'
+    f'<span style="display: flex; align-items: center; gap: 8px">{ic("phone", 16)}0803 111 2233</span>'
+    f'<span style="display: flex; align-items: center; gap: 8px">{ic("pin", 16)}Rumuola · Rumuola Road, Port Harcourt</span></div>'
+    f'<section style="background: #FFFFFF; border: 1px solid {LINE}; border-radius: 18px; overflow: hidden; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">'
+    f'<div style="{TRI}"><div style="font-size: 12px; color: {MUTED}; font-weight: 700">TOTAL BOUGHT</div><div style="font-family: {HEAD}; font-size: 17px; font-weight: 600">₦1,354,500</div></div>'
+    f'<div style="{TRI}; border-left: 1px solid {LINE}"><div style="font-size: 12px; color: {MUTED}; font-weight: 700">ORDERS</div><div style="font-family: {HEAD}; font-size: 17px; font-weight: 600">14</div></div>'
+    f'<div style="{TRI}; border-left: 1px solid {LINE}"><div style="font-size: 12px; color: {MUTED}; font-weight: 700">LAST ORDER</div><div style="font-family: {HEAD}; font-size: 17px; font-weight: 600">30/09</div></div></section>'
+    f'<section style="background: {NAVY}; color: #FFFFFF; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 12px">'
+    f'<div style="display: flex; align-items: center; gap: 12px">{avatar("EO", ORANGE, NAVY, 44)}<div style="flex-grow: 1"><div style="font-size: 12px; color: #B8C3DB">Usually delivered by</div>'
+    f'<div style="font-weight: 700; font-size: 16px">Emeka Obi · Bike 1</div><div style="font-size: 12px; color: #B8C3DB">9 of 14 deliveries · last on 25/09/2026</div></div></div>'
+    f'<a href="NewSale.dc.html" style="min-height: 48px; border-radius: 12px; background: {ORANGE}; color: {NAVY}; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px">{ic("truck", 20, NAVY)}New order with Emeka</a></section>'
+    + f'<div style="display: flex; gap: 8px">{btn("Call", None, "ghost", "phone")}{btn("New order", "NewSale.dc.html", "ghost", "cart")}</div>'
+    + card(h2("Delivery history")
+           + dhist("30/09/2026", "Mullein herbal tea × 6 · ₦129,000", "Emeka · Bike 1", "Rumuola", "Pending", True)
+           + dhist("25/09/2026", "Orafix × 4 · Fibnova × 4 · ₦172,000", "Emeka · Bike 1", "Rumuola")
+           + dhist("22/09/2026", "Kidney Support tea × 4 · ₦86,000", "Tolu · Bike 3", "Rumuola")
+           + dhist("15/09/2026", "Mullein herbal tea × 6 · ₦129,000", "Emeka · Bike 1", "Rumuola"), gap=0)
+    + card(h2("Most bought") + kv("Mullein herbal tea", "24 boxes · ₦516,000") + kv("Orafix Power Duo", "15 packs · ₦322,500") + kv("Fibnova", "14 packs · ₦301,000") + kv("Kidney Support tea", "10 boxes · ₦215,000"), gap=10)
+))
