@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
+import { SwitchRow } from '../components/SwitchRow';
 import { Button, Card, Chips, Field, H2, Muted, Screen, TopBar } from '../components/ui';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
@@ -144,15 +145,7 @@ export default function AddRider() {
             keyboardType="number-pad"
             helper="Rider earnings = deliveries completed × this amount."
           />
-          {old ? null : (
-            <View style={st.switchRow}>
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={st.label}>Active</Text>
-                <Muted>Can be given deliveries</Muted>
-              </View>
-              <Switch value={active} onValueChange={setActive} accessibilityLabel="Active" trackColor={{ true: colors.green }} />
-            </View>
-          )}
+          {old ? null : <SwitchRow label="Active" sub="Can be given deliveries" value={active} onChange={setActive} />}
         </Card>
 
         {old ? (
@@ -173,6 +166,5 @@ export default function AddRider() {
 const st = StyleSheet.create({
   two: { flexDirection: 'row', gap: 10 },
   label: { fontFamily: fonts.bodyBold, fontSize: 13, color: colors.navy },
-  switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 },
   error: { fontFamily: fonts.bodyBold, fontSize: 13, color: colors.red },
 });
