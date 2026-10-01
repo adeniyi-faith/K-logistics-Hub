@@ -1,4 +1,4 @@
-import { Redirect } from 'expo-router';
+import { Redirect, usePathname } from 'expo-router';
 import Tabs from 'expo-router/tabs';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +13,9 @@ export default function AdminTabs() {
   const { state } = useStore();
   const insets = useSafeAreaInsets();
   const w = useWords();
+  const path = usePathname();
+  // Stock and Sales have a big button above the tabs (Receive stock, New sale); sit above it.
+  const footer = path.startsWith('/admin/stock') || path.startsWith('/admin/sales') ? 84 : 0;
   if (state.session?.role !== 'admin') return <Redirect href="/" />;
   return (
     <View style={{ flex: 1 }}>
@@ -39,7 +42,7 @@ export default function AdminTabs() {
         />
       </Tabs>
       {/* Opens the AI Assistant from every Admin tab. 72 is the tab bar's height. */}
-      <AskAiButton bottom={72 + insets.bottom + 16} />
+      <AskAiButton bottom={72 + insets.bottom + footer + 16} />
     </View>
   );
 }
