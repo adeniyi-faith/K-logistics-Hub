@@ -90,7 +90,7 @@ const TOOLS = [
   },
   {
     name: 'expenses',
-    description: 'Expenses between two days with category, note and amount, and the total.',
+    description: 'Expenses between two days with category, note, amount, bike and who was paid (for staff and rider pay), and the total.',
     parameters: { type: 'object', properties: { ...range, category: { type: 'string', description: 'e.g. Fuel.' } } },
   },
 ];

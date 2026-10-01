@@ -166,7 +166,14 @@ const TOOLS: Record<string, (state: AppState, args: Args) => unknown> = {
     const list = state.expenses.filter((e) => days.has(e.day) && has(e.category, text(args.category)));
     return {
       total: list.reduce((s, e) => s + e.amount, 0),
-      expenses: list.map(({ day, category, note, amount }) => ({ day, category, note, amount })),
+      expenses: list.map(({ day, category, note, amount, bike, payee }) => ({
+        day,
+        category,
+        note,
+        amount,
+        bike,
+        paidTo: payee,
+      })),
     };
   },
 };
