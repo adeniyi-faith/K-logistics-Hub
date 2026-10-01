@@ -41,10 +41,10 @@ export default function AdminHome() {
         </View>
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Quick icon="plus" label="New sale" soon />
+          <Quick icon="plus" label="New sale" onPress={() => router.push('/new-sale')} />
           <Quick icon="box" label="Receive stock" onPress={() => router.push('/receive-stock')} />
           <Quick icon="receipt" label="Add expense" soon />
-          <Quick icon="check" label="Delivered" soon />
+          <Quick icon="check" label="Delivered" onPress={() => router.push('/admin/sales?tab=delivered')} />
         </View>
 
         <Card>

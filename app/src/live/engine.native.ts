@@ -18,7 +18,9 @@ import {
 } from '@powersync/react-native';
 import { createClient, Session } from '@supabase/supabase-js';
 
-import { AppState, Order, PendingChange, Product, Rider, Role, StockMove } from '../data/types';
+import { AppState, Customer, Order, PendingChange, Product, Rider, Role, StockMove } from '../data/types';
+import { uuid } from '../lib/id';
+import { nextOrderCode } from '../lib/sales';
 import { today } from '../lib/format';
 import { config } from './config';
 import { LiveEngine, LiveSnapshot, SyncInfo } from './types';
@@ -48,11 +50,20 @@ const schema = new Schema({
     supplier: column.text,
     active: column.integer,
   }),
+  customers: new Table({
+    name: column.text,
+    phone: column.text,
+    area: column.text,
+    address: column.text,
+    created_at: column.text,
+  }),
   day_openings: new Table({ day: column.text, product_id: column.text, opening: column.integer }),
   orders: new Table({
     code: column.text,
     day: column.text,
     created_at: column.text,
+    taken_by: column.text,
+    customer_id: column.text,
     customer: column.text,
     phone: column.text,
     area: column.text,
@@ -92,7 +103,8 @@ const TABLES = Object.keys(schema.props);
 
 const LABELS: Record<string, string> = {
   stock_moves: 'Stock change',
-  orders: 'Order change',
+  orders: 'Order',
+  customers: 'Customer',
   products: 'Product change',
   expenses: 'Expense',
   order_items: 'Order item',
@@ -242,6 +254,58 @@ export function createLiveEngine(): LiveEngine {
         }
       });
     },
+    async createSale(input) {
+      const id = uuid();
+      const s = snap.state;
+      const at = now();
+      await db.writeTransaction(async (tx) => {
+        let customerId = input.customerId;
+        let name = '';
+        let phone = '';
+        if (customerId) {
+          const c = s.customers.find((x) => x.id === customerId);
+          name = c?.name ?? '';
+          phone = c?.phone ?? '';
+        } else {
+          customerId = uuid();
+          name = input.newCustomer?.name ?? '';
+          phone = input.newCustomer?.phone ?? '';
+          await tx.execute('INSERT INTO customers (id, name, phone, area, address, created_at) VALUES (?, ?, ?, ?, ?, ?)', [
+            customerId,
+            name,
+            phone,
+            input.area,
+            input.address,
+            at,
+          ]);
+        }
+        await tx.execute(
+          `INSERT INTO orders (id, code, day, created_at, taken_by, customer_id, customer, phone, area, address, rider_id, payment, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+          [
+            id,
+            nextOrderCode(s),
+            s.day,
+            at,
+            by(),
+            customerId,
+            name,
+            phone,
+            input.area,
+            input.address,
+            input.riderId,
+            input.payment,
+          ],
+        );
+        for (const it of input.items) {
+          await tx.execute(
+            'INSERT INTO order_items (id, order_id, rider_id, product_id, qty, unit_price) VALUES (uuid(), ?, ?, ?, ?, ?)',
+            [id, input.riderId, it.productId, it.qty, it.unitPrice],
+          );
+        }
+      });
+      return id;
+    },
     async updatePrices({ productId, costPrice, sellPrice, lowAt }) {
       await db.execute('UPDATE products SET cost_price = ?, sell_price = ?, low_at = ? WHERE id = ?', [
         costPrice,
@@ -264,6 +328,7 @@ function emptyState(): AppState {
     opening: {},
     moves: [],
     riders: [],
+    customers: [],
     orders: [],
     expenses: [],
     pending: [],
@@ -300,11 +365,12 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
     riderId: profile.rider_id ?? undefined,
   };
 
-  const [products, openings, moves, riders, orders, items, expenses] = await Promise.all([
+  const [products, openings, moves, riders, customers, orders, items, expenses] = await Promise.all([
     db.getAll<Row>('SELECT * FROM products WHERE active IS NULL OR active = 1 ORDER BY name'),
     db.getAll<Row>('SELECT product_id, opening FROM day_openings WHERE day = ?', [state.day]),
     db.getAll<Row>('SELECT * FROM stock_moves'),
     db.getAll<Row>('SELECT * FROM riders ORDER BY name'),
+    db.getAll<Row>('SELECT * FROM customers ORDER BY name'),
     db.getAll<Row>('SELECT * FROM orders ORDER BY created_at'),
     db.getAll<Row>('SELECT * FROM order_items'),
     db.getAll<Row>('SELECT * FROM expenses'),
@@ -350,6 +416,16 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
       ratePerDelivery: r.rate_per_delivery ?? 0,
     }),
   );
+  state.customers = customers.map(
+    (c): Customer => ({
+      id: c.id,
+      name: c.name ?? '',
+      phone: c.phone ?? '',
+      area: c.area ?? '',
+      address: c.address ?? '',
+      since: String(c.created_at ?? '').slice(0, 10),
+    }),
+  );
   const itemsByOrder = new Map<string, Order['items']>();
   for (const it of items) {
     const list = itemsByOrder.get(it.order_id) ?? [];
@@ -362,6 +438,8 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
       code: o.code ?? '',
       day: o.day,
       createdAt: o.created_at ?? '',
+      takenBy: o.taken_by ?? '',
+      customerId: o.customer_id ?? '',
       customer: o.customer ?? '',
       phone: o.phone ?? '',
       area: o.area ?? '',

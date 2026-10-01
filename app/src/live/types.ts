@@ -21,6 +21,17 @@ export type ConfirmInput = {
   amount: number;
 };
 
+export type SaleInput = {
+  /** An existing customer, or the details of a new one. */
+  customerId?: string;
+  newCustomer?: { name: string; phone: string };
+  area: string;
+  address: string;
+  riderId: string;
+  payment: Order['payment'];
+  items: Order['items'];
+};
+
 export type PriceInput = { productId: string; costPrice: number; sellPrice: number; lowAt: number };
 
 /** The real app: Supabase for accounts and the online database, PowerSync for the copy on the phone. */
@@ -32,4 +43,6 @@ export type LiveEngine = {
   receiveStock: (input: ReceiveInput) => Promise<void>;
   confirmDelivery: (input: ConfirmInput) => Promise<void>;
   updatePrices: (input: PriceInput) => Promise<void>;
+  /** Saves a new sale and returns its id. */
+  createSale: (input: SaleInput) => Promise<string>;
 };

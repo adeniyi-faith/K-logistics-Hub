@@ -13,9 +13,11 @@ import { AppState, Role } from '../data/types';
 import { today } from '../lib/format';
 import { liveAvailable } from '../live/config';
 import { createLiveEngine } from '../live/engine';
-import { ConfirmInput, LiveEngine, LiveSnapshot, Phase, PriceInput, ReceiveInput, SyncInfo } from '../live/types';
+import { ConfirmInput, LiveEngine, LiveSnapshot, Phase, PriceInput, ReceiveInput, SaleInput, SyncInfo } from '../live/types';
+import { uuid } from '../lib/id';
+import { nextOrderCode } from '../lib/sales';
 
-const KEY = 'klh-state-v2';
+const KEY = 'klh-state-v3';
 
 export type Store = {
   mode: 'demo' | 'live';
@@ -30,6 +32,8 @@ export type Store = {
   receiveStock: (input: ReceiveInput) => void;
   confirmDelivery: (input: ConfirmInput) => void;
   updatePrices: (input: PriceInput) => void;
+  /** Saves a new sale and returns its id. */
+  createSale: (input: SaleInput) => Promise<string>;
   /** Demo only: put the sample data back the way it started. */
   resetDemo: () => void;
 };
@@ -73,6 +77,7 @@ function LiveProvider({ children }: { children: ReactNode }) {
       receiveStock: (input) => report(e.receiveStock(input)),
       confirmDelivery: (input) => report(e.confirmDelivery(input)),
       updatePrices: (input) => report(e.updatePrices(input)),
+      createSale: e.createSale,
       resetDemo: () => {},
     };
   }, [snap]);
@@ -200,6 +205,48 @@ function DemoProvider({ children }: { children: ReactNode }) {
             ],
           };
         }),
+      createSale: async (input) => {
+        const id = uuid();
+        update((s) => {
+          const now = new Date().toISOString();
+          const customerId = input.customerId ?? uuid();
+          const existing = s.customers.find((c) => c.id === customerId);
+          const customer = existing ?? {
+            id: customerId,
+            name: input.newCustomer?.name ?? '',
+            phone: input.newCustomer?.phone ?? '',
+            area: input.area,
+            address: input.address,
+            since: s.day,
+          };
+          const code = nextOrderCode(s);
+          return {
+            ...s,
+            customers: existing ? s.customers : [...s.customers, customer],
+            orders: [
+              ...s.orders,
+              {
+                id,
+                code,
+                day: s.day,
+                createdAt: now,
+                takenBy: s.session?.name ?? '',
+                customerId,
+                customer: customer.name,
+                phone: customer.phone,
+                area: input.area,
+                address: input.address,
+                riderId: input.riderId,
+                items: input.items,
+                payment: input.payment,
+                status: 'pending',
+              },
+            ],
+            pending: [...s.pending, { id: newId('c'), at: now, label: `New sale #${code} for ${customer.name}`, ref: id }],
+          };
+        });
+        return id;
+      },
       resetDemo: () => setState({ ...sampleState(today()), session: state.session }),
     };
   }, [state, update]);

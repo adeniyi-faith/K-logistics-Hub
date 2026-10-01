@@ -25,6 +25,10 @@ To use the real, synced app (real accounts, data shared between phones), follow 
 - **Product detail**: today's stock sum, price and profit, NAFDAC number, supplier, nearest expiry.
 - **Edit prices** (Admin): change any product's cost price, selling price and low-stock alert at any time. Profit figures use the new cost price straight away.
 - **Receive stock**: pick a product, enter quantity, cost price, batch and expiry. Stock goes up straight away.
+- **Sales**: today's orders with totals and a rider filter; the **Delivered** tab searches every delivered order by customer, phone, area or order number.
+- **New sale**: pick or add a customer, add products (it won't sell more than is in stock), and the rider who last delivered to that customer is picked for you. Payment is paid by transfer or pay on delivery.
+- **Order / Delivery proof**: who took the order, the rider, who received it, a timeline, **Share on WhatsApp**, and **New order with the same rider**.
+- **Customers** and **Customer profile**: total bought, orders, who usually delivers to them (with a one-tap new order for that rider), delivery history and most-bought products.
 - **Rider app**: today's deliveries, call and directions buttons, **Confirm delivery** (who received it, cash/transfer/paid before, amount). Confirming moves the goods out of stock and adds to the rider's earnings.
 - **Rider history**: earnings per day and every delivery.
 - **Sync badge and Sync centre**: every change is saved on the phone first. The badge shows Synced, Syncing, or Offline · N changes waiting.
@@ -35,7 +39,7 @@ Everything is saved on the phone, so it keeps working with no internet. In demo 
 
 1. **First screens (done).** Sign-in, Admin home, Stock, Product detail, Receive stock, and the rider's deliveries, confirm delivery and history.
 2. **Online database and real sign-in (Supabase + PowerSync, chosen 1 Oct 2026).** Supabase is the online database: it holds the shared data, the user accounts (sign-in) and the delivery photos. PowerSync keeps a full copy of that data on each phone and uploads or downloads changes whenever there is internet, so the app keeps working offline. Done in code: the database tables and access rules (`supabase/`), the sync rules (`powersync/`), real sign-in, and the app reading and writing through PowerSync. Still to do: create the Supabase and PowerSync accounts and test on a real phone (see docs/SETUP.md). Note: PowerSync needs its own phone build of the app (a "development build"), so the plain Expo Go app will no longer be enough to try it on a phone. The browser version keeps working.
-3. **Sales and customers.** New sale (with the customer's usual rider), Orders list, Delivered orders with proof, Delivery proof sharing on WhatsApp, Customers and Customer profile. Photo and signature on delivery.
+3. **Sales and customers (done, except photo and signature).** New sale (with the customer's usual rider), Orders list, Delivered orders, Delivery proof with WhatsApp sharing, Customers and Customer profile. Still to do: delivery photo and signature (needs the phone camera and Supabase file storage).
 4. **Daily record and close the day.** The daily record page, closing stock becoming tomorrow's opening stock, and the last-5-days history on each product.
 5. **Money.** Expenses, Staff & pay, Riders & bikes, Rider earnings, Finance (day/week/month) and Reports with export.
 6. **Staff app and access control.** Staff roles, Off/View/Edit per area, per-person changes, and the Me screen.
