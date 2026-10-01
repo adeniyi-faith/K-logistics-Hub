@@ -60,6 +60,7 @@ jobs:
         run: |
           if ! grep -q '"projectId"' app.json; then
             eas init --non-interactive --force
+            echo "::notice::Linked to Expo. Add this to app/app.json under expo → extra → eas: $(node -p "JSON.stringify(require('./app.json').expo.extra.eas)")"
           fi
 
       - name: Start the build
