@@ -5,12 +5,14 @@ import { StyleSheet, Switch, Text, View } from 'react-native';
 import { Button, Card, Chips, Field, H2, Muted, Screen, TopBar } from '../components/ui';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
+import { useAccess } from '../lib/useAccess';
 
 const ID_TYPES = ['NIN slip', "Driver's licence", "Voter's card", 'Passport'];
 const toNumber = (t: string) => Number(t.replace(/[^\d]/g, '')) || 0;
 
 export default function AddRider() {
   const { state, addRider } = useStore();
+  const acc = useAccess();
   const nextBike = `Bike ${state.riders.length + 1}`;
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -25,7 +27,7 @@ export default function AddRider() {
   const [active, setActive] = useState(true);
   const [error, setError] = useState('');
 
-  if (state.session?.role !== 'admin') {
+  if (!acc.canEdit('riders')) {
     return (
       <View style={{ flex: 1 }}>
         <TopBar title="Add a rider" back />

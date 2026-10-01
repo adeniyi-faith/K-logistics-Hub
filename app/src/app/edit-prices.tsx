@@ -6,6 +6,7 @@ import { Button, Card, Field, H2, Muted, Row, Screen, TopBar } from '../componen
 import { naira } from '../lib/format';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
+import { useAccess } from '../lib/useAccess';
 
 const toNumber = (t: string) => Number(t.replace(/[^\d]/g, '')) || 0;
 
@@ -13,13 +14,14 @@ const toNumber = (t: string) => Number(t.replace(/[^\d]/g, '')) || 0;
 export default function EditPrices() {
   const { product: id } = useLocalSearchParams<{ product: string }>();
   const { state, updatePrices } = useStore();
+  const acc = useAccess();
   const p = state.products.find((x) => x.id === id);
   const [cost, setCost] = useState(p ? String(p.costPrice) : '');
   const [sell, setSell] = useState(p ? String(p.sellPrice) : '');
   const [lowAt, setLowAt] = useState(p ? String(p.lowAt) : '');
   const [error, setError] = useState('');
 
-  if (!p || state.session?.role !== 'admin') {
+  if (!p || !acc.canEdit('stock') || !acc.can('seeCost')) {
     return (
       <View style={{ flex: 1 }}>
         <TopBar title="Edit prices" back />

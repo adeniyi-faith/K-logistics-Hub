@@ -20,6 +20,7 @@ bucket_definitions:
       - SELECT * FROM profiles
       - SELECT * FROM riders
       - SELECT * FROM staff
+      - SELECT * FROM staff_roles
       - SELECT * FROM customers
       - SELECT * FROM products
       - SELECT * FROM day_openings

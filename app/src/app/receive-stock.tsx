@@ -8,12 +8,16 @@ import { count, naira } from '../lib/format';
 import { stockFor } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
+import { useAccess } from '../lib/useAccess';
+import { NoAccess } from '../components/NoAccess';
 
 const toNumber = (t: string) => Number(t.replace(/[^\d]/g, '')) || 0;
 
 export default function ReceiveStock() {
   const params = useLocalSearchParams<{ product?: string }>();
   const { state, receiveStock } = useStore();
+  const acc = useAccess();
+  const seeCost = acc.can('seeCost');
   const [productId, setProductId] = useState(params.product ?? '');
   const [search, setSearch] = useState('');
   const [qty, setQty] = useState('');
@@ -35,13 +39,16 @@ export default function ReceiveStock() {
   const save = () => {
     if (!product) return setError('Pick the product you received.');
     if (n <= 0) return setError('Enter how many came in.');
-    if (c <= 0) return setError('Enter the cost price per unit.');
+    if (seeCost && c <= 0) return setError('Enter the cost price per unit.');
     if (expiry && !/^\d{4}-\d{2}$/.test(expiry)) return setError('Write the expiry date as year-month, e.g. 2028-03.');
-    receiveStock({ productId: product.id, qty: n, costPrice: c, batch: batch.trim(), expiry });
+    // Without cost access the price isn't shown, so the product keeps its current cost price.
+    receiveStock({ productId: product.id, qty: n, costPrice: seeCost ? c : product.costPrice, batch: batch.trim(), expiry });
     router.back();
   };
 
   const matches = state.products.filter((p) => p.name.toLowerCase().includes(search.trim().toLowerCase()));
+
+  if (!acc.canEdit('stock')) return <NoAccess title="Receive stock" />;
 
   return (
     <View style={{ flex: 1 }}>
@@ -95,13 +102,15 @@ export default function ReceiveStock() {
               <Text style={st.after}>After this: {count(line.closing + n, product.unit)}</Text>
             </View>
           ) : null}
-          <Field
-            label={`Cost price per ${product?.unit ?? 'unit'}`}
-            keyboardType="number-pad"
-            value={cost}
-            onChangeText={setCost}
-            helper={product ? `Last time: ${naira(product.costPrice)}` : undefined}
-          />
+          {seeCost ? (
+            <Field
+              label={`Cost price per ${product?.unit ?? 'unit'}`}
+              keyboardType="number-pad"
+              value={cost}
+              onChangeText={setCost}
+              helper={product ? `Last time: ${naira(product.costPrice)}` : undefined}
+            />
+          ) : null}
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={{ flex: 1 }}>
               <Field label="Batch no." value={batch} onChangeText={setBatch} autoCapitalize="characters" />
@@ -110,10 +119,12 @@ export default function ReceiveStock() {
               <Field label="Expiry (year-month)" value={expiry} onChangeText={setExpiry} placeholder="2028-03" />
             </View>
           </View>
-          <View style={st.total}>
-            <Text style={st.label}>Total cost</Text>
-            <Text style={st.totalValue}>{naira(n * c)}</Text>
-          </View>
+          {seeCost ? (
+            <View style={st.total}>
+              <Text style={st.label}>Total cost</Text>
+              <Text style={st.totalValue}>{naira(n * c)}</Text>
+            </View>
+          ) : null}
         </Card>
       </Screen>
     </View>

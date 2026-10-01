@@ -9,11 +9,13 @@ import { riderOwed } from '../lib/riders';
 import { shiftDay } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
+import { useAccess } from '../lib/useAccess';
 
 /** Pay a staff member or rider. It is saved as a "Staff pay" expense. */
 export default function Pay() {
   const { who } = useLocalSearchParams<{ who: string }>();
   const { state, addExpense } = useStore();
+  const acc = useAccess();
   const staff = state.staff.find((x) => x.id === who);
   const rider = state.riders.find((r) => r.id === who);
   const due = staff ? staffDue(state, staff) : rider ? riderOwed(state, rider.id).owed : 0;
@@ -23,7 +25,7 @@ export default function Pay() {
   const [error, setError] = useState('');
 
   const person = staff ?? rider;
-  if (!person || state.session?.role !== 'admin') {
+  if (!person || !acc.canEdit('staffpay')) {
     return (
       <View style={{ flex: 1 }}>
         <TopBar title="Pay" back />

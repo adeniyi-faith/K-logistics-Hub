@@ -8,12 +8,14 @@ import { customerStats, itemsText } from '../../lib/sales';
 import { orderTotal } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
+import { useAccess } from '../../lib/useAccess';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function CustomerProfile() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state } = useStore();
+  const { canEdit } = useAccess();
   const c = state.customers.find((x) => x.id === id);
   if (!c) {
     return (
@@ -55,11 +57,13 @@ export default function CustomerProfile() {
               title={`Usually delivered by ${usual.name}`}
               sub={`${s.usualCount} of ${s.deliveredCount} deliveries${s.lastDeliveredDay ? ` · last on ${dayLabel(s.lastDeliveredDay)}` : ''}`}
             />
-            <Button
-              title={`New order with ${usual.name.split(' ')[0]}`}
-              kind="accent"
-              onPress={() => router.push(`/new-sale?customer=${c.id}&rider=${usual.id}`)}
-            />
+            {canEdit('sales') ? (
+              <Button
+                title={`New order with ${usual.name.split(' ')[0]}`}
+                kind="accent"
+                onPress={() => router.push(`/new-sale?customer=${c.id}&rider=${usual.id}`)}
+              />
+            ) : null}
           </Card>
         ) : null}
 
@@ -73,9 +77,11 @@ export default function CustomerProfile() {
               disabled={!c.phone}
             />
           </View>
-          <View style={{ flex: 1 }}>
-            <Button title="New order" kind="ghost" icon="plus" onPress={() => router.push(`/new-sale?customer=${c.id}`)} />
-          </View>
+          {canEdit('sales') ? (
+            <View style={{ flex: 1 }}>
+              <Button title="New order" kind="ghost" icon="plus" onPress={() => router.push(`/new-sale?customer=${c.id}`)} />
+            </View>
+          ) : null}
         </View>
 
         <Card style={{ paddingVertical: 8 }}>

@@ -8,18 +8,19 @@ import { Period, periodOf } from '../lib/money';
 import { buildReport, FILTERS, Filters, ReportKind, REPORTS } from '../lib/report';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
+import { useAccess } from '../lib/useAccess';
 
 const SHOW = 50;
 
 export default function Reports() {
   const { state } = useStore();
-  const isAdmin = state.session?.role === 'admin';
+  const acc = useAccess();
   const [kind, setKind] = useState<ReportKind>('sales');
   const [period, setPeriod] = useState<Period>(() => periodOf('week', state.day));
   const [filters, setFilters] = useState<Filters>({});
   const [message, setMessage] = useState('');
 
-  if (state.session?.role === 'rider') {
+  if (!acc.canView('reports')) {
     return (
       <View style={{ flex: 1 }}>
         <TopBar title="Reports" back />
@@ -30,7 +31,10 @@ export default function Reports() {
     );
   }
 
-  const report = buildReport(state, kind, period, filters);
+  const allowed = REPORTS.filter((r) => r.needs(acc));
+  // Someone who can't see the chosen report starts on the first one they can see.
+  const current = allowed.some((r) => r.value === kind) ? kind : (allowed[0]?.value ?? 'sales');
+  const report = buildReport(state, current, period, filters, acc.can('seeCost'));
   const options = {
     product: state.products.map((p) => ({ value: p.id, label: p.name })),
     customer: state.customers.map((c) => ({ value: c.id, label: c.name })),
@@ -50,8 +54,8 @@ export default function Reports() {
         <View style={{ gap: 8 }}>
           <Text style={st.label}>Report</Text>
           <Chips<ReportKind>
-            options={REPORTS.filter((r) => isAdmin || !r.adminOnly)}
-            value={kind}
+            options={allowed}
+            value={current}
             onChange={(k) => {
               setKind(k);
               setFilters({});
@@ -62,12 +66,15 @@ export default function Reports() {
 
         <PeriodPicker value={period} onChange={setPeriod} />
 
-        {FILTERS[kind].map((key) => (
+        {FILTERS[current].map((key) => (
           <View key={key} style={{ gap: 8 }}>
             <Text style={st.label}>{names[key]}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <Chips<string>
-                options={[...(key === 'customer' && kind === 'customer' ? [] : [{ value: '', label: `All` }]), ...options[key]]}
+                options={[
+                  ...(key === 'customer' && current === 'customer' ? [] : [{ value: '', label: `All` }]),
+                  ...options[key],
+                ]}
                 value={filters[key] ?? ''}
                 onChange={(v) => setFilters((f) => ({ ...f, [key]: v || undefined }))}
               />
@@ -89,15 +96,36 @@ export default function Reports() {
 
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <View style={{ flex: 1 }}>
-            <Button title="PDF" kind="ghost" icon="download" disabled={!report.rows.length} onPress={() => run(exportPdf)} />
+            <Button
+              title="PDF"
+              kind="ghost"
+              icon="download"
+              disabled={!report.rows.length || !acc.can('exportReports')}
+              onPress={() => run(exportPdf)}
+            />
           </View>
           <View style={{ flex: 1 }}>
-            <Button title="Excel" kind="ghost" icon="download" disabled={!report.rows.length} onPress={() => run(exportExcel)} />
+            <Button
+              title="Excel"
+              kind="ghost"
+              icon="download"
+              disabled={!report.rows.length || !acc.can('exportReports')}
+              onPress={() => run(exportExcel)}
+            />
           </View>
           <View style={{ flex: 1 }}>
-            <Button title="Share" kind="ghost" icon="share" disabled={!report.summary.length} onPress={() => run(shareReport)} />
+            <Button
+              title="Share"
+              kind="ghost"
+              icon="share"
+              disabled={!report.summary.length || !acc.can('exportReports')}
+              onPress={() => run(shareReport)}
+            />
           </View>
         </View>
+        {!acc.can('exportReports') ? (
+          <Muted>Saving and sharing reports is turned off for you. Ask Admin if you need it.</Muted>
+        ) : null}
         {message ? <Muted>{message}</Muted> : null}
 
         <Card style={{ paddingHorizontal: 0 }}>

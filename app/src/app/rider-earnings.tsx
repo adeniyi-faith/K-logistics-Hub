@@ -8,15 +8,17 @@ import { periodOf, Period, riderDays } from '../lib/money';
 import { riderDay, shiftDay } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
+import { useAccess } from '../lib/useAccess';
 
 /** Rider earnings = deliveries completed × the rider's rate, day by day. */
 export default function RiderEarnings() {
   const { state } = useStore();
+  const acc = useAccess();
   const [riderId, setRiderId] = useState(state.riders[0]?.id ?? '');
   const [period, setPeriod] = useState<Period>(() => periodOf('week', state.day));
   const [day, setDay] = useState(state.day);
 
-  if (state.session?.role === 'rider') {
+  if (!acc.canView('riders')) {
     return (
       <View style={{ flex: 1 }}>
         <TopBar title="Rider earnings" back />

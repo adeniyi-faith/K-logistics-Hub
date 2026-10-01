@@ -10,12 +10,14 @@ import { byNewest } from '../../lib/sales';
 import { orderTotal } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
+import { useAccess } from '../../lib/useAccess';
 
 type Tab = 'all' | 'delivered';
 
 export default function Sales() {
   const params = useLocalSearchParams<{ tab?: string }>();
   const { state } = useStore();
+  const { canEdit } = useAccess();
   const [tab, setTab] = useState<Tab>(params.tab === 'delivered' ? 'delivered' : 'all');
   const [rider, setRider] = useState('all');
 
@@ -40,7 +42,13 @@ export default function Sales() {
   return (
     <View style={{ flex: 1 }}>
       <TopBar title="Sales & deliveries" />
-      <Screen footer={<Button title="New sale" kind="accent" icon="plus" onPress={() => router.push('/new-sale')} />}>
+      <Screen
+        footer={
+          canEdit('sales') ? (
+            <Button title="New sale" kind="accent" icon="plus" onPress={() => router.push('/new-sale')} />
+          ) : undefined
+        }
+      >
         <Chips
           full
           value={tab}

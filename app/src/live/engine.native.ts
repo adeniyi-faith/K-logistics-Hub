@@ -18,6 +18,7 @@ import {
 } from '@powersync/react-native';
 import { createClient, Session } from '@supabase/supabase-js';
 
+import { DEFAULT_ROLES, parseJson, withOverrides } from '../data/access';
 import { AppState, Customer, Order, PendingChange, Product, Rider, Role, Staff, StockMove } from '../data/types';
 import { uuid } from '../lib/id';
 import { nextOrderCode } from '../lib/sales';
@@ -56,8 +57,20 @@ const schema = new Schema({
     pay: column.integer,
     pay_every: column.text,
     active: column.integer,
+    role_id: column.text,
+    overrides: column.text,
+    // The role plus this person's changes, worked out on save so the server can check it.
+    access: column.text,
   }),
-  profiles: new Table({ name: column.text, role: column.text, rider_id: column.text, can_sign_in: column.integer }),
+  profiles: new Table({
+    name: column.text,
+    role: column.text,
+    rider_id: column.text,
+    staff_id: column.text,
+    can_sign_in: column.integer,
+  }),
+  // Access is kept as JSON text (see data/access.ts).
+  staff_roles: new Table({ name: column.text, summary: column.text, access: column.text }),
   products: new Table({
     name: column.text,
     product_group: column.text,
@@ -142,6 +155,8 @@ const LABELS: Record<string, string> = {
   expenses: 'Expense',
   riders: 'Rider',
   staff: 'Staff',
+  staff_roles: 'Staff role',
+  profiles: 'Sign-in',
   order_items: 'Order item',
   day_openings: 'Opening stock',
 };
@@ -365,9 +380,21 @@ export function createLiveEngine(): LiveEngine {
       await updateRow('riders', id, cols);
     },
     async addStaff(input) {
+      const role = snap.state.roles.find((r) => r.id === input.roleId);
       await db.execute(
-        'INSERT INTO staff (id, name, initials, job, phone, pay, pay_every, active) VALUES (uuid(), ?, ?, ?, ?, ?, ?, ?)',
-        [input.name, initialsOf(input.name), input.job, input.phone, input.pay, input.payEvery, input.active ? 1 : 0],
+        `INSERT INTO staff (id, name, initials, job, phone, pay, pay_every, active, role_id, overrides, access)
+         VALUES (uuid(), ?, ?, ?, ?, ?, ?, ?, ?, '{}', ?)`,
+        [
+          input.name,
+          initialsOf(input.name),
+          input.job,
+          input.phone,
+          input.pay,
+          input.payEvery,
+          input.active ? 1 : 0,
+          input.roleId ?? null,
+          role ? JSON.stringify(role.access) : null,
+        ],
       );
     },
     async updateStaff(id, changes) {
@@ -379,6 +406,48 @@ export function createLiveEngine(): LiveEngine {
         pay: changes.pay,
         pay_every: changes.payEvery,
         active: changes.active === undefined ? undefined : changes.active ? 1 : 0,
+      });
+    },
+    async saveStaffAccess(staffId, { job, roleId, overrides, canSignIn }) {
+      const role = snap.state.roles.find((r) => r.id === roleId);
+      const access = role ? JSON.stringify(withOverrides(role.access, overrides)) : null;
+      await db.writeTransaction(async (tx) => {
+        await tx.execute('UPDATE staff SET job = ?, role_id = ?, overrides = ?, access = ? WHERE id = ?', [
+          job,
+          roleId,
+          JSON.stringify(overrides),
+          access,
+          staffId,
+        ]);
+        await tx.execute('UPDATE profiles SET can_sign_in = ? WHERE staff_id = ?', [canSignIn ? 1 : 0, staffId]);
+      });
+    },
+    async saveRole(role) {
+      await db.writeTransaction(async (tx) => {
+        const exists = await tx.getOptional('SELECT id FROM staff_roles WHERE id = ?', [role.id]);
+        const text = JSON.stringify(role.access);
+        if (exists) {
+          await tx.execute('UPDATE staff_roles SET name = ?, summary = ?, access = ? WHERE id = ?', [
+            role.name,
+            role.summary,
+            text,
+            role.id,
+          ]);
+        } else {
+          await tx.execute('INSERT INTO staff_roles (id, name, summary, access) VALUES (?, ?, ?, ?)', [
+            role.id,
+            role.name,
+            role.summary,
+            text,
+          ]);
+        }
+        // Everyone with this role gets the change, except what was changed just for them.
+        for (const x of snap.state.staff.filter((x) => x.roleId === role.id)) {
+          await tx.execute('UPDATE staff SET access = ? WHERE id = ?', [
+            JSON.stringify(withOverrides(role.access, x.overrides)),
+            x.id,
+          ]);
+        }
       });
     },
     async photoUrl(photo) {
@@ -482,6 +551,7 @@ function emptyState(): AppState {
     moves: [],
     riders: [],
     staff: [],
+    roles: DEFAULT_ROLES,
     customers: [],
     orders: [],
     expenses: [],
@@ -518,9 +588,10 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
     role: profile.role as Role,
     name: String(profile.name ?? '').split(' ')[0],
     riderId: profile.rider_id ?? undefined,
+    staffId: profile.staff_id ?? undefined,
   };
 
-  const [products, openings, moves, riders, customers, orders, items, expenses, staff] = await Promise.all([
+  const [products, openings, moves, riders, customers, orders, items, expenses, staff, roles, logins] = await Promise.all([
     db.getAll<Row>('SELECT * FROM products WHERE active IS NULL OR active = 1 ORDER BY name'),
     db.getAll<Row>('SELECT day, product_id, opening FROM day_openings'),
     db.getAll<Row>('SELECT * FROM stock_moves'),
@@ -530,6 +601,8 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
     db.getAll<Row>('SELECT * FROM order_items'),
     db.getAll<Row>('SELECT * FROM expenses'),
     db.getAll<Row>('SELECT * FROM staff ORDER BY name'),
+    db.getAll<Row>('SELECT * FROM staff_roles ORDER BY name'),
+    db.getAll<Row>('SELECT staff_id, can_sign_in FROM profiles WHERE staff_id IS NOT NULL'),
   ]);
 
   state.products = products.map(
@@ -592,8 +665,23 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
       pay: x.pay ?? 0,
       payEvery: x.pay_every === 'week' ? 'week' : 'month',
       active: x.active === null || x.active === undefined ? true : Boolean(x.active),
+      roleId: x.role_id ?? undefined,
+      overrides: parseJson(x.overrides, {}),
+      canSignIn: (() => {
+        const login = logins.find((l) => l.staff_id === x.id);
+        return login ? Boolean(login.can_sign_in) : undefined;
+      })(),
     }),
   );
+  // The default roles are added by the database setup; fall back to them until they have downloaded.
+  state.roles = roles.length
+    ? roles.map((r) => ({
+        id: r.id,
+        name: r.name ?? '',
+        summary: r.summary ?? '',
+        access: parseJson(r.access, DEFAULT_ROLES[0].access),
+      }))
+    : DEFAULT_ROLES;
   state.customers = customers.map(
     (c): Customer => ({
       id: c.id,
