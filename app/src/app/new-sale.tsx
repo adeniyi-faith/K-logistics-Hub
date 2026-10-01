@@ -29,7 +29,9 @@ export default function NewSale() {
   const [productSearch, setProductSearch] = useState('');
 
   const last = picked ? lastRiderFor(state, picked.id) : null;
-  const [riderId, setRiderId] = useState(params.rider ?? last?.riderId ?? state.riders[0]?.id ?? '');
+  const [riderId, setRiderId] = useState(
+    params.rider ?? last?.riderId ?? state.riders.find((r) => r.status === 'active')?.id ?? '',
+  );
   const [area, setArea] = useState(picked?.area ?? '');
   const [address, setAddress] = useState(picked?.address ?? '');
   const [payment, setPayment] = useState<Order['payment']>('on_delivery');
@@ -200,7 +202,10 @@ export default function NewSale() {
           <Chips
             value={riderId}
             onChange={setRiderId}
-            options={state.riders.map((r) => ({ value: r.id, label: `${r.name.split(' ')[0]} · ${r.bike.split(' · ')[0]}` }))}
+            options={state.riders
+              // Riders who are off duty or have a bike in repair can't be given deliveries.
+              .filter((r) => r.status === 'active' || r.id === riderId)
+              .map((r) => ({ value: r.id, label: `${r.name.split(' ')[0]} · ${r.bike.split(' · ')[0]}` }))}
           />
           <Text style={st.label}>Delivery area</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>

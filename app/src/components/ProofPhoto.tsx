@@ -5,8 +5,8 @@ import { useStore } from '../store/AppStore';
 import { colors } from '../theme';
 import { Muted } from './ui';
 
-/** Shows a delivery photo, whether it's still on this phone or already uploaded. */
-export function ProofPhoto({ photo }: { photo: string }) {
+/** Shows a delivery or receipt photo, whether it's still on this phone or already uploaded. */
+export function ProofPhoto({ photo, label = 'Delivery photo' }: { photo: string; label?: string }) {
   const { photoUrl } = useStore();
   const [uri, setUri] = useState<string | null | undefined>(undefined);
 
@@ -28,7 +28,7 @@ export function ProofPhoto({ photo }: { photo: string }) {
       </View>
     );
   }
-  return <Image source={{ uri }} style={st.box} resizeMode="cover" accessibilityLabel="Delivery photo" />;
+  return <Image source={{ uri }} style={st.box} resizeMode="cover" accessibilityLabel={label} />;
 }
 
 const st = StyleSheet.create({
