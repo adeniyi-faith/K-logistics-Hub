@@ -11,6 +11,7 @@ import { orderTotal } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
 import { useAccess } from '../../lib/useAccess';
+import { useWords } from '../../lib/words';
 
 type Tab = 'all' | 'delivered';
 
@@ -18,6 +19,7 @@ export default function Sales() {
   const params = useLocalSearchParams<{ tab?: string }>();
   const { state } = useStore();
   const { canEdit } = useAccess();
+  const w = useWords();
   const [tab, setTab] = useState<Tab>(params.tab === 'delivered' ? 'delivered' : 'all');
   const [rider, setRider] = useState('all');
 
@@ -32,7 +34,7 @@ export default function Sales() {
         value={rider}
         onChange={setRider}
         options={[
-          { value: 'all', label: 'All riders' },
+          { value: 'all', label: `All ${w.riders}` },
           ...state.riders.map((r) => ({ value: r.id, label: r.name.split(' ')[0] })),
         ]}
       />
@@ -41,11 +43,11 @@ export default function Sales() {
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title="Sales & deliveries" />
+      <TopBar title={`${w.Sales} & deliveries`} />
       <Screen
         footer={
           canEdit('sales') ? (
-            <Button title="New sale" kind="accent" icon="plus" onPress={() => router.push('/new-sale')} />
+            <Button title={`New ${w.sale}`} kind="accent" icon="plus" onPress={() => router.push('/new-sale')} />
           ) : undefined
         }
       >

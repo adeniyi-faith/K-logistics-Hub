@@ -4,13 +4,15 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { IconName } from '../../components/icons';
 import { Card, H2, LinkText, Row, Screen, Stat, TopBar } from '../../components/ui';
-import { greeting, longDay, naira } from '../../lib/format';
+import { count, greeting, longDay, naira } from '../../lib/format';
 import { dayMoney, deliveredOn, isLow, orderUnits, stockFor } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
+import { useWords } from '../../lib/words';
 
 export default function AdminHome() {
   const { state } = useStore();
+  const w = useWords();
   const money = dayMoney(state);
 
   const lines = state.products.map((p) => ({ p, line: stockFor(state, p.id) }));
@@ -37,7 +39,7 @@ export default function AdminHome() {
         >
           <Text style={st.heroLabel}>Today's sales</Text>
           <Text style={st.heroValue}>{naira(money.sales)}</Text>
-          <Text style={st.heroSub}>{money.salesCount} sales</Text>
+          <Text style={st.heroSub}>{count(money.salesCount, w.sale)}</Text>
           <View style={st.heroRow}>
             <HeroBit label="Cost of goods" value={naira(money.costOfGoods)} />
             <HeroBit label="Expenses" value={naira(money.expenses)} />
@@ -45,8 +47,20 @@ export default function AdminHome() {
           </View>
         </Pressable>
 
+        {state.clashes.length ? (
+          <Pressable onPress={() => router.push('/sync')} accessibilityRole="button" style={st.clash}>
+            <Icon name="alert" size={20} color={colors.red} />
+            <Text style={st.clashText}>
+              {state.clashes.length === 1
+                ? '1 change made on two phones needs your decision'
+                : `${state.clashes.length} changes made on two phones need your decision`}
+            </Text>
+            <Icon name="chev" size={18} color={colors.red} />
+          </Pressable>
+        ) : null}
+
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Quick icon="plus" label="New sale" onPress={() => router.push('/new-sale')} />
+          <Quick icon="plus" label={`New ${w.sale}`} onPress={() => router.push('/new-sale')} />
           <Quick icon="box" label="Receive stock" onPress={() => router.push('/receive-stock')} />
           <Quick icon="receipt" label="Add expense" onPress={() => router.push('/add-expense')} />
           <Quick icon="check" label="Delivered" onPress={() => router.push('/admin/sales?tab=delivered')} />
@@ -132,6 +146,15 @@ function Quick({ icon, label, onPress, soon }: { icon: IconName; label: string; 
 }
 
 const st = StyleSheet.create({
+  clash: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: colors.redBg,
+  },
+  clashText: { flex: 1, fontFamily: fonts.bodyBold, fontSize: 14, color: colors.red },
   hero: { backgroundColor: colors.navy, borderRadius: 20, padding: 18, gap: 4 },
   heroLabel: { fontFamily: fonts.bodyMedium, fontSize: 13, color: '#C9D3E6' },
   heroValue: { fontFamily: fonts.head, fontSize: 32, color: colors.white },

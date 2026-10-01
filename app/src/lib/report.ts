@@ -39,6 +39,8 @@ export type Filters = { product?: string; customer?: string; staff?: string; rid
 
 export type Report = {
   title: string;
+  /** The business name from Business settings. */
+  business: string;
   period: string;
   /** Headline numbers, e.g. ["Total sales", "₦1,204,000"]. */
   summary: [string, string][];
@@ -53,7 +55,7 @@ export type Report = {
 
 export function buildReport(state: AppState, kind: ReportKind, p: Period, f: Filters, seeCost = false): Report {
   const title = REPORTS.find((r) => r.value === kind)!.label;
-  const base = { title, period: periodLabel(p) };
+  const base = { title, business: state.settings.businessName, period: periodLabel(p) };
   const products = new Map(state.products.map((x) => [x.id, x]));
   const riders = new Map(state.riders.map((r) => [r.id, r]));
   const cost = (id: string) => products.get(id)?.costPrice ?? 0;
@@ -242,7 +244,7 @@ export function buildReport(state: AppState, kind: ReportKind, p: Period, f: Fil
 }
 
 /** A printable page for the PDF. */
-export function reportHtml(r: Report, business = 'K-Logistics Hub Ltd'): string {
+export function reportHtml(r: Report): string {
   const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const cell = (t: string, i: number, tag: 'td' | 'th') =>
     `<${tag}${r.numeric.includes(i) ? ' class="n"' : ''}>${esc(t)}</${tag}>`;
@@ -258,7 +260,7 @@ h1{font-size:20px;margin:0}.sub{color:#5A6378;margin:4px 0 16px}
 .sum{display:flex;flex-wrap:wrap;gap:8px 24px;margin-bottom:16px}.sum div{min-width:120px}.sum b{display:block;font-size:14px}
 table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #E3E7EF}
 th{background:#F4F6FA;font-size:11px}.n{text-align:right}.t td{font-weight:bold;border-top:2px solid #0F1E3B}
-</style></head><body><h1>${esc(r.title)}</h1><div class="sub">${esc(business)} · ${esc(r.period)}</div>
+</style></head><body><h1>${esc(r.title)}</h1><div class="sub">${esc(r.business)} · ${esc(r.period)}</div>
 <div class="sum">${r.summary.map(([k, v]) => `<div>${esc(k)}<b>${esc(v)}</b></div>`).join('')}</div>${table}</body></html>`;
 }
 

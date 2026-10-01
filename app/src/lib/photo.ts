@@ -10,9 +10,11 @@ import { Platform } from 'react-native';
 export async function takeDeliveryPhoto(
   asDataUri: boolean,
   what = 'delivery photos',
+  /** library: pick a picture already on the phone (used for the logo). */
+  from: 'camera' | 'library' = 'camera',
 ): Promise<{ uri: string } | { error: string } | null> {
   let result: ImagePicker.ImagePickerResult;
-  if (Platform.OS === 'web') {
+  if (Platform.OS === 'web' || from === 'library') {
     result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
   } else {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
