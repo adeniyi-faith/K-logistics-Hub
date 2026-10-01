@@ -1,6 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { Text } from '../components/Text';
 
 import { Icon } from '../components/Icon';
 import { Button, Card, Field, Muted, Row, Screen, TopBar } from '../components/ui';
@@ -58,7 +60,6 @@ export default function ReceiveStock() {
           <View style={{ gap: 8 }}>
             {error ? <Text style={st.error}>{error}</Text> : null}
             <Button title="Save stock" kind="accent" onPress={save} />
-            <Muted style={{ textAlign: 'center' }}>Saved on this phone first. Uploads when you're online.</Muted>
           </View>
         }
       >

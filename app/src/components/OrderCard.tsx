@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { Text } from './Text';
 
 import { Order } from '../data/types';
 import { clock, naira } from '../lib/format';
-import { itemsText, paymentText } from '../lib/sales';
-import { notSynced, orderTotal } from '../lib/stock';
+import { itemsText, orderFor, paymentText } from '../lib/sales';
+import { orderTotal } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
 import { Badge } from './ui';
@@ -31,13 +33,12 @@ export function OrderCard({ order, first, showReceiver }: { order: Order; first?
           #{order.code} · {clock(time)}
         </Text>
         <View style={{ flexDirection: 'row', gap: 6 }}>
-          {notSynced(state, order.id) ? <Badge kind="amber">Not synced</Badge> : null}
           <StatusBadge order={order} />
         </View>
       </View>
       <View style={st.line}>
         <Text style={st.customer} numberOfLines={1}>
-          {order.customer}
+          {orderFor(order)}
         </Text>
         <Text style={st.amount}>{naira(orderTotal(order))}</Text>
       </View>

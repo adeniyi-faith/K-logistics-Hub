@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+
+import { Text } from '../components/Text';
 
 import { PeriodPicker } from '../components/PeriodPicker';
 import { Avatar, Card, Chips, H2, Muted, Screen, Stat, TopBar } from '../components/ui';

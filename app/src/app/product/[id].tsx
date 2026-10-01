@@ -1,5 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+
+import { Text } from '../../components/Text';
 
 import { Button, Card, H2, LinkText, Muted, Row, Screen, TopBar } from '../../components/ui';
 import { count, dayLabel, naira } from '../../lib/format';

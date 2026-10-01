@@ -1,6 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+
+import { Text } from '../../components/Text';
 
 import { AccessEditor } from '../../components/AccessEditor';
 import { Button, Field, Muted, Screen, TopBar } from '../../components/ui';

@@ -1,6 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import { StyleSheet, Switch, View } from 'react-native';
+
+import { Text } from '../components/Text';
 
 import { SwitchRow } from '../components/SwitchRow';
 import { Button, Card, Chips, Field, H2, Muted, Screen, TopBar } from '../components/ui';

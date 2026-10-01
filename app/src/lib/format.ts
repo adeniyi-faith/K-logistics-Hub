@@ -39,9 +39,10 @@ export function today(): string {
 
 export function greeting(): string {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
+  // Short ("Morning, Kasim") so longer names still fit at the top of the screen.
+  if (h < 12) return 'Morning';
+  if (h < 17) return 'Afternoon';
+  return 'Evening';
 }
 
 /** (3, "box") -> "3 boxes", (2, "delivery") -> "2 deliveries", (1, "bottle") -> "1 bottle" */

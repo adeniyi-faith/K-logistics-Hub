@@ -1,6 +1,8 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+
+import { Text } from '../components/Text';
 
 import { Icon } from '../components/Icon';
 import { RiderAvatar } from '../components/RiderAvatar';
@@ -116,7 +118,6 @@ export default function RiderEdit() {
           <View style={{ gap: 8 }}>
             {error ? <Text style={st.error}>{error}</Text> : null}
             <Button title="Save changes" kind="accent" icon="check" onPress={save} />
-            <Muted style={{ textAlign: 'center' }}>Saved on your phone now. Uploads when you're online.</Muted>
           </View>
         }
       >
@@ -127,7 +128,7 @@ export default function RiderEdit() {
               <Icon name="camera" size={18} color={colors.white} />
             </Pressable>
           </View>
-          <Muted>Tap the camera to change your photo</Muted>
+          <Muted>Tap the camera to take or choose a new photo</Muted>
         </View>
 
         <Card>

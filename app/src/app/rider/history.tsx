@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { Badge, Card, H2, Muted, Row, Screen, Stat, TopBar } from '../../components/ui';
 import { clock, dayLabel, naira } from '../../lib/format';
 import { deliveredOn, riderDay } from '../../lib/stock';
+import { orderFor } from '../../lib/sales';
 import { useStore } from '../../store/AppStore';
 
 export default function RiderHistory() {
@@ -42,7 +43,7 @@ export default function RiderHistory() {
                 <Row
                   key={o.id}
                   first={i === 0}
-                  title={`${o.deliveredAt ? clock(o.deliveredAt) : ''} ${o.customer}`}
+                  title={`${o.deliveredAt ? clock(o.deliveredAt) : ''} ${orderFor(o)}`}
                   sub={o.items.map((it) => `${name.get(it.productId)} × ${it.qty}`).join(', ')}
                   rightSub={o.status === 'delivered' ? <Badge kind="green">Delivered</Badge> : <Badge kind="red">Failed</Badge>}
                 />

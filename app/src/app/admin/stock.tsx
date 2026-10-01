@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+
+import { Text } from '../../components/Text';
 
 import { Badge, Button, Card, Chips, Muted, Row, Screen, Stat, TopBar } from '../../components/ui';
 import { clock, count, dayLabel } from '../../lib/format';
-import { isLow, notSynced, stockFor } from '../../lib/stock';
+import { isLow, stockFor } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
 import { useAccess } from '../../lib/useAccess';
@@ -122,7 +124,6 @@ function Received() {
                       .filter(Boolean)
                       .join(' · ')}
                     right={`+${m.qty}`}
-                    rightSub={notSynced(state, m.id) ? <Badge kind="amber">Not synced</Badge> : null}
                   />
                 );
               })}

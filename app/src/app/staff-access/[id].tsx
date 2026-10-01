@@ -1,8 +1,11 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import { StyleSheet, Switch, View } from 'react-native';
+
+import { Text } from '../../components/Text';
 
 import { AccessEditor } from '../../components/AccessEditor';
+import { LoginCard } from '../../components/LoginCard';
 import { SwitchRow } from '../../components/SwitchRow';
 import { Avatar, Badge, Button, Card, Chips, Field, H2, LinkText, Muted, Screen, TopBar } from '../../components/ui';
 import { Access, changeCount, describeChanges, NO_ACCESS, overridesFrom, withOverrides } from '../../data/access';
@@ -58,7 +61,7 @@ export default function StaffAccess() {
         footer={
           <View style={{ gap: 6 }}>
             <Button title="Save access" kind="accent" icon="check" onPress={save} />
-            <Muted style={{ textAlign: 'center' }}>Changes reach {first}'s phone the next time it syncs.</Muted>
+            <Muted style={{ textAlign: 'center' }}>Changes reach {first}'s phone next time it's online.</Muted>
           </View>
         }
       >
@@ -91,19 +94,20 @@ export default function StaffAccess() {
 
         <AccessEditor value={access} onChange={setAccess} who={first} />
 
+        <LoginCard kind="staff" id={person.id} name={person.name} />
+
         <Card>
           <H2>Sign-in</H2>
           <SwitchRow
             label="Can sign in"
             sub={
               person.canSignIn === undefined
-                ? 'No sign-in account is linked yet (setup guide, step 3).'
+                ? 'No sign-in yet. Set an email and password above.'
                 : 'Turn off to block access as soon as their phone is online.'
             }
             value={canSignIn}
             onChange={setCanSignIn}
           />
-          <Muted>To reset a password, use Supabase: Authentication, Users, then the person's menu.</Muted>
         </Card>
       </Screen>
     </View>
