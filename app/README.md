@@ -17,7 +17,7 @@ On the sign-in screen, tap **Admin** or **Rider** under "Demo" to open the app a
 
 ## What works now
 
-- **Sign in** with the demo buttons (Admin, Staff, Rider). Real accounts need the online database (step 2 below).
+- **Sign in** with the demo buttons (Admin, Staff, Rider). Real accounts come with Supabase (step 2 below).
 - **Admin home**: today's sales, cost of goods, expenses and profit; deliveries; stock totals; riders out.
 - **Stock**: every product with Opening + Received − Delivered = Closing, filters (low stock, product group), and the **Received** tab listing every stock delivery under its date.
 - **Product detail**: today's stock sum, price and profit, NAFDAC number, supplier, nearest expiry.
@@ -31,7 +31,7 @@ Everything is saved on the phone, so it keeps working with no internet. The numb
 ## Build plan
 
 1. **First screens (this step).** Sign-in, Admin home, Stock, Product detail, Receive stock, and the rider's deliveries, confirm delivery and history.
-2. **Online database and real sign-in.** Choose where the data lives online (for example Supabase or Firebase), create real accounts for Admin, Staff and Riders, and make the waiting changes upload by themselves.
+2. **Online database and real sign-in (Supabase + PowerSync, chosen 1 Oct 2026).** Supabase is the online database: it holds the shared data, the user accounts (sign-in) and the delivery photos. PowerSync keeps a full copy of that data on each phone and uploads or downloads changes whenever there is internet, so the app keeps working offline. This step creates the database tables, real accounts for Admin, Staff and Riders, rules for who can see what, and replaces the sample data with PowerSync. Note: PowerSync needs its own phone build of the app (a "development build"), so the plain Expo Go app will no longer be enough to try it on a phone. The browser version keeps working.
 3. **Sales and customers.** New sale (with the customer's usual rider), Orders list, Delivered orders with proof, Delivery proof sharing on WhatsApp, Customers and Customer profile. Photo and signature on delivery.
 4. **Daily record and close the day.** The daily record page, closing stock becoming tomorrow's opening stock, and the last-5-days history on each product.
 5. **Money.** Expenses, Staff & pay, Riders & bikes, Rider earnings, Finance (day/week/month) and Reports with export.
