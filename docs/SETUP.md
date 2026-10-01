@@ -1,9 +1,8 @@
-# Connecting the app to Supabase and PowerSync
+# Connecting the app to Supabase
 
-The app has two parts online:
+**Supabase** is the online database. It also handles the accounts people sign in with.
 
-- **Supabase** is the online database. It also handles the accounts people sign in with.
-- **PowerSync** keeps a copy of the data on each phone. When there's internet, it uploads the changes made on that phone and downloads the changes made on other phones. This is why the app keeps working with no signal.
+The app has its own sync built in (no other service to sign up for). Every phone keeps a full copy of its data in a small database on the phone. When there's internet, the app uploads the changes made on that phone and downloads the changes made on other phones, about every 20 seconds while it's open. This is why the app keeps working with no signal.
 
 Until these steps are done, the app runs in **demo mode** with sample data that stays on the phone. The browser version always runs in demo mode for now.
 
@@ -14,17 +13,7 @@ Until these steps are done, the app runs in **demo mode** with sample data that 
 3. Paste in [`supabase/seed.sql`](../supabase/seed.sql) and press **Run**. This adds the 27 products. Their prices start at ₦14,000 cost and ₦21,500 selling, and you can change each one in the app.
 4. Go to **Project Settings → API** and copy the **Project URL** and the **anon public** key. Keep the **service_role** key secret. Never put it in the app.
 
-## 2. Create the PowerSync instance
-
-1. Sign up at [powersync.com](https://www.powersync.com) and create an instance.
-2. Connect it to the Supabase database. In Supabase, **Connect → Direct connection** shows the details it needs.
-3. Turn on **Use Supabase Auth** so PowerSync trusts the same accounts.
-4. Open **Sync Rules**, paste in [`powersync/sync-rules.yaml`](../powersync/sync-rules.yaml), and deploy. This decides what each phone downloads:
-   - Admin and Staff phones get everything. Only Admin phones get sync clashes.
-   - Rider phones only get their own deliveries, and they don't get cost prices.
-5. Copy the instance URL.
-
-## 3. Create the accounts
+## 2. Create the accounts
 
 For each person:
 
@@ -58,13 +47,13 @@ select 'PASTE-UID-HERE', name, 'rider', id from riders where name = 'Ibrahim Sul
 
 To stop someone signing in, set `can_sign_in` to `false` on their profile.
 
-## 4. Point the app at them
+## 3. Point the app at Supabase
 
-In the `app` folder, copy `.env.example` to `.env.local` and fill in the three values from steps 1 and 2. `.env.local` stays on your computer and is never uploaded to GitHub.
+In the `app` folder, copy `.env.example` to `.env.local` and fill in the two values from step 1 (the Project URL and the anon public key). `.env.local` stays on your computer and is never uploaded to GitHub.
 
-## 5. Put the app on a phone
+## 4. Put the app on a phone
 
-PowerSync stores data in its own database on the phone. The free Expo Go app doesn't include that database, so you need a build of this app.
+The app keeps its data in a database on the phone (`expo-sqlite`). The free Expo Go app may not match the version this app needs, so use a build of this app.
 
 - **Easiest:** in the `app` folder run `npx eas-cli@latest build --profile development --platform android`. This builds in Expo's cloud and gives you a link to install the app on an Android phone. After that, `npm start` sends your code changes to it.
 - **With Android Studio installed:** run `npx expo run:android` with a phone plugged in.
@@ -75,10 +64,11 @@ PowerSync stores data in its own database on the phone. The free Expo Go app doe
 - Receiving stock at a new cost price also updates that product's cost price.
 - **Delivery photos** are off at first. Admin turns them on in **More → Business settings**. When they're on, riders must take a photo before confirming a delivery. The photo is kept on the rider's phone and uploads to Supabase Storage (the private `delivery-photos` folder the migration files create) as soon as there's internet.
 - **Paying staff and riders** (More → Staff & pay) is saved as a "Staff pay" expense, so it counts in Finance and profit. Receipt photos on expenses go to the same private storage folder as delivery photos.
-- **Staff access** (More → Users & access) is checked twice: the app hides what a person can't use, and Supabase refuses changes they aren't allowed to make. Staff phones still download the business's data, so someone very technical could read hidden figures from their own phone's storage.
+- **Staff access** (More → Users & access) is checked twice: the app hides what a person can't use, and Supabase refuses changes they aren't allowed to make. Staff phones still download the business's data, so someone very technical could read hidden figures from their own phone's storage. In the same way, a rider's sign-in can read the products table, cost prices included, if someone very technical asked the server directly. The app itself never shows riders cost prices.
 - Every change is saved on the phone first. The badge at the top shows **Synced**, **Syncing**, or **Offline · N** (N changes still waiting to upload). Tap it to see them.
 - **Business settings** (logo, lists, words) are kept with the business row, so every phone gets them. A new logo, rider photos and receipt photos go in the same private storage folder as delivery photos.
 - **Riders can change their own details** (phone, address, next of kin, where to pay them, photo). The server stops them changing their name, ID, bike, pay rate or status. When a rider changes where to pay them, the server writes down the day so Admin sees a notice.
 - **Sync clashes**: changes to existing records (products, customers, riders, staff, roles, business settings) go through the `save_change` function in the migration files. It saves each changed value unless another phone changed it meanwhile; then it keeps the value already there and writes the other into `sync_clashes` for Admin to pick in the Sync centre. Only Admin phones download clashes.
+- **How sync works**: each change made on a phone is noted in a waiting list (`sync_outbox`) and sent oldest first, so orders arrive before the things that depend on them. Each table has an `updated_at` time that the server sets (see the `own_sync` migration), and each phone asks only for rows changed since it last looked. Deleted rows are written to `sync_deletes` so other phones can remove them too. A download never overwrites a change still waiting to upload from this phone.
 - **Putting the app in the stores**: see [RELEASE.md](RELEASE.md).
 - If the server refuses a change (for example, a rider trying something they aren't allowed to do), that change is dropped and the phone's copy is put back in line with the server.
