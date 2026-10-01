@@ -26,7 +26,7 @@ There's a button on GitHub that starts a build. It runs the same commands as the
    - **Send to the store** only once the store keys are set up in Expo (step 4 below).
 5. The build runs in Expo's cloud. The link to follow it (and to download the app when it's done) is in the GitHub run's log and on expo.dev under **Builds**.
 
-The first run creates the project on Expo. Copy the `projectId` line it shows into `app/app.json` (or run step 1 below once) so later runs use the same project.
+The first run creates the project on Expo. It shows a note with the project's id: ask Claude to add it to `app/app.json` (or run step 1 below once from a computer) so later runs use the same project.
 
 iPhone builds need the Apple account linked to Expo first: run step 5 below once from a computer, because Apple asks you to sign in. After that, GitHub can build iPhone apps too.
 
