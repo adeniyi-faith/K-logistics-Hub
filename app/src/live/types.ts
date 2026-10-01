@@ -50,7 +50,7 @@ export type ProductInput = Omit<Product, 'id'>;
 /** Which value stays after a sync clash: this phone's ("mine") or the one already on the server ("theirs"). */
 export type ClashChoice = 'mine' | 'theirs';
 
-/** The real app: Supabase for accounts and the online database, PowerSync for the copy on the phone. */
+/** The real app: Supabase for accounts and the online database, plus our own sync to the copy kept on the phone. */
 export type LiveEngine = {
   subscribe: (listener: (snap: LiveSnapshot) => void) => () => void;
   /** Returns an error message, or null when signed in. */

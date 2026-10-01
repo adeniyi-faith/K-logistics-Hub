@@ -1,22 +1,13 @@
 // The real app on Android and iPhone.
 // - Supabase: accounts (sign-in) and the online database.
-// - PowerSync: keeps a copy of the data in a database on the phone, uploads changes
-//   made on the phone, and downloads changes made on other phones. Everything the app
-//   shows is read from the phone's copy, so it keeps working with no internet.
+// - Our own sync (see sync.ts): everything the app shows is read from a database kept on the
+//   phone, so it keeps working with no internet. Changes made on the phone are uploaded in the
+//   background, and changes made on other phones are downloaded.
 import 'react-native-url-polyfill/auto';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  AbstractPowerSyncDatabase,
-  column,
-  PowerSyncBackendConnector,
-  PowerSyncDatabase,
-  Schema,
-  SyncStatus,
-  Table,
-  UpdateType,
-} from '@powersync/react-native';
 import { createClient, Session } from '@supabase/supabase-js';
+import { AppState as AppVisibility } from 'react-native';
 
 import { DEFAULT_ROLES, parseJson, withOverrides } from '../data/access';
 import { DEFAULT_SETTINGS, withDefaults } from '../data/settings';
@@ -27,178 +18,14 @@ import { closingStock, nextDay } from '../lib/stock';
 import { initialsOf, today } from '../lib/format';
 import { config } from './config';
 import { connectAssistant } from './assistant';
+import { LocalDb, openLocalDb } from './localdb';
 import { keepPhoto, localPhoto, uploadWaitingPhotos, BUCKET } from './photos';
+import { TABLES, YES_NO } from './schema';
+import { pull, push } from './sync';
 import { LiveEngine, LiveSnapshot, SyncInfo } from './types';
 
-// ------------------------------------------------------------------ schema
-// Must match supabase/migrations (PowerSync adds the "id" column itself).
-
-// Records people edit (rather than add) keep the value from before each change, so the
-// server can tell when two phones changed the same thing (a "sync clash").
-const CLASH_CHECKED = { trackPrevious: { onlyWhenChanged: true } };
-
-const schema = new Schema({
-  business: new Table(
-    {
-      name: column.text,
-      current_day: column.text,
-      require_photo: column.integer,
-      // The rest of the business settings, as JSON text (see data/settings.ts).
-      settings: column.text,
-    },
-    CLASH_CHECKED,
-  ),
-  riders: new Table(
-    {
-      name: column.text,
-      initials: column.text,
-      phone: column.text,
-      bike: column.text,
-      rate_per_delivery: column.integer,
-      status: column.text,
-      status_since: column.text,
-      address: column.text,
-      bike_model: column.text,
-      bike_colour: column.text,
-      id_type: column.text,
-      id_number: column.text,
-      joined: column.text,
-      phone2: column.text,
-      kin_name: column.text,
-      kin_phone: column.text,
-      kin_relation: column.text,
-      pay_bank: column.text,
-      pay_account: column.text,
-      pay_name: column.text,
-      pay_changed: column.text,
-      photo_path: column.text,
-      change_request: column.text,
-      change_request_at: column.text,
-    },
-    CLASH_CHECKED,
-  ),
-  staff: new Table(
-    {
-      name: column.text,
-      initials: column.text,
-      job: column.text,
-      phone: column.text,
-      pay: column.integer,
-      pay_every: column.text,
-      active: column.integer,
-      role_id: column.text,
-      overrides: column.text,
-      // The role plus this person's changes, worked out on save so the server can check it.
-      access: column.text,
-    },
-    CLASH_CHECKED,
-  ),
-  profiles: new Table({
-    name: column.text,
-    role: column.text,
-    rider_id: column.text,
-    staff_id: column.text,
-    can_sign_in: column.integer,
-  }),
-  // Access is kept as JSON text (see data/access.ts).
-  staff_roles: new Table({ name: column.text, summary: column.text, access: column.text }, CLASH_CHECKED),
-  products: new Table(
-    {
-      name: column.text,
-      product_group: column.text,
-      unit: column.text,
-      pack: column.text,
-      cost_price: column.integer,
-      sell_price: column.integer,
-      low_at: column.integer,
-      nafdac: column.text,
-      supplier: column.text,
-      active: column.integer,
-    },
-    CLASH_CHECKED,
-  ),
-  customers: new Table(
-    {
-      name: column.text,
-      phone: column.text,
-      area: column.text,
-      address: column.text,
-      created_at: column.text,
-    },
-    CLASH_CHECKED,
-  ),
-  day_openings: new Table({ day: column.text, product_id: column.text, opening: column.integer }),
-  orders: new Table({
-    code: column.text,
-    day: column.text,
-    created_at: column.text,
-    taken_by: column.text,
-    customer_id: column.text,
-    customer: column.text,
-    phone: column.text,
-    area: column.text,
-    address: column.text,
-    rider_id: column.text,
-    payment: column.text,
-    status: column.text,
-    delivered_at: column.text,
-    delivered_day: column.text,
-    received_by: column.text,
-    collected_method: column.text,
-    collected_amount: column.integer,
-    fail_reason: column.text,
-    photo_path: column.text,
-  }),
-  order_items: new Table({
-    order_id: column.text,
-    rider_id: column.text,
-    product_id: column.text,
-    qty: column.integer,
-    unit_price: column.integer,
-  }),
-  stock_moves: new Table({
-    day: column.text,
-    product_id: column.text,
-    kind: column.text,
-    qty: column.integer,
-    at: column.text,
-    by_name: column.text,
-    batch: column.text,
-    expiry: column.text,
-    cost_price: column.integer,
-    order_id: column.text,
-  }),
-  expenses: new Table({
-    day: column.text,
-    category: column.text,
-    note: column.text,
-    amount: column.integer,
-    frequency: column.text,
-    bike: column.text,
-    at: column.text,
-    by_name: column.text,
-    payee: column.text,
-    receipt_path: column.text,
-  }),
-  // Values that clashed, for Admin to pick from. mine and theirs are JSON text.
-  sync_clashes: new Table({
-    table_name: column.text,
-    row_id: column.text,
-    field: column.text,
-    mine: column.text,
-    mine_by: column.text,
-    theirs: column.text,
-    at: column.text,
-    resolved: column.integer,
-  }),
-});
-
 /** Tables whose changes go through the server's clash check (save_change in the migrations). */
-const CLASH_TABLES = ['business', 'riders', 'staff', 'staff_roles', 'products', 'customers'];
-/** Columns kept as true/false on the server but 1/0 on the phone. */
-const YES_NO = ['require_photo', 'active'];
-
-const TABLES = Object.keys(schema.props);
+const CLASH_TABLES = Object.keys(TABLES).filter((t) => TABLES[t].clash);
 
 const LABELS: Record<string, string> = {
   stock_moves: 'Stock change',
@@ -216,10 +43,17 @@ const LABELS: Record<string, string> = {
   sync_clashes: 'Sync clash choice',
 };
 
-// Postgres error codes that will never succeed on retry (bad data, or not allowed).
-const FATAL = [/^22...$/, /^23...$/, /^42501$/];
+/** How often to look for changes made on other phones while the app is open. */
+const CHECK_EVERY_MS = 20_000;
 
 type Row = Record<string, any>;
+
+/** The few database calls used inside a saved group of changes. */
+type Tx = {
+  execute: (sql: string, params?: any[]) => Promise<void>;
+  getOptional: <T = Row>(sql: string, params?: any[]) => Promise<T | null>;
+  getAll: <T = Row>(sql: string, params?: any[]) => Promise<T[]>;
+};
 
 export function createLiveEngine(): LiveEngine {
   const supabase = createClient(config.supabaseUrl, config.supabaseAnonKey, {
@@ -227,52 +61,24 @@ export function createLiveEngine(): LiveEngine {
   });
   connectAssistant(supabase);
 
-  const connector: PowerSyncBackendConnector = {
-    fetchCredentials: async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) throw error;
-      if (!data.session) return null;
-      return { endpoint: config.powersyncUrl, token: data.session.access_token };
-    },
-    // Sends the changes saved on this phone to Supabase, oldest first.
-    uploadData: async (database: AbstractPowerSyncDatabase) => {
-      const tx = await database.getNextCrudTransaction();
-      if (!tx) return;
-      try {
-        for (const op of tx.crud) {
-          const table = supabase.from(op.table);
-          const result =
-            op.op === UpdateType.PATCH && CLASH_TABLES.includes(op.table) && op.previousValues
-              ? // The server saves what nobody else changed meanwhile, and records a clash for the rest.
-                await supabase.rpc('save_change', {
-                  p_table: op.table,
-                  p_id: op.id,
-                  p_new: op.opData ?? {},
-                  p_old: op.previousValues,
-                  p_by: snap.state.session?.name ?? '',
-                })
-              : op.op === UpdateType.PUT
-                ? await table.upsert({ ...op.opData, id: op.id })
-                : op.op === UpdateType.PATCH
-                  ? await table.update(op.opData ?? {}).eq('id', op.id)
-                  : await table.delete().eq('id', op.id);
-          if (result.error) throw result.error;
-        }
-        await tx.complete();
-      } catch (e: any) {
-        if (typeof e?.code === 'string' && FATAL.some((r) => r.test(e.code))) {
-          // The server refused this change for good (e.g. not allowed). Drop it so the
-          // queue does not get stuck; the next download puts the phone back in line.
-          console.warn('Change refused by the server and discarded', e);
-          await tx.complete();
-          return;
-        }
-        throw e; // No internet or a temporary error: PowerSync tries again shortly.
-      }
-    },
+  // The phone's database opens in the background; everything below waits for it.
+  const opened: Promise<LocalDb> = openLocalDb();
+  const run = async <T>(task: (local: LocalDb) => Promise<T>) => task(await opened);
+  const db = {
+    execute: (sql: string, params: any[] = []) => run((l) => l.run(sql, params)),
+    getAll: <T = Row>(sql: string, params: any[] = []) => run((l) => l.all<T>(sql, params)),
+    getOptional: <T = Row>(sql: string, params: any[] = []) => run((l) => l.first<T>(sql, params)),
+    writeTransaction: (task: (tx: Tx) => Promise<void>) =>
+      run((l) =>
+        l.transaction((t) =>
+          task({
+            execute: (sql, params = []) => t.run(sql, params),
+            getOptional: (sql, params = []) => t.first(sql, params),
+            getAll: (sql, params = []) => t.all(sql, params),
+          }),
+        ),
+      ),
   };
-
-  const db = new PowerSyncDatabase({ schema, database: { dbFilename: 'k-logistics.db' } });
 
   let session: Session | null = null;
   let snap: LiveSnapshot = { phase: 'signedOut', state: emptyState(), sync: { status: 'offline', waiting: 0 } };
@@ -281,6 +87,49 @@ export function createLiveEngine(): LiveEngine {
     snap = next;
     listeners.forEach((l) => l(snap));
   };
+
+  // ---------------------------------------------------------------- syncing
+  let online = true;
+  let syncing = false;
+  let syncAgain = false;
+  let syncTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /** Uploads what is waiting, then downloads what changed. Never runs twice at once. */
+  async function syncNow() {
+    const current = session;
+    if (!current) return;
+    if (syncing) {
+      syncAgain = true;
+      return;
+    }
+    syncing = true;
+    reload();
+    try {
+      do {
+        syncAgain = false;
+        const local = await opened;
+        const sent = await push(local.forSync, supabase, by);
+        const got = sent === 'done' ? await pull(local.forSync, supabase, current.user.id) : sent;
+        online = got !== 'offline';
+        // Back online: send any delivery photos taken while offline.
+        if (got === 'done') uploadWaitingPhotos(supabase).catch(() => {});
+      } while (syncAgain && session);
+    } catch (e) {
+      console.warn('Sync stopped', e);
+    } finally {
+      syncing = false;
+      reload();
+    }
+  }
+
+  /** Soon, but not for every single save: a sale writes several rows at once. */
+  function syncSoon() {
+    if (!session || syncTimer) return;
+    syncTimer = setTimeout(() => {
+      syncTimer = undefined;
+      syncNow();
+    }, 800);
+  }
 
   let loading = false;
   let again = false;
@@ -293,7 +142,7 @@ export function createLiveEngine(): LiveEngine {
     try {
       do {
         again = false;
-        emit(await readSnapshot(db, session));
+        emit(await readSnapshot(await opened, session, { online, syncing }));
       } while (again);
     } catch (e) {
       console.warn('Could not read the phone database', e);
@@ -302,23 +151,29 @@ export function createLiveEngine(): LiveEngine {
     }
   }
 
-  db.onChange({ onChange: () => reload() }, { tables: TABLES, throttleMs: 150 });
-  db.registerListener({
-    statusChanged: (status) => {
+  opened.then((local) =>
+    local.onChange((kind) => {
       reload();
-      // Back online: send any delivery photos taken while offline.
-      if (status.connected && session) uploadWaitingPhotos(supabase).catch(() => {});
-    },
+      if (kind === 'save') syncSoon(); // Something was saved on this phone.
+    }),
+  );
+
+  // Look for other phones' changes now and then, and whenever the app comes back to the front.
+  setInterval(() => syncNow(), CHECK_EVERY_MS);
+  AppVisibility.addEventListener('change', (s) => {
+    if (s === 'active') syncNow();
   });
 
   async function start(next: Session | null) {
     const before = session?.user.id;
     session = next;
     if (next && next.user.id !== before) {
-      await db.connect(connector);
+      await reload();
+      syncNow();
     } else if (!next && before) {
       // Signed out: forget this person's data on the phone.
-      await db.disconnectAndClear();
+      await (await opened).clear();
+      online = true;
     }
     await reload();
   }
@@ -429,7 +284,7 @@ export function createLiveEngine(): LiveEngine {
       const c = snap.state.clashes.find((x) => x.id === id);
       if (!c) return;
       // Only ever write to a real column of a table that can clash.
-      const known = schema.tables.find((t) => t.name === c.table)?.columns.some((col) => col.name === c.field);
+      const known = TABLES[c.table]?.cols[c.field] !== undefined;
       await db.writeTransaction(async (tx) => {
         if (keep === 'mine' && CLASH_TABLES.includes(c.table) && known) {
           const v = YES_NO.includes(c.field) ? (c.mine ? 1 : 0) : c.mine;
@@ -688,29 +543,35 @@ function emptyState(): AppState {
   };
 }
 
-function syncInfo(status: SyncStatus, waiting: number): SyncInfo {
-  if (!status.connected) return { status: 'offline', waiting };
-  if (status.dataFlowStatus.uploading || status.dataFlowStatus.downloading || waiting > 0) return { status: 'syncing', waiting };
+function syncInfo(net: { online: boolean; syncing: boolean }, waiting: number): SyncInfo {
+  if (!net.online) return { status: 'offline', waiting };
+  if (net.syncing || waiting > 0) return { status: 'syncing', waiting };
   return { status: 'synced', waiting };
 }
 
-async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Promise<LiveSnapshot> {
-  const crud = await db.getAll<{ id: number; data: string }>('SELECT id, data FROM ps_crud ORDER BY id');
-  const pending: PendingChange[] = crud.map((c) => {
-    const d = JSON.parse(c.data) as { type?: string; id?: string };
-    return { id: String(c.id), at: '', label: LABELS[d.type ?? ''] ?? 'Change', ref: d.id ?? '' };
-  });
-  const sync = syncInfo(db.currentStatus, pending.length);
+async function readSnapshot(
+  db: LocalDb,
+  session: Session | null,
+  net: { online: boolean; syncing: boolean },
+): Promise<LiveSnapshot> {
+  const waiting = await db.all<{ seq: number; tbl: string; row_id: string }>('SELECT seq, tbl, row_id FROM sync_outbox ORDER BY seq');
+  const pending: PendingChange[] = waiting.map((c) => ({
+    id: String(c.seq),
+    at: '',
+    label: LABELS[c.tbl] ?? 'Change',
+    ref: c.row_id,
+  }));
+  const sync = syncInfo(net, pending.length);
   const state = emptyState();
   state.pending = pending;
 
   if (!session) return { phase: 'signedOut', state, sync };
 
-  const profile = (await db.getOptional<Row>('SELECT * FROM profiles WHERE id = ?', [session.user.id])) ?? null;
+  const profile = (await db.first<Row>('SELECT * FROM profiles WHERE id = ?', [session.user.id])) ?? null;
   if (!profile) return { phase: 'loading', state, sync };
   if (!profile.can_sign_in) return { phase: 'signedOut', state, sync };
 
-  const business = await db.getOptional<Row>('SELECT current_day, require_photo, settings FROM business LIMIT 1');
+  const business = await db.first<Row>('SELECT current_day, require_photo, settings FROM business LIMIT 1');
   state.day = business?.current_day ?? today();
   state.settings = withDefaults({
     ...parseJson<Partial<Settings>>(business?.settings, {}),
@@ -725,19 +586,19 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
 
   const [products, openings, moves, riders, customers, orders, items, expenses, staff, roles, logins, clashes] =
     await Promise.all([
-      db.getAll<Row>('SELECT * FROM products WHERE active IS NULL OR active = 1 ORDER BY name'),
-      db.getAll<Row>('SELECT day, product_id, opening FROM day_openings'),
-      db.getAll<Row>('SELECT * FROM stock_moves'),
-      db.getAll<Row>('SELECT * FROM riders ORDER BY name'),
-      db.getAll<Row>('SELECT * FROM customers ORDER BY name'),
-      db.getAll<Row>('SELECT * FROM orders ORDER BY created_at'),
-      db.getAll<Row>('SELECT * FROM order_items'),
-      db.getAll<Row>('SELECT * FROM expenses'),
-      db.getAll<Row>('SELECT * FROM staff ORDER BY name'),
-      db.getAll<Row>('SELECT * FROM staff_roles ORDER BY name'),
-      db.getAll<Row>('SELECT staff_id, can_sign_in FROM profiles WHERE staff_id IS NOT NULL'),
-      // Only Admin phones download these (see powersync/sync-rules.yaml).
-      db.getAll<Row>('SELECT * FROM sync_clashes WHERE resolved IS NULL OR resolved = 0 ORDER BY at'),
+      db.all<Row>('SELECT * FROM products WHERE active IS NULL OR active = 1 ORDER BY name'),
+      db.all<Row>('SELECT day, product_id, opening FROM day_openings'),
+      db.all<Row>('SELECT * FROM stock_moves'),
+      db.all<Row>('SELECT * FROM riders ORDER BY name'),
+      db.all<Row>('SELECT * FROM customers ORDER BY name'),
+      db.all<Row>('SELECT * FROM orders ORDER BY created_at'),
+      db.all<Row>('SELECT * FROM order_items'),
+      db.all<Row>('SELECT * FROM expenses'),
+      db.all<Row>('SELECT * FROM staff ORDER BY name'),
+      db.all<Row>('SELECT * FROM staff_roles ORDER BY name'),
+      db.all<Row>('SELECT staff_id, can_sign_in FROM profiles WHERE staff_id IS NOT NULL'),
+      // Only Admin phones download these (the server only lets Admin read them).
+      db.all<Row>('SELECT * FROM sync_clashes WHERE resolved IS NULL OR resolved = 0 ORDER BY at'),
     ]);
 
   state.products = products.map(
