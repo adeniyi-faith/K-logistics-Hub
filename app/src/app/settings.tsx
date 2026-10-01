@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Image, Platform, StyleSheet, Switch, Text, View } from 'react-native';
+import { Image, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { BusinessLogo } from '../components/BusinessLogo';
+import { SwitchRow } from '../components/SwitchRow';
 import { ListEditor } from '../components/ListEditor';
 import { Button, Card, Chips, Field, H2, Muted, Screen, TopBar } from '../components/ui';
 import { RIDER_WORDS, SALE_WORDS } from '../data/settings';
@@ -128,6 +129,7 @@ export default function Settings() {
             }
             value={draft.allowZeroStock}
             onChange={(allowZeroStock) => set({ allowZeroStock })}
+            onColor={colors.navy}
           />
         </Card>
 
@@ -185,6 +187,7 @@ export default function Settings() {
             }
             value={draft.requirePhoto}
             onChange={(requirePhoto) => set({ requirePhoto })}
+            onColor={colors.navy}
           />
         </Card>
 
@@ -204,34 +207,6 @@ function PreviewLogo({ logo, saved }: { logo?: string; saved?: string }) {
       resizeMode="contain"
       accessibilityLabel={logo ? 'New logo' : 'K-Logistics logo'}
     />
-  );
-}
-
-function SwitchRow({
-  label,
-  sub,
-  value,
-  onChange,
-}: {
-  label: string;
-  sub: string;
-  value: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <View style={st.row}>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={st.label}>{label}</Text>
-        <Muted>{sub}</Muted>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onChange}
-        trackColor={{ true: colors.navy, false: colors.inputLine }}
-        thumbColor={colors.white}
-        accessibilityLabel={label}
-      />
-    </View>
   );
 }
 

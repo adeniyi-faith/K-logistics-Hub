@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Access, AREAS_LIST, Level, LEVELS, PERMS_LIST } from '../data/access';
 import { colors, fonts } from '../theme';
+import { SwitchRow } from './SwitchRow';
 import { Card, H2, Muted } from './ui';
 
 /** Off / View / Edit for each area, then the extra permission switches. */
@@ -40,18 +41,14 @@ export function AccessEditor({ value, onChange, who }: { value: Access; onChange
       <Card style={{ gap: 0 }}>
         <H2>Extra permissions</H2>
         {PERMS_LIST.map((p, i) => (
-          <View key={p.value} style={[st.row, i > 0 && st.border]}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={st.title}>{p.label}</Text>
-              <Muted>{p.sub}</Muted>
-            </View>
-            <Switch
-              value={value.perms[p.value]}
-              onValueChange={(on) => onChange({ ...value, perms: { ...value.perms, [p.value]: on } })}
-              accessibilityLabel={p.label}
-              trackColor={{ true: colors.green }}
-            />
-          </View>
+          <SwitchRow
+            key={p.value}
+            label={p.label}
+            sub={p.sub}
+            value={value.perms[p.value]}
+            onChange={(on) => onChange({ ...value, perms: { ...value.perms, [p.value]: on } })}
+            style={[st.row, i > 0 && st.border]}
+          />
         ))}
       </Card>
     </>
