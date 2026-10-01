@@ -1,6 +1,7 @@
 // Sample data so the app has something to show before the online database exists.
 // Products are the real list from the design. Prices, stock and orders are made up:
 // the cost price (₦14,000) and rider pay (₦5,000 per delivery) are placeholders.
+import { DEFAULT_ROLES } from './access';
 import { AppState, Customer, Expense, Order, Product, Rider, Staff, StockMove } from './types';
 
 const P = (
@@ -225,8 +226,44 @@ export function sampleState(day: string): AppState {
   }));
 
   const staff: Staff[] = [
-    { id: 's1', name: 'Kemi Eze', initials: 'KE', job: 'Manager', phone: '0803 222 1111', pay: 150000, payEvery: 'month', active: true },
-    { id: 's2', name: 'Bola Johnson', initials: 'BJ', job: 'Store keeper', phone: '0816 333 4455', pay: 25000, payEvery: 'week', active: true },
+    {
+      id: 's1',
+      name: 'Kemi Eze',
+      initials: 'KE',
+      job: 'Sales & dispatch manager',
+      phone: '0803 222 1111',
+      pay: 150000,
+      payEvery: 'month',
+      active: true,
+      roleId: 'manager',
+      // The design's example: Kemi is a Manager who can also close the day, with Reports set to view only.
+      overrides: { areas: { reports: 'view' }, perms: { closeDay: true } },
+      canSignIn: true,
+    },
+    {
+      id: 's2',
+      name: 'Bola Johnson',
+      initials: 'BJ',
+      job: 'Store keeper',
+      phone: '0816 333 4455',
+      pay: 25000,
+      payEvery: 'week',
+      active: true,
+      roleId: 'storekeeper',
+      canSignIn: true,
+    },
+    {
+      id: 's3',
+      name: 'Ada Okoro',
+      initials: 'AO',
+      job: 'Accountant',
+      phone: '0809 444 5566',
+      pay: 120000,
+      payEvery: 'month',
+      active: true,
+      roleId: 'accounts',
+      canSignIn: true,
+    },
   ];
   const riderName = new Map(riders.map((r) => [r.id, r.name]));
 
@@ -291,6 +328,7 @@ export function sampleState(day: string): AppState {
     moves,
     riders,
     staff,
+    roles: DEFAULT_ROLES,
     customers,
     orders,
     expenses,

@@ -9,14 +9,16 @@ import { daysIn, periodMoney, periodOf, Period, shortNaira } from '../lib/money'
 import { shiftDay } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
+import { useAccess } from '../lib/useAccess';
 
 const WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function Finance() {
   const { state } = useStore();
+  const acc = useAccess();
   const [period, setPeriod] = useState<Period>(() => periodOf('week', state.day));
 
-  if (state.session?.role !== 'admin') {
+  if (!acc.canView('finance')) {
     return (
       <View style={{ flex: 1 }}>
         <TopBar title="Finance" back />

@@ -1,3 +1,5 @@
+import { Overrides, StaffRole } from './access';
+
 export type Role = 'admin' | 'staff' | 'rider';
 
 export type Product = {
@@ -71,6 +73,12 @@ export type Staff = {
   pay: number;
   payEvery: 'month' | 'week';
   active: boolean;
+  /** Their staff role (see access.ts); missing means no access yet. */
+  roleId?: string;
+  /** What Admin changed for this one person on top of the role. */
+  overrides?: Overrides;
+  /** Whether their account may sign in. Turning it off blocks them as soon as they are online. */
+  canSignIn?: boolean;
 };
 
 export type Customer = {
@@ -174,7 +182,7 @@ export type AppState = {
   version: 1;
   /** The day the shop is currently recording ("YYYY-MM-DD"). */
   day: string;
-  session: { role: Role; name: string; riderId?: string } | null;
+  session: { role: Role; name: string; riderId?: string; staffId?: string } | null;
   settings: Settings;
   products: Product[];
   /** Opening stock per day, then per product id: openings["2026-10-01"]["p01"]. */
@@ -182,6 +190,7 @@ export type AppState = {
   moves: StockMove[];
   riders: Rider[];
   staff: Staff[];
+  roles: StaffRole[];
   customers: Customer[];
   orders: Order[];
   expenses: Expense[];

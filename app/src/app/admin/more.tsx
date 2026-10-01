@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { Icon } from '../../components/Icon';
-import { ComingNext, SignedInMenu } from '../../components/SignedInMenu';
+import { SignedInMenu } from '../../components/SignedInMenu';
 import { Card, IconTile, Row, Screen, TopBar } from '../../components/ui';
 import { colors } from '../../theme';
 
@@ -56,6 +56,13 @@ export default function More() {
             onPress={() => router.push('/reports')}
           />
           <Row
+            lead={<IconTile name="shield" />}
+            title="Users & access"
+            sub="Who can see and change what"
+            rightSub={<Icon name="chev" color={colors.muted} />}
+            onPress={() => router.push('/users')}
+          />
+          <Row
             lead={<IconTile name="sliders" />}
             title="Business settings"
             sub="Delivery photo on or off"
@@ -63,7 +70,6 @@ export default function More() {
             onPress={() => router.push('/settings')}
           />
         </Card>
-        <ComingNext what="Users & access, and the staff app where each person only sees what Admin allows." />
         <SignedInMenu />
       </Screen>
     </View>

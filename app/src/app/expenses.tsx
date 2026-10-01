@@ -11,12 +11,14 @@ import { byCategory, expensesIn, periodOf, shortNaira } from '../lib/money';
 import { payeeName } from '../lib/pay';
 import { notSynced } from '../lib/stock';
 import { useStore } from '../store/AppStore';
+import { useAccess } from '../lib/useAccess';
 
 export default function Expenses() {
   const { state } = useStore();
+  const acc = useAccess();
   const [show, setShow] = useState<Frequency | 'all'>('all');
 
-  if (state.session?.role === 'rider') {
+  if (!acc.canView('expenses')) {
     return (
       <View style={{ flex: 1 }}>
         <TopBar title="Expenses" back />
@@ -37,7 +39,13 @@ export default function Expenses() {
   return (
     <View style={{ flex: 1 }}>
       <TopBar title="Expenses" back />
-      <Screen footer={<Button title="Add expense" kind="accent" icon="plus" onPress={() => router.push('/add-expense')} />}>
+      <Screen
+        footer={
+          acc.canEdit('expenses') ? (
+            <Button title="Add expense" kind="accent" icon="plus" onPress={() => router.push('/add-expense')} />
+          ) : undefined
+        }
+      >
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Stat label="Today" value={shortNaira(total('day'))} />
           <Stat label="This week" value={shortNaira(total('week'))} />

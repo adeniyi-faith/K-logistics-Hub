@@ -6,6 +6,7 @@ import { Button, Card, H2, Muted, Screen, TopBar } from '../components/ui';
 import { closingStock, nextDay } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
+import { useAccess } from '../lib/useAccess';
 
 const MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const short = (day: string) => `${Number(day.slice(8))} ${MO[Number(day.slice(5, 7)) - 1]}`;
@@ -13,12 +14,13 @@ const short = (day: string) => `${Number(day.slice(8))} ${MO[Number(day.slice(5,
 /** Check the day, then copy each product's closing stock into tomorrow as opening stock. */
 export default function CloseDay() {
   const { state, sync, closeDay } = useStore();
+  const acc = useAccess();
   const next = nextDay(state.day);
   const closing = closingStock(state);
   const pending = state.orders.filter((o) => o.status === 'pending').length;
   const noRider = state.orders.filter((o) => o.day === state.day && !o.riderId).length;
 
-  if (state.session?.role !== 'admin') {
+  if (!acc.can('closeDay')) {
     return (
       <View style={{ flex: 1 }}>
         <TopBar title="Close the day" back />
