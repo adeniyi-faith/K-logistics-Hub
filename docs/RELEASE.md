@@ -19,7 +19,7 @@ There's a button on GitHub that starts a build. It runs the same commands as the
 
 1. On expo.dev, open your account settings, then **Access tokens**, and create a **robot** token. Copy it.
 2. On GitHub, open the repository, then **Settings → Secrets and variables → Actions → New repository secret**. Name it `EXPO_TOKEN` and paste the token.
-3. Add the three connection details on expo.dev (step 2 below).
+3. The Supabase connection details are already in `app/eas.json`, so there is nothing to add on expo.dev (see step 2 below).
 4. On GitHub, open **Actions → Build the app → Run workflow**. Pick:
    - **Which phones**: android, ios or all.
    - **preview** for a test app you install from a link (Android), or **production** for the stores.
@@ -39,22 +39,13 @@ npx eas-cli@latest init
 
 `init` adds the project's Expo id to `app.json`. Commit that change.
 
-## 2. Give the builds the connection details (once)
+## 2. The connection details (already done)
 
-`.env.local` stays on your computer, so the cloud builds can't see it. Copy the same two values into Expo instead.
+`.env.local` stays on your computer, so the cloud builds can't see it. Instead, the Supabase project URL and the **anon public** key are written in `app/eas.json`, under each build profile's `env`. They are safe to keep in the repository: the anon key is meant to ship inside the app, and Supabase's access rules decide who can see what.
 
-Easiest: on expo.dev open the project, then **Environment variables**, and add each of these, ticking **Preview** and **Production**:
+If you ever move to a different Supabase project, change those two lines in `app/eas.json` and build again. (Values set on expo.dev under **Environment variables** with the same names take priority over `eas.json`.)
 
-- `EXPO_PUBLIC_SUPABASE_URL`
-- `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-
-Or from the computer, once per value and per environment (`production`, then again with `preview`):
-
-```
-npx eas-cli@latest env:create --environment production --name EXPO_PUBLIC_SUPABASE_URL --value "https://xxxx.supabase.co" --visibility plaintext
-```
-
-Only ever use the **anon public** key here. The **service_role** key must never go into the app or into Expo.
+Only ever use the **anon public** key here. The **service_role** key, the secret key and the database password must never go into the app, into `eas.json`, or into Expo.
 
 If a build opens in demo mode (the Admin / Staff / Rider buttons on the sign-in screen), these values were missing.
 
