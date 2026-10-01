@@ -32,7 +32,7 @@ Swanky, Sabana Pro, Visura, Zouwa, Kidney Support (tea), Zudes Capsule, Zemora T
 | Background | `#F4F6FA` | Screen ground; cards are white with `#E3E7EF` borders |
 | Muted text | `#5A6378` | Labels and secondary text |
 | Green | `#1B7A43` on `#E8F6EE` | Paid, delivered, profit |
-| Red | `#B42318` on `#FDECEA` | Owes, failed, errors |
+| Red | `#B42318` on `#FDECEA` | Failed, errors |
 | Blue | `#1D4ED8` on `#EAF0FE` | In progress / on delivery, syncing |
 
 Fonts: **Poppins** (titles and money figures) and **DM Sans** (body). Both are on Google Fonts / `@expo-google-fonts`.
@@ -58,22 +58,23 @@ There are exactly three kinds of user: **Admin, Staff and Rider**. Manager, Acco
 - Staff can see their own access on the **Me** screen. Every access change is logged. Changes reach a staff phone on its next sync; turning off "Can sign in" blocks the person straight away when online.
 - Rider and Admin access are fixed.
 
-## Screens (32)
+## Screens (36)
 
 1. **Start, home & settings** — Sign in (with demo picker: Admin, Staff, Rider), Admin dashboard, Sync centre, More menu, Business settings (logo, expense categories, units, low-stock alert, own words for "sale"/"rider"), Style guide.
-2. **Stock & daily record** — Stock list, Product detail (Opening + Received − Delivered = Closing, cost/sell/profit, last 5 days), Receive stock, Daily record (any past day), Close the day (closing stock carried into tomorrow's opening stock).
-3. **Sales, deliveries & customers** — Sales list, New sale (customer, items, rider + bike, payment, balance), Customers (total owed), Customer profile (Bought / Paid / Owes, running balance, most bought).
-4. **Expenses, staff & riders** — Expenses (by category and Daily/Weekly/Monthly/One-time), Add expense, Staff & pay, Riders & bikes, Add a rider (personal → bike → ID & login).
+2. **Stock & daily record** — Stock list (In store / Received tabs), **Stock received** (every delivery of stock on one page, grouped under a clear date such as 30/09/2026, with product, quantity, batch, expiry and who received it), Product detail (Opening + Received − Delivered = Closing, cost/sell/profit, last 5 days), Receive stock, Daily record (includes each rider's earnings for that day), Close the day.
+3. **Sales, deliveries & customers** — Orders list (All orders / Delivered tabs), **Delivered orders** (search by customer, phone, area or order number; each shows date and time, rider and bike, area, who received it, photo and signature — to settle "it wasn't delivered" calls), **Delivery proof** (one delivered order with timeline; share on WhatsApp; new order with the same rider), New sale (picks the rider who last delivered to that customer; payment is paid by transfer or pay on delivery), Customers, Customer profile (total bought, orders, "usually delivered by" rider with a one-tap new order for that rider, delivery history with date, area, rider and items).
+4. **Expenses, staff & riders** — Expenses (by category and Daily/Weekly/Monthly/One-time), Add expense, Staff & pay, Riders & bikes, **Rider earnings** (per rider, day by day: Date · Deliveries · Earnings, plus all riders for a day), Add a rider (personal → bike → ID & login).
 5. **Finance & reports** — Finance (Day/Week/Month), Reports (filter by period, product, customer, staff, rider; export PDF/Excel/share).
+6. **Rider app** — Deliveries today, Confirm delivery (items, cash/transfer collected, photo, signature), History (with a day-by-day earnings table), Profile, Edit profile. Riders change their own photo, phone, address, next of kin, pay account and password straight away (a new phone number is confirmed by code; Admin is told when the pay account changes). Name, ID and bike/plate are checked by Admin, so the rider taps "Ask to change" instead.
 7. **Staff app** — Staff home (shown for Kemi, who has Manager access: stock, sales, riders, no money; the home and tabs change with each person's access), Me (my access and pay).
 8. **Access control (Admin)** — Users & access (everyone labelled Admin, Staff or Rider, plus a side-by-side comparison of staff access), Edit one staff member's access, Staff roles.
-6. **Rider app** — Deliveries today, Confirm delivery (items, cash/transfer collected, photo, signature), History, Profile, Edit profile. Riders change their own photo, phone, address, next of kin, pay account and password straight away (a new phone number is confirmed by code; Admin is told when the pay account changes). Name, ID and bike/plate are checked by Admin, so the rider taps "Ask to change" instead.
 
 ## Automatic sums shown in the design
 
 - Closing stock = Opening stock + Received − Delivered. Closing stock of a day becomes the next day's opening stock when the day is closed.
 - Profit = Sales − Cost of goods sold − Expenses. (Cost of goods comes from each product's cost price. The brief's simpler "Sales − Expenses" would count the goods themselves as profit, so the design shows cost of goods separately — to be confirmed with the business.)
-- Customer owes = Total bought − Total paid.
+- Customers do not owe: every order is either paid by transfer or paid on delivery (the rider collects the money). There is no debt or balance column.
+- Rider earnings = deliveries completed × the rider's rate (₦5,000 per delivery in the design — to be confirmed).
 
 ## Offline first
 

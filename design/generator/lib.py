@@ -333,3 +333,21 @@ def note(text, icon="cloudup", kind="amber"):
     bg, fg = BADGE[kind]
     return (f'<div style="display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; '
             f'background: {bg}; color: {fg}; font-size: 13px; font-weight: 500; line-height: 1.4">{ic(icon, 18, fg)}<div>{text}</div></div>')
+
+
+def seglinks(opts, active):
+    """Segmented control whose options move to other screens."""
+    out = []
+    for label, href in opts:
+        on = label == active
+        style = (f'background: #FFFFFF; color: {NAVY}; box-shadow: 0 1px 3px rgba(15,30,59,0.15)' if on
+                 else f'background: transparent; color: {MUTED}')
+        out.append(f'<a href="{href}" aria-current="{"page" if on else "false"}" style="flex: 1 1 0; min-height: 40px; border-radius: 10px; {style}; '
+                   f'font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center">{label}</a>')
+    return f'<div style="display: flex; gap: 4px; padding: 4px; background: #E6E9F1; border-radius: 13px">{"".join(out)}</div>'
+
+
+def datehead(date, day, right=""):
+    return (f'<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 4px 2px 0">'
+            f'<div style="display: flex; align-items: baseline; gap: 8px"><span style="font-family: {HEAD}; font-size: 17px; font-weight: 600">{date}</span>'
+            f'<span style="font-size: 13px; color: {MUTED}">{day}</span></div><span style="font-size: 13px; color: {MUTED}; font-weight: 700">{right}</span></div>')

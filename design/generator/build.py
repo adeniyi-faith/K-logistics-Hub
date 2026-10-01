@@ -2,15 +2,15 @@ import json, datetime, sys
 sys.path.insert(0, '.')
 from lib import page
 S = {}
-for m in ("screens1", "screens2", "screens3", "screens4"):
+for m in ("screens1", "screens2", "screens3", "screens4", "screens5"):
     S.update(__import__(m).S)
 rows = [
   ("start", "Start, home & settings", ["Main", "Dashboard", "SyncCenter", "More", "Settings", "StyleGuide"]),
   ("staff", "Staff app — each person sees only what Admin allows", ["StaffHome", "StaffProfile"]),
   ("access", "Access control (Admin)", ["Users", "StaffAccess", "Roles"]),
-  ("stock", "Stock & daily record", ["Inventory", "ProductDetail", "ReceiveStock", "DailyRecord", "CloseDay"]),
-  ("sales", "Sales, deliveries & customers", ["Sales", "NewSale", "Customers", "CustomerProfile"]),
-  ("money", "Expenses, staff & riders", ["Expenses", "AddExpense", "Staff", "Riders", "OnboardRider"]),
+  ("stock", "Stock & daily record", ["Inventory", "StockReceived", "ProductDetail", "ReceiveStock", "DailyRecord", "CloseDay"]),
+  ("sales", "Sales, deliveries & customers", ["Sales", "Deliveries", "DeliveryProof", "NewSale", "Customers", "CustomerProfile"]),
+  ("money", "Expenses, staff & riders", ["Expenses", "AddExpense", "Staff", "Riders", "RiderEarnings", "OnboardRider"]),
   ("fin", "Finance & reports", ["Finance", "Reports"]),
   ("rider", "Rider app", ["RiderHome", "DeliveryDetail", "RiderHistory", "RiderProfile", "RiderEditProfile"]),
 ]
