@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Button, Card, H2, Muted, Row, Screen, TopBar } from '../../components/ui';
+import { Button, Card, H2, LinkText, Muted, Row, Screen, TopBar } from '../../components/ui';
 import { count, naira } from '../../lib/format';
 import { stockFor } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
@@ -32,7 +32,11 @@ export default function ProductDetail() {
   return (
     <View style={{ flex: 1 }}>
       <TopBar title={p.name} sub={`${p.group} · ${p.pack}`} back />
-      <Screen footer={<Button title="Receive stock" kind="accent" icon="plus" onPress={() => router.push(`/receive-stock?product=${p.id}`)} />}>
+      <Screen
+        footer={
+          <Button title="Receive stock" kind="accent" icon="plus" onPress={() => router.push(`/receive-stock?product=${p.id}`)} />
+        }
+      >
         <Card>
           <H2>Today's stock</H2>
           <Muted>Worked out for you</Muted>
@@ -49,7 +53,15 @@ export default function ProductDetail() {
         </Card>
 
         <Card style={{ paddingVertical: 8 }}>
-          <H2>Price & profit</H2>
+          <H2
+            right={
+              state.session?.role === 'admin' ? (
+                <LinkText onPress={() => router.push(`/edit-prices?product=${p.id}`)}>Edit prices</LinkText>
+              ) : undefined
+            }
+          >
+            Price & profit
+          </H2>
           <Row first title="Cost price" right={`${naira(p.costPrice)} per ${p.unit}`} />
           <Row title="Selling price" right={`${naira(p.sellPrice)} per ${p.unit}`} />
           <Row title={`Profit per ${p.unit}`} sub={`${margin.toFixed(1)}% margin`} right={naira(profitEach)} />

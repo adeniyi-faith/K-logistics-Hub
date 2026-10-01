@@ -45,7 +45,7 @@ export default function ConfirmDelivery() {
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title="Confirm delivery" sub={`#${order.id} ${order.customer}`} back />
+      <TopBar title="Confirm delivery" sub={`#${order.code} ${order.customer}`} back />
       <Screen
         footer={
           done ? undefined : (

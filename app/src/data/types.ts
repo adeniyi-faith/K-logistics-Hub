@@ -48,6 +48,8 @@ export type OrderItem = { productId: string; qty: number; unitPrice: number };
 
 export type Order = {
   id: string;
+  /** Short number people read out, e.g. "S-0930-18". */
+  code: string;
   day: string;
   createdAt: string;
   customer: string;

@@ -18,22 +18,28 @@ export function Screen({ children, footer }: { children: ReactNode; footer?: Rea
   );
 }
 
-/** Small badge in the top bar: Synced, or Offline · N changes waiting. Tapping opens the Sync centre. */
+/** Small badge in the top bar: Synced, Syncing, or Offline · N changes waiting. Tapping it opens the Sync centre. */
 export function SyncPill() {
-  const { state } = useStore();
-  const waiting = state.pending.length;
-  const ok = waiting === 0;
+  const { sync } = useStore();
+  const look = {
+    synced: { bg: colors.greenBg, fg: colors.green, icon: 'cloudok' as const, text: 'Synced' },
+    syncing: { bg: colors.blueBg, fg: colors.blue, icon: 'refresh' as const, text: 'Syncing' },
+    offline: {
+      bg: colors.orangeBg,
+      fg: colors.orangeText,
+      icon: 'cloudoff' as const,
+      text: sync.waiting ? `Offline · ${sync.waiting}` : 'Offline',
+    },
+  }[sync.status];
   return (
     <Pressable
       onPress={() => router.push('/sync')}
       accessibilityRole="button"
-      accessibilityLabel={ok ? 'All synced' : `${waiting} changes waiting to upload`}
-      style={[s.pill, { backgroundColor: ok ? colors.greenBg : colors.orangeBg }]}
+      accessibilityLabel={`${look.text}. ${sync.waiting} changes waiting to upload`}
+      style={[s.pill, { backgroundColor: look.bg }]}
     >
-      <Icon name={ok ? 'cloudok' : 'cloudoff'} size={16} color={ok ? colors.green : colors.orangeText} />
-      <Text style={[s.pillText, { color: ok ? colors.green : colors.orangeText }]}>
-        {ok ? 'Synced' : `Offline · ${waiting}`}
-      </Text>
+      <Icon name={look.icon} size={16} color={look.fg} />
+      <Text style={[s.pillText, { color: look.fg }]}>{look.text}</Text>
     </Pressable>
   );
 }
@@ -316,7 +322,14 @@ export const s = StyleSheet.create({
   },
   helper: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { minHeight: 36, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  chip: {
+    minHeight: 36,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   chipOn: { backgroundColor: colors.navy, borderColor: colors.navy },
   chipOff: { backgroundColor: colors.white, borderColor: colors.line },
   chipText: { fontFamily: fonts.bodyBold, fontSize: 13 },

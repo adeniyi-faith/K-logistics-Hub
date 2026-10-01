@@ -1,0 +1,36 @@
+# PowerSync sync rules: which rows each person's phone downloads.
+# Paste this into your PowerSync instance (Sync Rules tab) and deploy.
+# request.user_id() is the Supabase Auth user id of the person signed in.
+bucket_definitions:
+  # Everyone who is signed in: the business row (which day is open).
+  everyone:
+    data:
+      - SELECT * FROM business
+
+  # Every phone gets its own profile (name and role).
+  me:
+    parameters: SELECT request.user_id() AS user_id
+    data:
+      - SELECT * FROM profiles WHERE id = bucket.user_id
+
+  # Admin and Staff phones get the whole business.
+  office:
+    parameters: SELECT id AS user_id FROM profiles WHERE id = request.user_id() AND role IN ('admin', 'staff') AND can_sign_in
+    data:
+      - SELECT * FROM profiles
+      - SELECT * FROM riders
+      - SELECT * FROM products
+      - SELECT * FROM day_openings
+      - SELECT * FROM stock_moves
+      - SELECT * FROM orders
+      - SELECT * FROM order_items
+      - SELECT * FROM expenses
+
+  # Rider phones only get their own deliveries, and products without cost prices.
+  rider:
+    parameters: SELECT rider_id FROM profiles WHERE id = request.user_id() AND role = 'rider' AND can_sign_in
+    data:
+      - SELECT * FROM riders WHERE id = bucket.rider_id
+      - SELECT * FROM orders WHERE rider_id = bucket.rider_id
+      - SELECT * FROM order_items WHERE rider_id = bucket.rider_id
+      - SELECT id, name, product_group, unit, pack, sell_price, low_at, nafdac, supplier, active FROM products

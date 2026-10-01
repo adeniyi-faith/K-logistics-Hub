@@ -1,0 +1,35 @@
+import { AppState, Order } from '../data/types';
+
+export type SyncInfo = {
+  /** synced: all uploaded. offline: no connection. syncing: uploading or downloading now. */
+  status: 'synced' | 'offline' | 'syncing';
+  /** Changes saved on this phone and not uploaded yet. */
+  waiting: number;
+};
+
+/** signedOut: show sign-in. loading: signed in, waiting for the first download. ready: show the app. */
+export type Phase = 'signedOut' | 'loading' | 'ready';
+
+export type LiveSnapshot = { phase: Phase; state: AppState; sync: SyncInfo };
+
+export type ReceiveInput = { productId: string; qty: number; costPrice: number; batch: string; expiry: string };
+
+export type ConfirmInput = {
+  orderId: string;
+  receivedBy: string;
+  method: NonNullable<Order['collected']>['method'];
+  amount: number;
+};
+
+export type PriceInput = { productId: string; costPrice: number; sellPrice: number; lowAt: number };
+
+/** The real app: Supabase for accounts and the online database, PowerSync for the copy on the phone. */
+export type LiveEngine = {
+  subscribe: (listener: (snap: LiveSnapshot) => void) => () => void;
+  /** Returns an error message, or null when signed in. */
+  signIn: (email: string, password: string) => Promise<string | null>;
+  signOut: () => Promise<void>;
+  receiveStock: (input: ReceiveInput) => Promise<void>;
+  confirmDelivery: (input: ConfirmInput) => Promise<void>;
+  updatePrices: (input: PriceInput) => Promise<void>;
+};

@@ -58,7 +58,12 @@ export default function ReceiveStock() {
         {product ? (
           <Card>
             <Text style={st.label}>Product</Text>
-            <Pressable onPress={() => setProductId('')} style={st.picked} accessibilityRole="button" accessibilityLabel="Change product">
+            <Pressable
+              onPress={() => setProductId('')}
+              style={st.picked}
+              accessibilityRole="button"
+              accessibilityLabel="Change product"
+            >
               <View style={{ flex: 1 }}>
                 <Text style={st.pickedName}>{product.name}</Text>
                 <Muted>{product.pack}</Muted>
@@ -70,7 +75,14 @@ export default function ReceiveStock() {
           <Card style={{ paddingVertical: 8 }}>
             <Field label="Product" placeholder="Search products" value={search} onChangeText={setSearch} />
             {matches.slice(0, 8).map((p, i) => (
-              <Row key={p.id} first={i === 0} title={p.name} sub={p.pack} onPress={() => pick(p.id)} rightSub={<Icon name="chev" color={colors.muted} />} />
+              <Row
+                key={p.id}
+                first={i === 0}
+                title={p.name}
+                sub={p.pack}
+                onPress={() => pick(p.id)}
+                rightSub={<Icon name="chev" color={colors.muted} />}
+              />
             ))}
           </Card>
         )}
@@ -79,12 +91,8 @@ export default function ReceiveStock() {
           <Field label="Quantity received" keyboardType="number-pad" value={qty} onChangeText={setQty} placeholder="0" />
           {product && line ? (
             <View style={st.now}>
-              <Muted>
-                Stock now {count(line.closing, product.unit)}
-              </Muted>
-              <Text style={st.after}>
-                After this: {count(line.closing + n, product.unit)}
-              </Text>
+              <Muted>Stock now {count(line.closing, product.unit)}</Muted>
+              <Text style={st.after}>After this: {count(line.closing + n, product.unit)}</Text>
             </View>
           ) : null}
           <Field
@@ -119,7 +127,14 @@ const st = StyleSheet.create({
   change: { fontFamily: fonts.bodyBold, fontSize: 13, color: colors.orangeText },
   now: { flexDirection: 'row', justifyContent: 'space-between' },
   after: { fontFamily: fonts.bodyBold, fontSize: 13, color: colors.green },
-  total: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.line },
+  total: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+  },
   totalValue: { fontFamily: fonts.head, fontSize: 20, color: colors.navy },
   error: { fontFamily: fonts.bodyBold, fontSize: 13, color: colors.red },
 });

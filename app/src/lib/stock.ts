@@ -33,10 +33,7 @@ export function dayMoney(state: AppState) {
   const cost = new Map(state.products.map((p) => [p.id, p.costPrice]));
   const orders = state.orders.filter((o) => o.day === state.day && o.status !== 'failed');
   const sales = orders.reduce((s, o) => s + orderTotal(o), 0);
-  const costOfGoods = orders.reduce(
-    (s, o) => s + o.items.reduce((t, it) => t + it.qty * (cost.get(it.productId) ?? 0), 0),
-    0,
-  );
+  const costOfGoods = orders.reduce((s, o) => s + o.items.reduce((t, it) => t + it.qty * (cost.get(it.productId) ?? 0), 0), 0);
   const expenses = state.expenses.filter((e) => e.day === state.day).reduce((s, e) => s + e.amount, 0);
   return { sales, salesCount: orders.length, costOfGoods, expenses, profit: sales - costOfGoods - expenses };
 }
