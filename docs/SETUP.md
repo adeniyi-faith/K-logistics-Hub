@@ -10,7 +10,7 @@ Until these steps are done, the app runs in **demo mode** with sample data that 
 ## 1. Create the Supabase project
 
 1. Sign up at [supabase.com](https://supabase.com) and create a new project. Pick the region closest to Nigeria (for example, Europe West).
-2. Open **SQL Editor**, paste in all of [`supabase/migrations/20261001000000_init.sql`](../supabase/migrations/20261001000000_init.sql), and press **Run**. This creates the tables and the rules about who can see and change what.
+2. Open **SQL Editor**. Paste in each file in [`supabase/migrations`](../supabase/migrations) in date order (the number at the start of its name), pressing **Run** after each one. They create the tables and the rules about who can see and change what.
 3. Paste in [`supabase/seed.sql`](../supabase/seed.sql) and press **Run**. This adds the 27 products. Their prices start at ₦14,000 cost and ₦21,500 selling, and you can change each one in the app.
 4. Go to **Project Settings → API** and copy the **Project URL** and the **anon public** key. Keep the **service_role** key secret. Never put it in the app.
 
