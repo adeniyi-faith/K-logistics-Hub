@@ -1,9 +1,11 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+
+import { Text } from '../components/Text';
 
 import { Icon } from '../components/Icon';
-import { Avatar, Badge, Button, Card, Chips, H2, IconTile, Muted, Row, Screen, TopBar } from '../components/ui';
+import { Avatar, Badge, Button, Card, Chips, Field, H2, IconTile, Muted, Row, Screen, TopBar } from '../components/ui';
 import { AREAS_LIST, changeCount, Level, NO_ACCESS, withOverrides } from '../data/access';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
@@ -16,7 +18,8 @@ const CELL: Record<Level, { text: string; color: string }> = {
 
 /** Admin: everyone who uses the app, and what each staff member can use. */
 export default function Users() {
-  const { state } = useStore();
+  const { state, updateSettings } = useStore();
+  const [editTitle, setEditTitle] = useState<string | null>(null);
   const [show, setShow] = useState<'all' | 'staff' | 'riders'>('all');
 
   if (state.session?.role !== 'admin') {
@@ -31,6 +34,16 @@ export default function Users() {
   }
 
   const staff = state.staff.filter((x) => x.active);
+  const myName = state.session.name;
+  const myTitle = state.settings.titles[myName] || 'Admin';
+  const saveTitle = () => {
+    const t = (editTitle ?? '').trim();
+    const titles = { ...state.settings.titles };
+    if (t && t !== 'Admin') titles[myName] = t;
+    else delete titles[myName];
+    updateSettings({ ...state.settings, titles });
+    setEditTitle(null);
+  };
   const roleName = (id?: string) => state.roles.find((r) => r.id === id)?.name;
   const shown = staff.slice(0, 4);
 
@@ -52,19 +65,40 @@ export default function Users() {
           onChange={setShow}
         />
 
+        {editTitle !== null ? (
+          <Card>
+            <H2>Your title</H2>
+            <Field
+              label="Shown instead of “Admin”"
+              value={editTitle}
+              onChangeText={setEditTitle}
+              placeholder="e.g. Developer, Owner"
+            />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Button title="Cancel" kind="ghost" onPress={() => setEditTitle(null)} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button title="Save" onPress={saveTitle} />
+              </View>
+            </View>
+          </Card>
+        ) : null}
+
         <Card style={{ paddingVertical: 4 }}>
           {show === 'all' ? (
             <Row
               first
               lead={<Avatar initials={state.session.name.slice(0, 1)} />}
               title={state.session.name}
-              sub="You"
+              sub="You · tap to change your title"
               rightSub={
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  <Badge kind="blue">Admin</Badge>
+                  <Badge kind="blue">{myTitle}</Badge>
                   <Muted>Full access</Muted>
                 </View>
               }
+              onPress={() => setEditTitle(myTitle)}
             />
           ) : null}
           {show !== 'riders'

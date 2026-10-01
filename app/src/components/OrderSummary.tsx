@@ -1,10 +1,13 @@
-import { Text, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+
+import { Text } from './Text';
 
 import { Order } from '../data/types';
 import { count, naira } from '../lib/format';
 import { orderTotal } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
+import { orderFor } from '../lib/sales';
 import { Badge, Muted } from './ui';
 
 export function OrderSummary({ order }: { order: Order }) {
@@ -18,7 +21,7 @@ export function OrderSummary({ order }: { order: Order }) {
           {order.status === 'delivered' ? 'Delivered' : 'Pending'}
         </Badge>
       </View>
-      <Text style={st.customer}>{order.customer}</Text>
+      <Text style={st.customer}>{orderFor(order)}</Text>
       <Muted>{order.address}</Muted>
       {order.items.map((it) => {
         const p = name.get(it.productId);

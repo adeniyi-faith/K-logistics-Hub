@@ -1,4 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { Text } from './Text';
 
 import { Access, AREAS_LIST, Level, LEVELS, PERMS_LIST } from '../data/access';
 import { colors, fonts } from '../theme';

@@ -1,4 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { Text } from './Text';
 
 import { movePeriod, Period, periodLabel, periodOf, PeriodKind } from '../lib/money';
 import { useStore } from '../store/AppStore';

@@ -140,7 +140,10 @@ async function fetchChanged(remote: SupabaseClient, table: string, cols: string[
   for (let from = 0; ; from += PAGE) {
     let q = remote.from(table).select(['id', ...cols, 'updated_at'].join(', '));
     if (since) q = q.gte('updated_at', earlier(since));
-    const { data, error } = await q.order('updated_at').order('id').range(from, from + PAGE - 1);
+    const { data, error } = await q
+      .order('updated_at')
+      .order('id')
+      .range(from, from + PAGE - 1);
     if (error) throw error;
     rows.push(...((data ?? []) as unknown as Row[]));
     if ((data?.length ?? 0) < PAGE) return rows;
@@ -188,7 +191,10 @@ async function applyDeletes(sql: Sql, remote: SupabaseClient) {
     await tx.run("UPDATE sync_meta SET value = '1' WHERE key = 'applying'");
     for (const d of found) {
       if (!TABLES[d.table_name]) continue; // Only ever delete from our own tables.
-      const waiting = await tx.first('SELECT 1 AS x FROM sync_outbox WHERE tbl = ? AND row_id = ? LIMIT 1', [d.table_name, d.row_id]);
+      const waiting = await tx.first('SELECT 1 AS x FROM sync_outbox WHERE tbl = ? AND row_id = ? LIMIT 1', [
+        d.table_name,
+        d.row_id,
+      ]);
       if (!waiting) await tx.run(`DELETE FROM ${d.table_name} WHERE id = ?`, [d.row_id]);
     }
     await setMeta(tx, 'cursor:deletes', String(found[found.length - 1].id));

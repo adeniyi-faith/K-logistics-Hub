@@ -23,6 +23,11 @@ export function connectAssistant(c: SupabaseClient) {
   client = c;
 }
 
+/** The signed-in Supabase connection, for other server functions (e.g. live/logins.ts). Null in demo mode. */
+export function liveClient(): SupabaseClient | null {
+  return client;
+}
+
 /** Gemini may ask for figures this many times for one question before we give up. */
 const MAX_ROUNDS = 6;
 /** How many earlier questions (with their answers) are sent along, so follow-ups like "and yesterday?" work. */

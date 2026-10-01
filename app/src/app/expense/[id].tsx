@@ -6,7 +6,6 @@ import { Card, H2, Muted, Row, Screen, TopBar } from '../../components/ui';
 import { frequencyLabel } from '../../lib/expenses';
 import { clock, dayLabel, naira } from '../../lib/format';
 import { payeeName } from '../../lib/pay';
-import { notSynced } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { useAccess } from '../../lib/useAccess';
 
@@ -40,7 +39,6 @@ export default function ExpenseDetail() {
           {paid ? <Row title="Paid to" right={paid} /> : null}
           {e.note ? <Row title="Note" sub={e.note} /> : null}
           <Row title="Written down by" right={[e.by, e.at && clock(e.at)].filter(Boolean).join(' · ')} />
-          {notSynced(state, e.id) ? <Row title="Upload" right="Waiting (saved on this phone)" /> : null}
         </Card>
         {e.receipt ? (
           <Card>

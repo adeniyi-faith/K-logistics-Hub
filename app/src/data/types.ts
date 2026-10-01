@@ -75,7 +75,15 @@ export type Rider = {
   /** Something the rider asked Admin to change (name, ID or bike), and the day they asked. */
   changeRequest?: string;
   changeRequestAt?: string;
+  /** Papers the rider uploaded, e.g. driver's licence. */
+  documents?: RiderDoc[];
 };
+
+/** A photo of one of a rider's papers. photo: a file on this phone, or its name in online storage. */
+export type RiderDoc = { id: string; kind: string; photo: string; day: string };
+
+/** The papers a rider can upload. */
+export const DOC_KINDS = ["Driver's licence", 'National ID (NIN)', 'Bike papers', 'Guarantor form', 'Other'];
 
 /** Someone on the payroll who is not a rider (riders are paid per delivery). */
 export type Staff = {
@@ -174,6 +182,10 @@ export type Settings = {
   areas: string[];
   /** The business's own words for "sale" and "rider". */
   words: { sale: string; rider: string };
+  /** Take the customer's name and phone on each sale. Off: sales are saved with no customer. */
+  customerDetails: boolean;
+  /** The title shown for an Admin instead of "Admin", by their name, e.g. { Faith: 'Developer' }. */
+  titles: Record<string, string>;
 };
 
 /** How often an expense comes up. It is a label for grouping; nothing repeats by itself. */

@@ -1,6 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
+
+import { Text } from '../../components/Text';
 
 import { OrderSummary } from '../../components/OrderSummary';
 import { Button, Card, Chips, Field, H2, Muted, Screen, TopBar } from '../../components/ui';
@@ -9,6 +11,7 @@ import { naira } from '../../lib/format';
 import { takeDeliveryPhoto } from '../../lib/photo';
 import { orderTotal } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
+import { orderFor } from '../../lib/sales';
 import { colors, fonts } from '../../theme';
 
 type Method = NonNullable<Order['collected']>['method'];
@@ -57,14 +60,14 @@ export default function ConfirmDelivery() {
     const paid = method === 'paid_before' ? 0 : Number(amount.replace(/[^\d]/g, '')) || 0;
     if (!receivedBy.trim()) return setError('Write the name of the person who received it.');
     if (method !== 'paid_before' && paid <= 0) return setError('Enter the amount you collected.');
-    if (needPhoto && !photo) return setError('Take a photo of the delivery first.');
+    if (needPhoto && !photo) return setError('Add a photo of the delivery first.');
     confirmDelivery({ orderId: order.id, receivedBy: receivedBy.trim(), method, amount: paid, photo: photo ?? undefined });
     router.back();
   };
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title="Confirm delivery" sub={`#${order.code} ${order.customer}`} back />
+      <TopBar title="Confirm delivery" sub={`#${order.code} ${orderFor(order)}`} back />
       <Screen
         footer={
           done ? undefined : (
@@ -125,7 +128,7 @@ export default function ConfirmDelivery() {
                     <Image source={{ uri: photo }} style={st.photo} resizeMode="cover" accessibilityLabel="Delivery photo" />
                   ) : null}
                   <Button
-                    title={taking ? 'Opening camera…' : photo ? 'Retake photo' : 'Take photo'}
+                    title={taking ? 'Opening…' : photo ? 'Change photo' : 'Add photo'}
                     kind={photo ? 'ghost' : 'primary'}
                     icon="camera"
                     onPress={snap}

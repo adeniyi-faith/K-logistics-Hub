@@ -1,4 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+
+import { Text } from './Text';
 
 import { naira } from '../lib/format';
 import { colors, fonts } from '../theme';
@@ -20,7 +22,9 @@ export function CategoryBar({ rows }: { rows: { category: string; amount: number
         {rows.map((r, i) => (
           <View key={r.category} style={st.keyItem}>
             <View style={[st.dot, { backgroundColor: SHADES[i % SHADES.length] }]} />
-            <Text style={st.keyText}>{r.category}</Text>
+            <Text style={st.keyText} numberOfLines={1}>
+              {r.category}
+            </Text>
             <Text style={st.keyAmount}>{naira(r.amount)}</Text>
           </View>
         ))}
@@ -31,10 +35,11 @@ export function CategoryBar({ rows }: { rows: { category: string; amount: number
 
 const st = StyleSheet.create({
   bar: { flexDirection: 'row', height: 14, borderRadius: 8, overflow: 'hidden', gap: 2 },
-  key: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 6, columnGap: 12 },
-  keyItem: { flexDirection: 'row', alignItems: 'center', gap: 6, width: '46%' },
+  // One category per line, so long names like "Transport" never break in the middle.
+  key: { gap: 8 },
+  keyItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dot: { width: 10, height: 10, borderRadius: 3 },
-  keyText: { flex: 1, fontFamily: fonts.body, fontSize: 13, color: colors.navy },
+  keyText: { flex: 1, fontFamily: fonts.body, fontSize: 14, color: colors.navy },
   keyAmount: { fontFamily: fonts.bodyBold, fontSize: 13, color: colors.navy },
   muted: { fontFamily: fonts.body, fontSize: 13, color: colors.muted },
 });

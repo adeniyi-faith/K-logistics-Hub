@@ -1,6 +1,8 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { Text } from '../components/Text';
 
 import { Avatar, Badge, Button, Card, Chips, Muted, Row, Screen, TopBar } from '../components/ui';
 import { dayLabel, naira } from '../lib/format';

@@ -176,7 +176,8 @@ function DemoProvider({ children }: { children: ReactNode }) {
       mode: 'demo',
       phase: state.session ? 'ready' : 'signedOut',
       state,
-      sync: { status: waiting ? 'offline' : 'synced', waiting },
+      // Demo mode never goes online, so there's no "no internet" sign to show.
+      sync: { status: 'synced', waiting },
       signInAs: (role) =>
         update((s) => ({
           ...s,
@@ -275,7 +276,9 @@ function DemoProvider({ children }: { children: ReactNode }) {
         const id = uuid();
         update((s) => {
           const now = new Date().toISOString();
-          const customerId = input.customerId ?? uuid();
+          // No customer at all when the business doesn't take customer details.
+          const none = !input.customerId && !input.newCustomer;
+          const customerId = none ? '' : (input.customerId ?? uuid());
           const existing = s.customers.find((c) => c.id === customerId);
           const customer = existing ?? {
             id: customerId,
@@ -288,7 +291,7 @@ function DemoProvider({ children }: { children: ReactNode }) {
           const code = nextOrderCode(s);
           return {
             ...s,
-            customers: existing ? s.customers : [...s.customers, customer],
+            customers: existing || none ? s.customers : [...s.customers, customer],
             orders: [
               ...s.orders,
               {
@@ -308,7 +311,10 @@ function DemoProvider({ children }: { children: ReactNode }) {
                 status: 'pending',
               },
             ],
-            pending: [...s.pending, { id: newId('c'), at: now, label: `New sale #${code} for ${customer.name}`, ref: id }],
+            pending: [
+              ...s.pending,
+              { id: newId('c'), at: now, label: `New sale #${code}${customer.name ? ` for ${customer.name}` : ''}`, ref: id },
+            ],
           };
         });
         return id;

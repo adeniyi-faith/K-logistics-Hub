@@ -1,6 +1,8 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
+
+import { Text, TextInput } from '../components/Text';
 
 import { Icon } from '../components/Icon';
 import { Button, Chips, Field, Muted, Screen, TopBar } from '../components/ui';
@@ -78,7 +80,6 @@ export default function AddExpense() {
           <View style={{ gap: 8 }}>
             {error ? <Text style={st.error}>{error}</Text> : null}
             <Button title="Save expense" kind="accent" icon="check" onPress={save} />
-            <Muted style={{ textAlign: 'center' }}>Saved on this phone first. Uploads when you're online.</Muted>
           </View>
         }
       >
@@ -158,7 +159,7 @@ export default function AddExpense() {
         ) : (
           <Pressable onPress={snap} disabled={taking} accessibilityRole="button" style={st.addReceipt}>
             <Icon name="camera" size={20} color={colors.muted} />
-            <Text style={st.addReceiptText}>{taking ? 'Opening camera…' : 'Add receipt photo (optional)'}</Text>
+            <Text style={st.addReceiptText}>{taking ? 'Opening…' : 'Add receipt photo (optional)'}</Text>
           </Pressable>
         )}
       </Screen>
