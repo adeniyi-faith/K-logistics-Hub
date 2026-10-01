@@ -41,7 +41,7 @@ export default function OrderDetail() {
 
   const share = () => {
     const text = [
-      `K-Logistics Hub · Order #${o.code}`,
+      `K-logistics Hub · Order #${o.code}`,
       `${o.customer}, ${o.area}`,
       itemsText(state, o),
       `Amount: ${naira(total)} (${paymentText(o)})`,

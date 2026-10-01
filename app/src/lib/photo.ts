@@ -18,7 +18,7 @@ export async function takeDeliveryPhoto(
     result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
   } else {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) return { error: `Allow the camera for K-Logistics Hub in your phone settings to take ${what}.` };
+    if (!perm.granted) return { error: `Allow the camera for K-logistics Hub in your phone settings to take ${what}.` };
     result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 });
   }
   if (result.canceled || !result.assets?.[0]) return null;
