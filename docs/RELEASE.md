@@ -1,6 +1,6 @@
 # Putting the app in the Play Store and App Store
 
-The app is built in Expo's cloud (called **EAS**), so nobody needs Android Studio or a Mac. Do these steps after the Supabase and PowerSync setup in [SETUP.md](SETUP.md) works on a test phone.
+The app is built in Expo's cloud (called **EAS**), so nobody needs Android Studio or a Mac. Do these steps after the Supabase setup in [SETUP.md](SETUP.md) works on a test phone.
 
 Commands run in the `app` folder on a computer with Node.js installed.
 
@@ -41,13 +41,12 @@ npx eas-cli@latest init
 
 ## 2. Give the builds the connection details (once)
 
-`.env.local` stays on your computer, so the cloud builds can't see it. Copy the same three values into Expo instead.
+`.env.local` stays on your computer, so the cloud builds can't see it. Copy the same two values into Expo instead.
 
 Easiest: on expo.dev open the project, then **Environment variables**, and add each of these, ticking **Preview** and **Production**:
 
 - `EXPO_PUBLIC_SUPABASE_URL`
 - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-- `EXPO_PUBLIC_POWERSYNC_URL`
 
 Or from the computer, once per value and per environment (`production`, then again with `preview`):
 
