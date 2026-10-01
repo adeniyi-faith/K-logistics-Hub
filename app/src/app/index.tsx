@@ -1,7 +1,7 @@
 import { Redirect, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BusinessLogo } from '../components/BusinessLogo';
@@ -49,6 +49,10 @@ export default function SignIn() {
   const [show, setShow] = useState(false);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // Demo buttons are for trying the app in the browser or while building it. Real phone builds
+  // (preview and store) never show them, even if the Supabase details were left out.
+  const showDemo = mode === 'demo' && (__DEV__ || Platform.OS === 'web');
 
   if (state.session) return <Redirect href={HOME[state.session.role]} />;
 
@@ -133,7 +137,7 @@ export default function SignIn() {
                 </View>
               )}
 
-              {mode === 'demo' ? (
+              {showDemo ? (
                 <View style={st.demo}>
                   <View style={st.orRow}>
                     <View style={st.orLine} />
