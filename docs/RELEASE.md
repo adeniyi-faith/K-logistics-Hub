@@ -13,6 +13,23 @@ Commands run in the `app` folder on a computer with Node.js installed.
 | Apple Developer Program | $99 a year | To publish on iPhone (optional; Android first is fine) |
 | A privacy policy web page | Free (e.g. a Google Doc made public) | Both stores ask for it because the app stores names, phone numbers and photos |
 
+## Building from GitHub (no computer needed)
+
+There's a button on GitHub that starts a build. It runs the same commands as the steps below.
+
+1. On expo.dev, open your account settings, then **Access tokens**, and create a **robot** token. Copy it.
+2. On GitHub, open the repository, then **Settings → Secrets and variables → Actions → New repository secret**. Name it `EXPO_TOKEN` and paste the token.
+3. Add the three connection details on expo.dev (step 2 below).
+4. On GitHub, open **Actions → Build the app → Run workflow**. Pick:
+   - **Which phones**: android, ios or all.
+   - **preview** for a test app you install from a link (Android), or **production** for the stores.
+   - **Send to the store** only once the store keys are set up in Expo (step 4 below).
+5. The build runs in Expo's cloud. The link to follow it (and to download the app when it's done) is in the GitHub run's log and on expo.dev under **Builds**.
+
+The first run creates the project on Expo. Copy the `projectId` line it shows into `app/app.json` (or run step 1 below once) so later runs use the same project.
+
+iPhone builds need the Apple account linked to Expo first: run step 5 below once from a computer, because Apple asks you to sign in. After that, GitHub can build iPhone apps too.
+
 ## 1. Link the app to your Expo account (once)
 
 ```

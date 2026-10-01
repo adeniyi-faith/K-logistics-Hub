@@ -1,0 +1,72 @@
+# Builds the Android and/or iPhone app in Expo's cloud (EAS), started by hand from GitHub.
+# GitHub: Actions tab → "Build the app" → Run workflow.
+# Needs the repository secret EXPO_TOKEN (an Expo robot access token). See docs/RELEASE.md.
+name: Build the app
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Which phones
+        type: choice
+        options: [android, ios, all]
+        default: android
+      profile:
+        description: "preview = test app to install from a link (Android APK). production = for the stores."
+        type: choice
+        options: [preview, production]
+        default: preview
+      submit:
+        description: Send a production build to the store when it's done (needs store keys set up in Expo)
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Check the Expo token is set
+        working-directory: .
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Add the EXPO_TOKEN secret first (GitHub: Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install
+        run: npm ci
+
+      # The first time, this creates the project on Expo and links it.
+      # Commit the projectId it adds to app.json afterwards (see docs/RELEASE.md) so it isn't repeated.
+      - name: Link the app to Expo
+        run: |
+          if ! grep -q '"projectId"' app.json; then
+            eas init --non-interactive --force
+          fi
+
+      - name: Start the build
+        run: >
+          eas build
+          --platform ${{ inputs.platform }}
+          --profile ${{ inputs.profile }}
+          --non-interactive
+          --no-wait
+          ${{ inputs.submit && inputs.profile == 'production' && '--auto-submit' || '' }}
