@@ -10,22 +10,20 @@ const NATIVE = Platform.OS !== 'web';
 // Keep the phone's own start screen up until this one is ready to take over, so there's no flash.
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-/** The opening screen: the logo grows in, the name and slogan fade up, then it all fades away. */
+/** The opening screen: the logo, name and slogan appear together, stay a moment, then fade away. */
 export function Splash({ onDone }: { onDone: () => void }) {
   const { state } = useStore();
   const logo = useRef(new Animated.Value(0)).current;
-  const words = useRef(new Animated.Value(0)).current;
   const out = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     SplashScreen.hideAsync().catch(() => {});
     Animated.sequence([
       Animated.timing(logo, { toValue: 1, duration: 650, easing: Easing.out(Easing.back(1.4)), useNativeDriver: NATIVE }),
-      Animated.timing(words, { toValue: 1, duration: 450, easing: Easing.out(Easing.quad), useNativeDriver: NATIVE }),
-      Animated.delay(700),
+      Animated.delay(1200),
       Animated.timing(out, { toValue: 0, duration: 400, easing: Easing.in(Easing.quad), useNativeDriver: NATIVE }),
     ]).start(() => onDone());
-  }, [logo, words, out, onDone]);
+  }, [logo, out, onDone]);
 
   return (
     <Animated.View style={[st.wrap, { opacity: out }]} pointerEvents="none">
@@ -39,8 +37,8 @@ export function Splash({ onDone }: { onDone: () => void }) {
         style={{
           alignItems: 'center',
           gap: 6,
-          opacity: words,
-          transform: [{ translateY: words.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }],
+          opacity: logo,
+          transform: [{ translateY: logo.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
         }}
       >
         <Animated.Text style={st.name} maxFontSizeMultiplier={1.15}>

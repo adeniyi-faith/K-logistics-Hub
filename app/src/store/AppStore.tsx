@@ -188,7 +188,7 @@ function DemoProvider({ children }: { children: ReactNode }) {
                 ? { role, name: 'Emeka', riderId: 'r1' }
                 : { role, name: 'Kemi', staffId: 's1' },
         })),
-      signIn: async () => 'Real accounts need Supabase set up. Use a demo button below.',
+      signIn: async () => "This copy of the app isn't connected to the business yet. Ask Admin for the latest version.",
       signOut: () => update((s) => ({ ...s, session: null })),
       receiveStock: ({ productId, qty, costPrice, batch, expiry }) =>
         update((s) => {
