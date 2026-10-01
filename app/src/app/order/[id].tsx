@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Linking, StyleSheet, Text, View } from 'react-native';
 
 import { StatusBadge } from '../../components/OrderCard';
+import { ProofPhoto } from '../../components/ProofPhoto';
 import { Avatar, Button, Card, H2, Muted, Row, Screen, TopBar } from '../../components/ui';
 import { clock, dayLabel, naira } from '../../lib/format';
 import { itemsText, paymentText } from '../../lib/sales';
@@ -54,7 +55,8 @@ export default function OrderDetail() {
     [`Order taken${o.takenBy ? ` by ${o.takenBy}` : ''}`, clock(o.createdAt)],
     [`Given to ${rider?.name.split(' ')[0] ?? 'rider'}`, clock(o.createdAt)],
   ];
-  if (delivered) steps.push([`Delivered, received by ${o.receivedBy ?? '—'}`, clock(o.deliveredAt ?? '')]);
+  if (delivered)
+    steps.push([`Delivered${o.photo ? ' and photo taken' : ''}, received by ${o.receivedBy ?? '—'}`, clock(o.deliveredAt ?? '')]);
   steps.push([waiting ? 'Waiting to upload (saved on this phone)' : 'Uploaded', '']);
 
   return (
@@ -114,7 +116,12 @@ export default function OrderDetail() {
             </View>
           ))}
         </Card>
-        {delivered ? <Muted>Delivery photo and signature come in the next update.</Muted> : null}
+        {delivered && o.photo ? (
+          <Card>
+            <H2>Delivery photo</H2>
+            <ProofPhoto photo={o.photo} />
+          </Card>
+        ) : null}
       </Screen>
     </View>
   );

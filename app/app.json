@@ -25,7 +25,15 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "K-Logistics Hub uses the camera to take a photo when a delivery is handed over.",
+          "photosPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ],
     "scheme": "klogistics"
   }

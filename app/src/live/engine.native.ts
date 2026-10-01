@@ -24,13 +24,14 @@ import { nextOrderCode } from '../lib/sales';
 import { closingStock, nextDay } from '../lib/stock';
 import { today } from '../lib/format';
 import { config } from './config';
+import { keepPhoto, localPhoto, uploadWaitingPhotos, BUCKET } from './photos';
 import { LiveEngine, LiveSnapshot, SyncInfo } from './types';
 
 // ------------------------------------------------------------------ schema
 // Must match supabase/migrations (PowerSync adds the "id" column itself).
 
 const schema = new Schema({
-  business: new Table({ name: column.text, current_day: column.text }),
+  business: new Table({ name: column.text, current_day: column.text, require_photo: column.integer }),
   riders: new Table({
     name: column.text,
     initials: column.text,
@@ -78,6 +79,7 @@ const schema = new Schema({
     collected_method: column.text,
     collected_amount: column.integer,
     fail_reason: column.text,
+    photo_path: column.text,
   }),
   order_items: new Table({
     order_id: column.text,
@@ -190,7 +192,13 @@ export function createLiveEngine(): LiveEngine {
   }
 
   db.onChange({ onChange: () => reload() }, { tables: TABLES, throttleMs: 150 });
-  db.registerListener({ statusChanged: () => reload() });
+  db.registerListener({
+    statusChanged: (status) => {
+      reload();
+      // Back online: send any delivery photos taken while offline.
+      if (status.connected && session) uploadWaitingPhotos(supabase).catch(() => {});
+    },
+  });
 
   async function start(next: Session | null) {
     const before = session?.user.id;
@@ -236,15 +244,17 @@ export function createLiveEngine(): LiveEngine {
         await tx.execute('UPDATE products SET cost_price = ? WHERE id = ?', [costPrice, productId]);
       });
     },
-    async confirmDelivery({ orderId, receivedBy, method, amount }) {
+    async confirmDelivery({ orderId, receivedBy, method, amount, photo }) {
       const order = snap.state.orders.find((o) => o.id === orderId);
       if (!order || order.status !== 'pending') return;
       const at = now();
+      // Keep the photo on the phone first; it uploads by itself when there's internet.
+      const photoName = photo ? await keepPhoto(orderId, photo) : null;
       await db.writeTransaction(async (tx) => {
         await tx.execute(
           `UPDATE orders SET status = 'delivered', delivered_at = ?, delivered_day = ?, received_by = ?, collected_method = ?,
-           collected_amount = ? WHERE id = ?`,
-          [at, snap.state.day, receivedBy, method, amount, orderId],
+           collected_amount = ?, photo_path = ? WHERE id = ?`,
+          [at, snap.state.day, receivedBy, method, amount, photoName, orderId],
         );
         // Delivered goods leave the store, so stock goes down by itself.
         for (const it of order.items) {
@@ -255,6 +265,16 @@ export function createLiveEngine(): LiveEngine {
           );
         }
       });
+      if (photoName) uploadWaitingPhotos(supabase).catch(() => {});
+    },
+    async updateSettings(settings) {
+      await db.execute('UPDATE business SET require_photo = ?', [settings.requirePhoto ? 1 : 0]);
+    },
+    async photoUrl(photo) {
+      const local = localPhoto(photo);
+      if (local) return local;
+      const { data } = await supabase.storage.from(BUCKET).createSignedUrl(photo, 60 * 60);
+      return data?.signedUrl ?? null;
     },
     async createSale(input) {
       const id = uuid();
@@ -345,6 +365,7 @@ function emptyState(): AppState {
     version: 1,
     day: today(),
     session: null,
+    settings: { requirePhoto: false },
     products: [],
     openings: {},
     moves: [],
@@ -378,8 +399,9 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
   if (!profile) return { phase: 'loading', state, sync };
   if (!profile.can_sign_in) return { phase: 'signedOut', state, sync };
 
-  const business = await db.getOptional<Row>('SELECT current_day FROM business LIMIT 1');
+  const business = await db.getOptional<Row>('SELECT current_day, require_photo FROM business LIMIT 1');
   state.day = business?.current_day ?? today();
+  state.settings = { requirePhoto: Boolean(business?.require_photo) };
   state.session = {
     role: profile.role as Role,
     name: String(profile.name ?? '').split(' ')[0],
@@ -476,6 +498,7 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
       receivedBy: o.received_by ?? undefined,
       collected: o.collected_method ? { method: o.collected_method, amount: o.collected_amount ?? 0 } : undefined,
       failReason: o.fail_reason ?? undefined,
+      photo: o.photo_path ?? undefined,
     }),
   );
   state.expenses = expenses.map((e) => ({

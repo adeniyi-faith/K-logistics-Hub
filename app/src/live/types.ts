@@ -1,4 +1,4 @@
-import { AppState, Order } from '../data/types';
+import { AppState, Order, Settings } from '../data/types';
 
 export type SyncInfo = {
   /** synced: all uploaded. offline: no connection. syncing: uploading or downloading now. */
@@ -19,6 +19,8 @@ export type ConfirmInput = {
   receivedBy: string;
   method: NonNullable<Order['collected']>['method'];
   amount: number;
+  /** A photo file on this phone. */
+  photo?: string;
 };
 
 export type SaleInput = {
@@ -47,4 +49,7 @@ export type LiveEngine = {
   createSale: (input: SaleInput) => Promise<string>;
   /** Copies each product's closing stock into the next day as opening stock, and moves the business to that day. */
   closeDay: () => Promise<void>;
+  updateSettings: (settings: Settings) => Promise<void>;
+  /** A web address or file the app can show for a delivery photo, or null when it can't be loaded now. */
+  photoUrl: (photo: string) => Promise<string | null>;
 };

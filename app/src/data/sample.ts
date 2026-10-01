@@ -237,6 +237,7 @@ export function sampleState(day: string): AppState {
     version: 1,
     day,
     session: null,
+    settings: { requirePhoto: false },
     products,
     openings,
     moves,
