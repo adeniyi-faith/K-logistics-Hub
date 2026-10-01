@@ -1,3 +1,4 @@
+import { Overrides, StaffRole } from '../data/access';
 import { AppState, Expense, Order, Rider, Settings, Staff } from '../data/types';
 
 export type SyncInfo = {
@@ -40,6 +41,8 @@ export type RiderInput = Omit<Rider, 'id' | 'initials'>;
 
 export type StaffInput = Omit<Staff, 'id' | 'initials'>;
 
+export type AccessInput = { job: string; roleId: string; overrides: Overrides; canSignIn: boolean };
+
 export type PriceInput = { productId: string; costPrice: number; sellPrice: number; lowAt: number };
 
 /** The real app: Supabase for accounts and the online database, PowerSync for the copy on the phone. */
@@ -63,6 +66,10 @@ export type LiveEngine = {
   updateRider: (id: string, changes: Partial<RiderInput>) => Promise<void>;
   addStaff: (input: StaffInput) => Promise<void>;
   updateStaff: (id: string, changes: Partial<StaffInput>) => Promise<void>;
+  /** Admin: give a staff member a role and any changes just for them. */
+  saveStaffAccess: (staffId: string, input: AccessInput) => Promise<void>;
+  /** Admin: add or change a staff role. Everyone with the role gets the change. */
+  saveRole: (role: StaffRole) => Promise<void>;
   /** A web address or file the app can show for a delivery photo, or null when it can't be loaded now. */
   photoUrl: (photo: string) => Promise<string | null>;
 };

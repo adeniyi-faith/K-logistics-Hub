@@ -10,12 +10,15 @@ import { lastRiderFor } from '../lib/sales';
 import { stockFor } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
+import { useAccess } from '../lib/useAccess';
+import { NoAccess } from '../components/NoAccess';
 
 type Line = { productId: string; qty: number };
 
 export default function NewSale() {
   const params = useLocalSearchParams<{ customer?: string; rider?: string }>();
   const { state, createSale } = useStore();
+  const acc = useAccess();
 
   const [customerId, setCustomerId] = useState(params.customer ?? '');
   const [isNew, setIsNew] = useState(false);
@@ -94,6 +97,8 @@ export default function NewSale() {
     (p) => !lines.some((l) => l.productId === p.id) && p.name.toLowerCase().includes(productSearch.trim().toLowerCase()),
   );
   const lastRider = last ? state.riders.find((r) => r.id === last.riderId) : null;
+
+  if (!acc.canEdit('sales')) return <NoAccess title="New sale" />;
 
   return (
     <View style={{ flex: 1 }}>

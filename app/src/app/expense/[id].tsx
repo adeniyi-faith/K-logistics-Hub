@@ -8,13 +8,15 @@ import { clock, dayLabel, naira } from '../../lib/format';
 import { payeeName } from '../../lib/pay';
 import { notSynced } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
+import { useAccess } from '../../lib/useAccess';
 
 export default function ExpenseDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state } = useStore();
+  const acc = useAccess();
   const e = state.expenses.find((x) => x.id === id);
 
-  if (!e || state.session?.role === 'rider') {
+  if (!e || !(e.payee ? acc.canView('staffpay') : acc.canView('expenses'))) {
     return (
       <View style={{ flex: 1 }}>
         <TopBar title="Expense" back />

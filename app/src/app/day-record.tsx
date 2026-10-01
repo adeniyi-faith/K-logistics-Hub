@@ -7,6 +7,7 @@ import { naira } from '../lib/format';
 import { dayMoney, deliveredOn, riderDay, shiftDay, stockFor } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
+import { useAccess } from '../lib/useAccess';
 
 const WD = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 const MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -16,6 +17,7 @@ const date = (day: string) => new Date(`${day}T12:00:00`);
 /** Everything about one day: stock in and out, money, deliveries and rider earnings. */
 export default function DayRecord() {
   const { state } = useStore();
+  const acc = useAccess();
   const [day, setDay] = useState(state.day);
   const strip = useRef<ScrollView>(null);
   const days = Array.from({ length: 7 }, (_, i) => shiftDay(state.day, i - 6));
@@ -36,7 +38,7 @@ export default function DayRecord() {
       <TopBar title="Daily record" back />
       <Screen
         footer={
-          open && state.session?.role === 'admin' ? (
+          open && acc.can('closeDay') ? (
             <Button title="Review and close day" kind="accent" onPress={() => router.push('/close-day')} />
           ) : undefined
         }
@@ -83,9 +85,17 @@ export default function DayRecord() {
         <Card style={{ paddingVertical: 8 }}>
           <H2>Money</H2>
           <Row first title="Total sales" right={naira(money.sales)} />
-          <Row title="Cost of goods sold" right={naira(money.costOfGoods)} />
-          <Row title="Expenses" right={naira(money.expenses)} onPress={() => router.push('/expenses')} />
-          <Row title="Profit" right={naira(money.profit)} />
+          {acc.can('seeCost') ? (
+            <>
+              <Row title="Cost of goods sold" right={naira(money.costOfGoods)} />
+              <Row
+                title="Expenses"
+                right={naira(money.expenses)}
+                onPress={acc.canView('expenses') ? () => router.push('/expenses') : undefined}
+              />
+              <Row title="Profit" right={naira(money.profit)} />
+            </>
+          ) : null}
         </Card>
 
         <Card style={{ paddingVertical: 8 }}>

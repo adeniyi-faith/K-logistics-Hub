@@ -35,6 +35,8 @@ To use the real, synced app (real accounts, data shared between phones), follow 
 - **Riders & bikes**: every rider with what they're doing now (On delivery, Available, Off duty, Bike in repair), a Bikes tab, and search by name or plate. **Add a rider** (Admin) takes personal details, bike, ID and pay per delivery. Each rider's page shows earnings, what they're owed, a status switch and their pay rate. Riders who are off duty or have a bike in repair can't be picked for a new sale.
 - **Staff & pay** (Admin): everyone on the payroll with their pay, what they've been paid this month and what's due, plus a Payment history tab. **Pay** saves a "Staff pay" expense, so it counts in Finance and profit. A rider is owed their delivery earnings minus what they've been paid.
 - **Reports**: Sales, Stock, Expenses, Profit & loss, Customer statement, Rider deliveries and Staff pay, for a day, week or month, filtered by product, customer, staff or rider. Save as **PDF** or **Excel**, or **Share** a short summary (for example on WhatsApp).
+- **Users & access** (Admin): everyone who uses the app, a side-by-side comparison of staff access, and each staff member's access: a **staff role** as the starting point, Off / View / Edit for each area, extra permissions (see cost prices and profit, close the day, export reports), and **Can sign in**. **Staff roles** (Manager, Accounts, Store keeper, Sales, or new ones) can be changed; everyone with the role gets the change except what was changed just for them.
+- **Staff app**: the home screen and tabs show only the areas that person may use, plus **Me** (my access and my pay). Buttons for adding and changing things only show with Edit access, and cost prices and profit are hidden without that permission. The server checks the same rules.
 - **Receipt photo** on an expense (optional). Tap an expense to see it.
 - **Rider earnings**: pick a rider to see their earnings day by day for a week or month, plus every rider's earnings for one day.
 - **Daily record**: pick any of the last 7 days to see stock in and out, money, deliveries, each rider's earnings and every product's Open / In / Out / Close.
@@ -52,7 +54,7 @@ Everything is saved on the phone, so it keeps working with no internet. In demo 
 3. **Sales and customers (done).** New sale (with the customer's usual rider), Orders list, Delivered orders, Delivery proof with WhatsApp sharing and the delivery photo, Customers and Customer profile. No signature (the business doesn't want one).
 4. **Daily record and close the day (done).** The daily record page, closing stock becoming tomorrow's opening stock, and the last-5-days history on each product. Reopening a closed day is not built yet.
 5. **Money (done).** Expenses with receipt photos, Finance (day/week/month), Rider earnings, Riders & bikes, Add a rider, Staff & pay, and Reports with PDF/Excel export. Not built: photos of a rider and their ID, and saved reports.
-6. **Staff app and access control.** Staff roles, Off/View/Edit per area, per-person changes, and the Me screen.
+6. **Staff app and access control (done).** Staff roles, Off/View/Edit per area, per-person changes, the staff home and the Me screen. Not built: the access change log, discounts, cancelling a saved sale, and deciding sync clashes (those features come in step 7).
 7. **Settings, sync clashes and release.** Business settings, the Sync centre's "pick a value" for clashes, then building the Android and iPhone apps for the stores.
 
 ## Still to confirm with the business

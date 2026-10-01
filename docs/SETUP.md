@@ -35,8 +35,10 @@ For each person:
 -- Admin (Kasim)
 insert into profiles (id, name, role) values ('PASTE-UID-HERE', 'Kasim', 'admin');
 
--- A staff member
-insert into profiles (id, name, role) values ('PASTE-UID-HERE', 'Kemi', 'staff');
+-- A staff member: first add them in the app (More → Users & access → Add staff),
+-- then link the account to them. What they can see comes from their role in the app.
+insert into profiles (id, name, role, staff_id)
+select 'PASTE-UID-HERE', name, 'staff', id from staff where name = 'Kemi Eze';
 
 -- A rider: add the rider first, then link the account to them
 with r as (
@@ -73,5 +75,6 @@ PowerSync stores data in its own database on the phone. The free Expo Go app doe
 - Receiving stock at a new cost price also updates that product's cost price.
 - **Delivery photos** are off at first. Admin turns them on in **More → Business settings**. When they're on, riders must take a photo before confirming a delivery. The photo is kept on the rider's phone and uploads to Supabase Storage (the private `delivery-photos` folder the migration files create) as soon as there's internet.
 - **Paying staff and riders** (More → Staff & pay) is saved as a "Staff pay" expense, so it counts in Finance and profit. Receipt photos on expenses go to the same private storage folder as delivery photos.
+- **Staff access** (More → Users & access) is checked twice: the app hides what a person can't use, and Supabase refuses changes they aren't allowed to make. Staff phones still download the business's data, so someone very technical could read hidden figures from their own phone's storage.
 - Every change is saved on the phone first. The badge at the top shows **Synced**, **Syncing**, or **Offline · N** (N changes still waiting to upload). Tap it to see them.
 - If the server refuses a change (for example, a rider trying something they aren't allowed to do), that change is dropped and the phone's copy is put back in line with the server.

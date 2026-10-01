@@ -8,12 +8,14 @@ import { periodOf, periodLabel, shortNaira } from '../lib/money';
 import { PAY_CATEGORY, payeeName, payroll } from '../lib/pay';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
+import { useAccess } from '../lib/useAccess';
 
 export default function StaffPay() {
   const { state } = useStore();
+  const acc = useAccess();
   const [tab, setTab] = useState<'staff' | 'history'>('staff');
 
-  if (state.session?.role !== 'admin') {
+  if (!acc.canView('staffpay')) {
     return (
       <View style={{ flex: 1 }}>
         <TopBar title="Staff & pay" back />
@@ -37,7 +39,13 @@ export default function StaffPay() {
   return (
     <View style={{ flex: 1 }}>
       <TopBar title="Staff & pay" back />
-      <Screen footer={<Button title="Add staff" kind="ghost" icon="plus" onPress={() => router.push('/add-staff')} />}>
+      <Screen
+        footer={
+          acc.isAdmin ? (
+            <Button title="Add staff" kind="ghost" icon="plus" onPress={() => router.push('/add-staff')} />
+          ) : undefined
+        }
+      >
         <Chips<'staff' | 'history'>
           full
           options={[
@@ -77,9 +85,11 @@ export default function StaffPay() {
                   <Muted>
                     Paid this month <Text style={st.bold}>{naira(p.paidThisMonth)}</Text>
                   </Muted>
-                  <Pressable onPress={() => router.push(`/pay?who=${p.id}`)} accessibilityRole="button" style={st.pay}>
-                    <Text style={st.payText}>Pay</Text>
-                  </Pressable>
+                  {acc.canEdit('staffpay') ? (
+                    <Pressable onPress={() => router.push(`/pay?who=${p.id}`)} accessibilityRole="button" style={st.pay}>
+                      <Text style={st.payText}>Pay</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               </View>
             ))}

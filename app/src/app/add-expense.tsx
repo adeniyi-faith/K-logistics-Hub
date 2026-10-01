@@ -11,11 +11,14 @@ import { dayLabel, naira } from '../lib/format';
 import { shiftDay } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
+import { useAccess } from '../lib/useAccess';
+import { NoAccess } from '../components/NoAccess';
 
 const toNumber = (t: string) => Number(t.replace(/[^\d]/g, '')) || 0;
 
 export default function AddExpense() {
   const { state, mode, addExpense } = useStore();
+  const acc = useAccess();
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<string>('Fuel');
   const [frequency, setFrequency] = useState<Frequency>('daily');
@@ -63,6 +66,8 @@ export default function AddExpense() {
     });
     router.back();
   };
+
+  if (!acc.canEdit('expenses')) return <NoAccess title="Add expense" />;
 
   return (
     <View style={{ flex: 1 }}>

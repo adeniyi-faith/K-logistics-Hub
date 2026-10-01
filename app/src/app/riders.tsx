@@ -9,14 +9,15 @@ import { bikeParts, riderNow } from '../lib/riders';
 import { riderDay } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
+import { useAccess } from '../lib/useAccess';
 
 export default function Riders() {
   const { state } = useStore();
+  const acc = useAccess();
   const [tab, setTab] = useState<'riders' | 'bikes'>('riders');
   const [search, setSearch] = useState('');
-  const isAdmin = state.session?.role === 'admin';
 
-  if (state.session?.role === 'rider') {
+  if (!acc.canView('riders')) {
     return (
       <View style={{ flex: 1 }}>
         <TopBar title="Riders & bikes" back />
@@ -38,7 +39,9 @@ export default function Riders() {
       <TopBar title="Riders & bikes" back />
       <Screen
         footer={
-          isAdmin ? <Button title="Add rider" kind="accent" icon="plus" onPress={() => router.push('/add-rider')} /> : undefined
+          acc.canEdit('riders') ? (
+            <Button title="Add rider" kind="accent" icon="plus" onPress={() => router.push('/add-rider')} />
+          ) : undefined
         }
       >
         <Chips<'riders' | 'bikes'>

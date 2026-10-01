@@ -9,6 +9,7 @@ import { itemsText, paymentText } from '../../lib/sales';
 import { notSynced, orderTotal } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
+import { useAccess } from '../../lib/useAccess';
 
 /** "0803 111 2233" -> "2348031112233" for WhatsApp links. */
 function waNumber(phone: string): string {
@@ -20,6 +21,7 @@ function waNumber(phone: string): string {
 export default function OrderDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state } = useStore();
+  const acc = useAccess();
   const o = state.orders.find((x) => x.id === id);
   if (!o) {
     return (
@@ -68,13 +70,15 @@ export default function OrderDetail() {
             <View style={{ flex: 1 }}>
               <Button title="Share on WhatsApp" kind="ghost" icon="share" onPress={share} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Button
-                title={`New order${rider ? ` with ${rider.name.split(' ')[0]}` : ''}`}
-                kind="accent"
-                onPress={() => router.push(`/new-sale?customer=${o.customerId}&rider=${o.riderId}`)}
-              />
-            </View>
+            {acc.canEdit('sales') ? (
+              <View style={{ flex: 1 }}>
+                <Button
+                  title={`New order${rider ? ` with ${rider.name.split(' ')[0]}` : ''}`}
+                  kind="accent"
+                  onPress={() => router.push(`/new-sale?customer=${o.customerId}&rider=${o.riderId}`)}
+                />
+              </View>
+            ) : null}
           </View>
         }
       >

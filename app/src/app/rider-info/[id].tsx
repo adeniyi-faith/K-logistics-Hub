@@ -9,16 +9,17 @@ import { periodOf, riderDays } from '../../lib/money';
 import { bikeParts, riderNow, riderOwed } from '../../lib/riders';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
+import { useAccess } from '../../lib/useAccess';
 
 /** One rider, as Admin and Staff see them. */
 export default function RiderInfo() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, updateRider } = useStore();
+  const acc = useAccess();
   const r = state.riders.find((x) => x.id === id);
   const [rate, setRate] = useState(r ? String(r.ratePerDelivery) : '');
-  const isAdmin = state.session?.role === 'admin';
 
-  if (!r || state.session?.role === 'rider') {
+  if (!r || !acc.canView('riders')) {
     return (
       <View style={{ flex: 1 }}>
         <TopBar title="Rider" back />
@@ -55,14 +56,14 @@ export default function RiderInfo() {
           <View style={{ flex: 1 }}>
             <Button title="See earnings" kind="ghost" icon="wallet" onPress={() => router.push('/rider-earnings')} />
           </View>
-          {isAdmin ? (
+          {acc.canEdit('staffpay') ? (
             <View style={{ flex: 1 }}>
               <Button title="Pay rider" kind="primary" icon="cash" onPress={() => router.push(`/pay?who=${r.id}`)} />
             </View>
           ) : null}
         </View>
 
-        {isAdmin ? (
+        {acc.canEdit('riders') ? (
           <Card>
             <H2>Status</H2>
             <Chips<RiderStatus>
@@ -91,7 +92,7 @@ export default function RiderInfo() {
           <Row title="Pay per delivery" right={naira(r.ratePerDelivery)} />
         </Card>
 
-        {isAdmin ? (
+        {acc.canEdit('riders') ? (
           <Card>
             <H2>Change pay per delivery</H2>
             <Field label="Pay per delivery" value={rate} onChangeText={setRate} keyboardType="number-pad" />
