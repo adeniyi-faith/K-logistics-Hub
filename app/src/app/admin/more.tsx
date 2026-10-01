@@ -21,6 +21,27 @@ export default function More() {
             onPress={() => router.push('/day-record')}
           />
           <Row
+            lead={<IconTile name="receipt" />}
+            title="Expenses"
+            sub="Fuel, repairs, pay"
+            rightSub={<Icon name="chev" color={colors.muted} />}
+            onPress={() => router.push('/expenses')}
+          />
+          <Row
+            lead={<IconTile name="chart" />}
+            title="Finance"
+            sub="Profit by day, week and month"
+            rightSub={<Icon name="chev" color={colors.muted} />}
+            onPress={() => router.push('/finance')}
+          />
+          <Row
+            lead={<IconTile name="wallet" />}
+            title="Rider earnings"
+            sub="Each rider, day by day"
+            rightSub={<Icon name="chev" color={colors.muted} />}
+            onPress={() => router.push('/rider-earnings')}
+          />
+          <Row
             lead={<IconTile name="sliders" />}
             title="Business settings"
             sub="Delivery photo on or off"
@@ -28,7 +49,7 @@ export default function More() {
             onPress={() => router.push('/settings')}
           />
         </Card>
-        <ComingNext what="Expenses, Staff & pay, Riders & bikes, Finance, Reports and Users & access." />
+        <ComingNext what="Reports, Staff & pay, Riders & bikes, and Users & access." />
         <SignedInMenu />
       </Screen>
     </View>

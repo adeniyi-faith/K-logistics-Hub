@@ -1,7 +1,7 @@
 // Sample data so the app has something to show before the online database exists.
 // Products are the real list from the design. Prices, stock and orders are made up:
 // the cost price (₦14,000) and rider pay (₦5,000 per delivery) are placeholders.
-import { AppState, Customer, Order, Product, StockMove } from './types';
+import { AppState, Customer, Expense, Order, Product, StockMove } from './types';
 
 const P = (
   id: string,
@@ -142,6 +142,39 @@ export function sampleState(day: string): AppState {
     [0, 19, 'c3', 'r1', [['p20', 2]], 'on_delivery', '10:30'],
   ];
 
+  // [daysAgo, category, note, amount, frequency, bike?]
+  type ExpenseSeed = [number, string, string, number, Expense['frequency'], string?];
+  const expenseSeeds: ExpenseSeed[] = [
+    [0, 'Fuel', 'Fuel for 3 bikes', 18000, 'daily'],
+    [0, 'Repairs', 'Brake pads', 15500, 'one_time', 'Bike 2'],
+    [0, 'Packaging', 'Nylon and tape', 6500, 'daily'],
+    [1, 'Fuel', 'Fuel for 3 bikes', 18000, 'daily'],
+    [1, 'Transport', 'Supplier pickup', 20000, 'daily'],
+    [2, 'Fuel', 'Fuel for 3 bikes', 17000, 'daily'],
+    [2, 'Staff pay', 'Weekly pay, store keeper', 25000, 'weekly'],
+    [3, 'Fuel', 'Fuel for 2 bikes', 12000, 'daily'],
+    [3, 'Packaging', 'Cartons', 8000, 'daily'],
+    [5, 'Fuel', 'Fuel for 3 bikes', 18000, 'daily'],
+    [6, 'Bike care', 'Oil change', 9000, 'monthly', 'Bike 1'],
+    [9, 'Staff pay', 'Weekly pay, store keeper', 25000, 'weekly'],
+    [12, 'Fuel', 'Fuel for 3 bikes', 18000, 'daily'],
+    [16, 'Staff pay', 'Weekly pay, store keeper', 25000, 'weekly'],
+    [20, 'Repairs', 'Clutch', 35000, 'one_time', 'Bike 3'],
+    [30, 'Staff pay', 'Monthly pay, manager', 150000, 'monthly'],
+    [31, 'Bike care', 'Service all bikes', 25000, 'monthly'],
+  ];
+  const expenses: Expense[] = expenseSeeds.map(([ago, category, note, amount, frequency, bike], i) => ({
+    id: `e${i + 1}`,
+    day: before(ago),
+    category,
+    note,
+    amount,
+    frequency,
+    bike,
+    at: at(before(ago), '17:00'),
+    by: 'Kasim',
+  }));
+
   const orders: Order[] = seeds.map(([ago, n, customerId, riderId, items, payment, taken, delivered, receivedBy]) => {
     const d = before(ago);
     const c = byId.get(customerId)!;
@@ -244,11 +277,7 @@ export function sampleState(day: string): AppState {
     riders,
     customers,
     orders,
-    expenses: [
-      { id: 'e1', day, category: 'Fuel', note: 'Fuel for 3 bikes', amount: 18000 },
-      { id: 'e2', day, category: 'Bike repairs', note: 'Brake pads, Bike 2', amount: 15500 },
-      { id: 'e3', day, category: 'Data & airtime', note: 'Office data', amount: 8000 },
-    ],
+    expenses,
     pending: [],
   };
 }

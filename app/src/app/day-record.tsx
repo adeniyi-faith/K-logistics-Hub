@@ -84,7 +84,7 @@ export default function DayRecord() {
           <H2>Money</H2>
           <Row first title="Total sales" right={naira(money.sales)} />
           <Row title="Cost of goods sold" right={naira(money.costOfGoods)} />
-          <Row title="Expenses" right={naira(money.expenses)} />
+          <Row title="Expenses" right={naira(money.expenses)} onPress={() => router.push('/expenses')} />
           <Row title="Profit" right={naira(money.profit)} />
         </Card>
 
