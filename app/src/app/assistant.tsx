@@ -50,11 +50,6 @@ export default function Assistant() {
           contentContainerStyle={st.list}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={st.demo}>
-            <Icon name="alert" size={16} color={colors.orangeText} />
-            <Text style={st.demoText}>Demo: answers are worked out from the sample data. Gemini will answer for real later.</Text>
-          </View>
-
           {messages.length === 0 ? (
             <View style={st.welcome}>
               <View style={st.welcomeIcon}>
@@ -174,16 +169,6 @@ function AiBubble({ answer }: { answer: Answer }) {
 
 const st = StyleSheet.create({
   list: { padding: 16, gap: 14, paddingBottom: 20 },
-  demo: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-    backgroundColor: colors.orangeBg,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  demoText: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.orangeText },
   welcome: { alignItems: 'center', gap: 8, paddingTop: 16 },
   welcomeIcon: {
     width: 64,
