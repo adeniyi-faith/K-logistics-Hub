@@ -15,7 +15,7 @@ npm start        # shows a QR code: scan it with the Expo Go app on your phone
 
 Without any setup the app runs in **demo mode**: on the sign-in screen, tap **Admin** or **Rider** under "Demo" to open the app as that person, with sample data kept on the phone.
 
-To use the real, synced app (real accounts, data shared between phones), follow [docs/SETUP.md](../docs/SETUP.md) to connect Supabase and PowerSync. The synced app runs on Android and iPhone; the browser version stays in demo mode for now.
+To use the real, synced app (real accounts, data shared between phones), follow [docs/SETUP.md](../docs/SETUP.md) to connect Supabase. The synced app runs on Android and iPhone; the browser version stays in demo mode for now.
 
 ## What works now
 
@@ -53,7 +53,7 @@ Everything is saved on the phone, so it keeps working with no internet. In demo 
 ## Build plan
 
 1. **First screens (done).** Sign-in, Admin home, Stock, Product detail, Receive stock, and the rider's deliveries, confirm delivery and history.
-2. **Online database and real sign-in (Supabase + PowerSync, chosen 1 Oct 2026).** Supabase is the online database: it holds the shared data, the user accounts (sign-in) and the delivery photos. PowerSync keeps a full copy of that data on each phone and uploads or downloads changes whenever there is internet, so the app keeps working offline. Done in code: the database tables and access rules (`supabase/`), the sync rules (`powersync/`), real sign-in, and the app reading and writing through PowerSync. Still to do: create the Supabase and PowerSync accounts and test on a real phone (see docs/SETUP.md). Note: PowerSync needs its own phone build of the app (a "development build"), so the plain Expo Go app will no longer be enough to try it on a phone. The browser version keeps working.
+2. **Online database and real sign-in (Supabase, with our own sync; PowerSync was tried first and replaced on 1 Oct 2026).** Supabase is the online database: it holds the shared data, the user accounts (sign-in) and the delivery photos. The app keeps a full copy of its data in a database on the phone (`expo-sqlite`) and uploads or downloads changes whenever there is internet, so it keeps working offline. Done in code: the database tables and access rules (`supabase/`), real sign-in, and the sync (`src/live/sync.ts`). Still to do: create the Supabase project and test on a real phone (see docs/SETUP.md). Note: the sync needs its own phone build of the app (a "development build"), so the plain Expo Go app may not be enough to try it on a phone. The browser version keeps working.
 3. **Sales and customers (done).** New sale (with the customer's usual rider), Orders list, Delivered orders, Delivery proof with WhatsApp sharing and the delivery photo, Customers and Customer profile. No signature (the business doesn't want one).
 4. **Daily record and close the day (done).** The daily record page, closing stock becoming tomorrow's opening stock, and the last-5-days history on each product. Reopening a closed day is not built yet.
 5. **Money (done).** Expenses with receipt photos, Finance (day/week/month), Rider earnings, Riders & bikes, Add a rider, Staff & pay, and Reports with PDF/Excel export. Not built: photos of a rider and their ID, and saved reports.
@@ -71,8 +71,7 @@ Everything is saved on the phone, so it keeps working with no internet. In demo 
 - `src/app/` – one file per screen (the file path is the screen's address, e.g. `src/app/admin/stock.tsx` is `/admin/stock`).
 - `src/components/` – shared pieces such as buttons, cards and the sync badge.
 - `src/lib/stock.ts` – the automatic sums (stock, profit, rider earnings).
-- `src/store/AppStore.tsx` – the app's memory: live mode (Supabase + PowerSync) or demo mode.
-- `src/live/` – the Supabase and PowerSync connection (`engine.native.ts` is used on phones).
+- `src/store/AppStore.tsx` – the app's memory: live mode (Supabase + our own sync) or demo mode.
+- `src/live/` – the Supabase connection and the sync (`engine.native.ts` is used on phones; `sync.ts` and `schema.ts` hold the sync logic).
 - `../supabase/` – the online database tables, access rules and starting products.
-- `../powersync/sync-rules.yaml` – which data each phone downloads.
 - `src/data/sample.ts` – the sample products, riders and orders.
