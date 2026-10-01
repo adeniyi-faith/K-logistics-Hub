@@ -10,7 +10,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 
 import { sampleState } from '../data/sample';
 import { AppState, Role, Settings } from '../data/types';
-import { naira, today } from '../lib/format';
+import { initialsOf, naira, today } from '../lib/format';
 import { liveAvailable } from '../live/config';
 import { createLiveEngine } from '../live/engine';
 import {
@@ -21,14 +21,16 @@ import {
   Phase,
   PriceInput,
   ReceiveInput,
+  RiderInput,
   SaleInput,
+  StaffInput,
   SyncInfo,
 } from '../live/types';
 import { uuid } from '../lib/id';
 import { nextOrderCode } from '../lib/sales';
 import { closingStock, nextDay } from '../lib/stock';
 
-const KEY = 'klh-state-v6';
+const KEY = 'klh-state-v7';
 
 export type Store = {
   mode: 'demo' | 'live';
@@ -51,6 +53,11 @@ export type Store = {
   updateSettings: (settings: Settings) => void;
   /** Admin and Staff: write down money spent. */
   addExpense: (input: ExpenseInput) => void;
+  /** Admin: saves a new rider and returns their id. */
+  addRider: (input: RiderInput) => Promise<string>;
+  updateRider: (id: string, changes: Partial<RiderInput>) => void;
+  addStaff: (input: StaffInput) => void;
+  updateStaff: (id: string, changes: Partial<StaffInput>) => void;
   /** Something the app can show for a delivery photo, or null when it can't be loaded now. */
   photoUrl: (photo: string) => Promise<string | null>;
   /** Demo only: put the sample data back the way it started. */
@@ -100,6 +107,10 @@ function LiveProvider({ children }: { children: ReactNode }) {
       closeDay: () => report(e.closeDay()),
       updateSettings: (settings) => report(e.updateSettings(settings)),
       addExpense: (input) => report(e.addExpense(input)),
+      addRider: e.addRider,
+      updateRider: (id, changes) => report(e.updateRider(id, changes)),
+      addStaff: (input) => report(e.addStaff(input)),
+      updateStaff: (id, changes) => report(e.updateStaff(id, changes)),
       photoUrl: e.photoUrl,
       resetDemo: () => {},
     };
@@ -309,6 +320,40 @@ function DemoProvider({ children }: { children: ReactNode }) {
             ],
           };
         }),
+      addRider: async (input) => {
+        const id = newId('r');
+        update((s) => ({
+          ...s,
+          riders: [...s.riders, { ...input, id, initials: initialsOf(input.name) }],
+          pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: `New rider ${input.name}`, ref: id }],
+        }));
+        return id;
+      },
+      updateRider: (id, changes) =>
+        update((s) => ({
+          ...s,
+          riders: s.riders.map((r) =>
+            r.id === id ? { ...r, ...changes, initials: changes.name ? initialsOf(changes.name) : r.initials } : r,
+          ),
+          pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: 'Rider details', ref: id }],
+        })),
+      addStaff: (input) =>
+        update((s) => {
+          const id = newId('s');
+          return {
+            ...s,
+            staff: [...s.staff, { ...input, id, initials: initialsOf(input.name) }],
+            pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: `New staff ${input.name}`, ref: id }],
+          };
+        }),
+      updateStaff: (id, changes) =>
+        update((s) => ({
+          ...s,
+          staff: s.staff.map((x) =>
+            x.id === id ? { ...x, ...changes, initials: changes.name ? initialsOf(changes.name) : x.initials } : x,
+          ),
+          pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: 'Staff details', ref: id }],
+        })),
       // Demo photos stay on this phone, so the saved address can be shown as it is.
       photoUrl: async (photo) => photo,
       resetDemo: () => setState({ ...sampleState(today()), session: state.session }),

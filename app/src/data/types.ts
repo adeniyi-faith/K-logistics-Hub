@@ -34,14 +34,43 @@ export type StockMove = {
   orderId?: string;
 };
 
+/** active: can be given deliveries. The app shows "On delivery" or "Available" from their orders. */
+export type RiderStatus = 'active' | 'off_duty' | 'bike_repair';
+
 export type Rider = {
   id: string;
   name: string;
   initials: string;
   phone: string;
+  /** Bike name and plate, e.g. "Bike 1 · PHC-234KA". */
   bike: string;
   /** Pay per completed delivery (₦5,000 in the design, to be confirmed). */
   ratePerDelivery: number;
+  status: RiderStatus;
+  /** The day the status last changed, "YYYY-MM-DD". */
+  statusSince?: string;
+  address?: string;
+  bikeModel?: string;
+  bikeColour?: string;
+  /** NIN slip, driver's licence, voter's card or passport. */
+  idType?: string;
+  idNumber?: string;
+  /** Day they joined, "YYYY-MM-DD". */
+  joined?: string;
+};
+
+/** Someone on the payroll who is not a rider (riders are paid per delivery). */
+export type Staff = {
+  id: string;
+  name: string;
+  initials: string;
+  /** Their job, e.g. "Manager" or "Store keeper". */
+  job: string;
+  phone: string;
+  /** Pay for each month or week. */
+  pay: number;
+  payEvery: 'month' | 'week';
+  active: boolean;
 };
 
 export type Customer = {
@@ -132,6 +161,10 @@ export type Expense = {
   /** When it was written down, and by whom. */
   at: string;
   by: string;
+  /** For pay: the staff member or rider who was paid. */
+  payee?: string;
+  /** Receipt photo: a file on this phone, or its name in online storage. */
+  receipt?: string;
 };
 
 /** A change saved on this phone that has not been uploaded yet. */
@@ -148,6 +181,7 @@ export type AppState = {
   openings: Record<string, Record<string, number>>;
   moves: StockMove[];
   riders: Rider[];
+  staff: Staff[];
   customers: Customer[];
   orders: Order[];
   expenses: Expense[];

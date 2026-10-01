@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Icon } from '../components/Icon';
 import { Button, Chips, Field, Muted, Screen, TopBar } from '../components/ui';
 import { EXPENSE_CATEGORIES, Frequency, FREQUENCIES } from '../data/types';
 import { categoryIcon } from '../lib/expenses';
+import { takeDeliveryPhoto } from '../lib/photo';
 import { dayLabel, naira } from '../lib/format';
 import { shiftDay } from '../lib/stock';
 import { useStore } from '../store/AppStore';
@@ -14,7 +15,7 @@ import { colors, fonts } from '../theme';
 const toNumber = (t: string) => Number(t.replace(/[^\d]/g, '')) || 0;
 
 export default function AddExpense() {
-  const { state, addExpense } = useStore();
+  const { state, mode, addExpense } = useStore();
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<string>('Fuel');
   const [frequency, setFrequency] = useState<Frequency>('daily');
@@ -22,6 +23,8 @@ export default function AddExpense() {
   const [day, setDay] = useState(state.day);
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
+  const [receipt, setReceipt] = useState<string | null>(null);
+  const [taking, setTaking] = useState(false);
 
   const bikes = [...new Set(state.riders.map((r) => r.bike.split(' · ')[0]).filter(Boolean))].sort();
   const days = [0, 1, 2, 3, 4, 5, 6].map((n) => shiftDay(state.day, -n));
@@ -33,10 +36,31 @@ export default function AddExpense() {
       set(v);
     };
 
+  const snap = async () => {
+    setTaking(true);
+    try {
+      const r = await takeDeliveryPhoto(mode === 'demo', 'receipt photos');
+      if (r && 'error' in r) setError(r.error);
+      else if (r) setReceipt(r.uri);
+    } catch {
+      setError('Could not take the photo. Please try again.');
+    } finally {
+      setTaking(false);
+    }
+  };
+
   const save = () => {
     if (n <= 0) return setError('Enter how much was spent.');
     if (category === 'Other' && !note.trim()) return setError('Write what the money was for.');
-    addExpense({ day, category, note: note.trim(), amount: n, frequency, bike: bike || undefined });
+    addExpense({
+      day,
+      category,
+      note: note.trim(),
+      amount: n,
+      frequency,
+      bike: bike || undefined,
+      receipt: receipt ?? undefined,
+    });
     router.back();
   };
 
@@ -119,6 +143,18 @@ export default function AddExpense() {
           onChangeText={change(setNote)}
           placeholder="e.g. Filled 4 bikes at the station"
         />
+
+        {receipt ? (
+          <View style={{ gap: 8 }}>
+            <Image source={{ uri: receipt }} style={st.receipt} resizeMode="cover" accessibilityLabel="Receipt photo" />
+            <Button title="Remove receipt photo" kind="danger" icon="x" onPress={() => setReceipt(null)} />
+          </View>
+        ) : (
+          <Pressable onPress={snap} disabled={taking} accessibilityRole="button" style={st.addReceipt}>
+            <Icon name="camera" size={20} color={colors.muted} />
+            <Text style={st.addReceiptText}>{taking ? 'Opening camera…' : 'Add receipt photo (optional)'}</Text>
+          </Pressable>
+        )}
       </Screen>
     </View>
   );
@@ -142,4 +178,18 @@ const st = StyleSheet.create({
   catOff: { borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white },
   catText: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.navy, textAlign: 'center' },
   error: { fontFamily: fonts.bodyBold, fontSize: 13, color: colors.red },
+  receipt: { width: '100%', aspectRatio: 3 / 4, borderRadius: 12, backgroundColor: colors.grayBg },
+  addReceipt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: 52,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.inputLine,
+    backgroundColor: colors.white,
+  },
+  addReceiptText: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.muted },
 });

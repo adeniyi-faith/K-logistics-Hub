@@ -1,4 +1,4 @@
-import { AppState, Expense, Order, Settings } from '../data/types';
+import { AppState, Expense, Order, Rider, Settings, Staff } from '../data/types';
 
 export type SyncInfo = {
   /** synced: all uploaded. offline: no connection. syncing: uploading or downloading now. */
@@ -34,7 +34,11 @@ export type SaleInput = {
   items: Order['items'];
 };
 
-export type ExpenseInput = Pick<Expense, 'day' | 'category' | 'note' | 'amount' | 'frequency' | 'bike'>;
+export type ExpenseInput = Pick<Expense, 'day' | 'category' | 'note' | 'amount' | 'frequency' | 'bike' | 'payee' | 'receipt'>;
+
+export type RiderInput = Omit<Rider, 'id' | 'initials'>;
+
+export type StaffInput = Omit<Staff, 'id' | 'initials'>;
 
 export type PriceInput = { productId: string; costPrice: number; sellPrice: number; lowAt: number };
 
@@ -52,7 +56,13 @@ export type LiveEngine = {
   /** Copies each product's closing stock into the next day as opening stock, and moves the business to that day. */
   closeDay: () => Promise<void>;
   updateSettings: (settings: Settings) => Promise<void>;
+  /** The receipt, if any, is a photo file on this phone. */
   addExpense: (input: ExpenseInput) => Promise<void>;
+  /** Saves a new rider and returns their id. */
+  addRider: (input: RiderInput) => Promise<string>;
+  updateRider: (id: string, changes: Partial<RiderInput>) => Promise<void>;
+  addStaff: (input: StaffInput) => Promise<void>;
+  updateStaff: (id: string, changes: Partial<StaffInput>) => Promise<void>;
   /** A web address or file the app can show for a delivery photo, or null when it can't be loaded now. */
   photoUrl: (photo: string) => Promise<string | null>;
 };

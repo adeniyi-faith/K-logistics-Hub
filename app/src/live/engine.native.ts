@@ -18,11 +18,11 @@ import {
 } from '@powersync/react-native';
 import { createClient, Session } from '@supabase/supabase-js';
 
-import { AppState, Customer, Order, PendingChange, Product, Rider, Role, StockMove } from '../data/types';
+import { AppState, Customer, Order, PendingChange, Product, Rider, Role, Staff, StockMove } from '../data/types';
 import { uuid } from '../lib/id';
 import { nextOrderCode } from '../lib/sales';
 import { closingStock, nextDay } from '../lib/stock';
-import { today } from '../lib/format';
+import { initialsOf, today } from '../lib/format';
 import { config } from './config';
 import { keepPhoto, localPhoto, uploadWaitingPhotos, BUCKET } from './photos';
 import { LiveEngine, LiveSnapshot, SyncInfo } from './types';
@@ -38,6 +38,23 @@ const schema = new Schema({
     phone: column.text,
     bike: column.text,
     rate_per_delivery: column.integer,
+    status: column.text,
+    status_since: column.text,
+    address: column.text,
+    bike_model: column.text,
+    bike_colour: column.text,
+    id_type: column.text,
+    id_number: column.text,
+    joined: column.text,
+  }),
+  staff: new Table({
+    name: column.text,
+    initials: column.text,
+    job: column.text,
+    phone: column.text,
+    pay: column.integer,
+    pay_every: column.text,
+    active: column.integer,
   }),
   profiles: new Table({ name: column.text, role: column.text, rider_id: column.text, can_sign_in: column.integer }),
   products: new Table({
@@ -109,6 +126,8 @@ const schema = new Schema({
     bike: column.text,
     at: column.text,
     by_name: column.text,
+    payee: column.text,
+    receipt_path: column.text,
   }),
 });
 
@@ -120,6 +139,8 @@ const LABELS: Record<string, string> = {
   customers: 'Customer',
   products: 'Product change',
   expenses: 'Expense',
+  riders: 'Rider',
+  staff: 'Staff',
   order_items: 'Order item',
   day_openings: 'Opening stock',
 };
@@ -229,6 +250,15 @@ export function createLiveEngine(): LiveEngine {
 
   const by = () => snap.state.session?.name ?? '';
   const now = () => new Date().toISOString();
+  /** Changes only the columns given a value. */
+  const updateRow = async (table: string, id: string, cols: Record<string, unknown>) => {
+    const set = Object.entries(cols).filter(([, v]) => v !== undefined);
+    if (!set.length) return;
+    await db.execute(`UPDATE ${table} SET ${set.map(([k]) => `${k} = ?`).join(', ')} WHERE id = ?`, [
+      ...set.map(([, v]) => v),
+      id,
+    ]);
+  };
 
   return {
     subscribe(listener) {
@@ -279,12 +309,75 @@ export function createLiveEngine(): LiveEngine {
     async updateSettings(settings) {
       await db.execute('UPDATE business SET require_photo = ?', [settings.requirePhoto ? 1 : 0]);
     },
-    async addExpense({ day, category, note, amount, frequency, bike }) {
+    async addExpense({ day, category, note, amount, frequency, bike, payee, receipt }) {
+      const id = uuid();
+      // Keep the receipt photo on the phone first; it uploads by itself when there's internet.
+      const receiptName = receipt ? await keepPhoto(id, receipt) : null;
       await db.execute(
-        `INSERT INTO expenses (id, day, category, note, amount, frequency, bike, at, by_name)
-         VALUES (uuid(), ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [day, category, note, amount, frequency, bike ?? null, now(), by()],
+        `INSERT INTO expenses (id, day, category, note, amount, frequency, bike, at, by_name, payee, receipt_path)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, day, category, note, amount, frequency, bike ?? null, now(), by(), payee ?? null, receiptName],
       );
+      if (receiptName) uploadWaitingPhotos(supabase).catch(() => {});
+    },
+    async addRider(input) {
+      const id = uuid();
+      const r = { ...input, initials: initialsOf(input.name) };
+      await db.execute(
+        `INSERT INTO riders (id, name, initials, phone, bike, rate_per_delivery, status, status_since, address, bike_model,
+         bike_colour, id_type, id_number, joined) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          id,
+          r.name,
+          r.initials,
+          r.phone,
+          r.bike,
+          r.ratePerDelivery,
+          r.status,
+          r.statusSince ?? null,
+          r.address ?? null,
+          r.bikeModel ?? null,
+          r.bikeColour ?? null,
+          r.idType ?? null,
+          r.idNumber ?? null,
+          r.joined ?? null,
+        ],
+      );
+      return id;
+    },
+    async updateRider(id, changes) {
+      const cols: Record<string, unknown> = {
+        name: changes.name,
+        initials: changes.name ? initialsOf(changes.name) : undefined,
+        phone: changes.phone,
+        bike: changes.bike,
+        rate_per_delivery: changes.ratePerDelivery,
+        status: changes.status,
+        status_since: changes.statusSince,
+        address: changes.address,
+        bike_model: changes.bikeModel,
+        bike_colour: changes.bikeColour,
+        id_type: changes.idType,
+        id_number: changes.idNumber,
+      };
+      await updateRow('riders', id, cols);
+    },
+    async addStaff(input) {
+      await db.execute(
+        'INSERT INTO staff (id, name, initials, job, phone, pay, pay_every, active) VALUES (uuid(), ?, ?, ?, ?, ?, ?, ?)',
+        [input.name, initialsOf(input.name), input.job, input.phone, input.pay, input.payEvery, input.active ? 1 : 0],
+      );
+    },
+    async updateStaff(id, changes) {
+      await updateRow('staff', id, {
+        name: changes.name,
+        initials: changes.name ? initialsOf(changes.name) : undefined,
+        job: changes.job,
+        phone: changes.phone,
+        pay: changes.pay,
+        pay_every: changes.payEvery,
+        active: changes.active === undefined ? undefined : changes.active ? 1 : 0,
+      });
     },
     async photoUrl(photo) {
       const local = localPhoto(photo);
@@ -386,6 +479,7 @@ function emptyState(): AppState {
     openings: {},
     moves: [],
     riders: [],
+    staff: [],
     customers: [],
     orders: [],
     expenses: [],
@@ -424,7 +518,7 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
     riderId: profile.rider_id ?? undefined,
   };
 
-  const [products, openings, moves, riders, customers, orders, items, expenses] = await Promise.all([
+  const [products, openings, moves, riders, customers, orders, items, expenses, staff] = await Promise.all([
     db.getAll<Row>('SELECT * FROM products WHERE active IS NULL OR active = 1 ORDER BY name'),
     db.getAll<Row>('SELECT day, product_id, opening FROM day_openings'),
     db.getAll<Row>('SELECT * FROM stock_moves'),
@@ -433,6 +527,7 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
     db.getAll<Row>('SELECT * FROM orders ORDER BY created_at'),
     db.getAll<Row>('SELECT * FROM order_items'),
     db.getAll<Row>('SELECT * FROM expenses'),
+    db.getAll<Row>('SELECT * FROM staff ORDER BY name'),
   ]);
 
   state.products = products.map(
@@ -475,6 +570,26 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
       phone: r.phone ?? '',
       bike: r.bike ?? '',
       ratePerDelivery: r.rate_per_delivery ?? 0,
+      status: r.status ?? 'active',
+      statusSince: r.status_since ?? undefined,
+      address: r.address ?? undefined,
+      bikeModel: r.bike_model ?? undefined,
+      bikeColour: r.bike_colour ?? undefined,
+      idType: r.id_type ?? undefined,
+      idNumber: r.id_number ?? undefined,
+      joined: r.joined ?? undefined,
+    }),
+  );
+  state.staff = staff.map(
+    (x): Staff => ({
+      id: x.id,
+      name: x.name ?? '',
+      initials: x.initials ?? '',
+      job: x.job ?? '',
+      phone: x.phone ?? '',
+      pay: x.pay ?? 0,
+      payEvery: x.pay_every === 'week' ? 'week' : 'month',
+      active: x.active === null || x.active === undefined ? true : Boolean(x.active),
     }),
   );
   state.customers = customers.map(
@@ -527,6 +642,8 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
     bike: e.bike ?? undefined,
     at: e.at ?? '',
     by: e.by_name ?? '',
+    payee: e.payee ?? undefined,
+    receipt: e.receipt_path ?? undefined,
   }));
 
   return { phase: 'ready', state, sync };

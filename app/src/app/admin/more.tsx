@@ -28,6 +28,20 @@ export default function More() {
             onPress={() => router.push('/expenses')}
           />
           <Row
+            lead={<IconTile name="users" />}
+            title="Staff & pay"
+            sub="Salaries and payments"
+            rightSub={<Icon name="chev" color={colors.muted} />}
+            onPress={() => router.push('/staff-pay')}
+          />
+          <Row
+            lead={<IconTile name="bike" />}
+            title="Riders & bikes"
+            sub="Riders, bikes and earnings"
+            rightSub={<Icon name="chev" color={colors.muted} />}
+            onPress={() => router.push('/riders')}
+          />
+          <Row
             lead={<IconTile name="chart" />}
             title="Finance"
             sub="Profit by day, week and month"
@@ -35,11 +49,11 @@ export default function More() {
             onPress={() => router.push('/finance')}
           />
           <Row
-            lead={<IconTile name="wallet" />}
-            title="Rider earnings"
-            sub="Each rider, day by day"
+            lead={<IconTile name="file" />}
+            title="Reports"
+            sub="Filter, then save as PDF or Excel"
             rightSub={<Icon name="chev" color={colors.muted} />}
-            onPress={() => router.push('/rider-earnings')}
+            onPress={() => router.push('/reports')}
           />
           <Row
             lead={<IconTile name="sliders" />}
@@ -49,7 +63,7 @@ export default function More() {
             onPress={() => router.push('/settings')}
           />
         </Card>
-        <ComingNext what="Reports, Staff & pay, Riders & bikes, and Users & access." />
+        <ComingNext what="Users & access, and the staff app where each person only sees what Admin allows." />
         <SignedInMenu />
       </Screen>
     </View>
