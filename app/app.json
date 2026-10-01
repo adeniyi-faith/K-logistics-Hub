@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "K-Logistics Hub",
+    "name": "K-logistics Hub",
     "slug": "k-logistics-hub",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,10 +15,9 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0F1E3B",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundImage": "./assets/android-icon-background.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.klogistics.hub"
@@ -32,7 +31,7 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": "K-Logistics Hub uses the camera for delivery photos, receipt photos and your profile photo.",
+          "cameraPermission": "K-logistics Hub uses the camera for delivery photos, receipt photos and your profile photo.",
           "photosPermission": false,
           "microphonePermission": false
         }
