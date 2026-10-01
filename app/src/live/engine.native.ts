@@ -24,6 +24,7 @@ import { nextOrderCode } from '../lib/sales';
 import { closingStock, nextDay } from '../lib/stock';
 import { today } from '../lib/format';
 import { config } from './config';
+import { connectAssistant } from './assistant';
 import { keepPhoto, localPhoto, uploadWaitingPhotos, BUCKET } from './photos';
 import { LiveEngine, LiveSnapshot, SyncInfo } from './types';
 
@@ -124,6 +125,7 @@ export function createLiveEngine(): LiveEngine {
   const supabase = createClient(config.supabaseUrl, config.supabaseAnonKey, {
     auth: { storage: AsyncStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
   });
+  connectAssistant(supabase);
 
   const connector: PowerSyncBackendConnector = {
     fetchCredentials: async () => {

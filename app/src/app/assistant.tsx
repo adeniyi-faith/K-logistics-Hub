@@ -1,5 +1,6 @@
 // AI Assistant: ask anything about the business in plain English.
-// In this demo the answers come from src/lib/assistant.ts; the real version will ask Gemini.
+// The synced app asks Gemini (src/live/assistant.ts). Demo mode has no Gemini, so it answers
+// common questions itself from the sample data (src/lib/assistant.ts).
 import { Href, Redirect, router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -9,31 +10,47 @@ import { AiIcon } from '../components/AskAiButton';
 import { Icon } from '../components/Icon';
 import { TopBar } from '../components/ui';
 import { Answer, demoAnswer, SUGGESTIONS } from '../lib/assistant';
+import { askGemini, Turn } from '../live/assistant';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
 
-type Message = { id: number; from: 'you' | 'ai'; text: string; answer?: Answer };
+type Message = { id: number; from: 'you' | 'ai'; text: string; answer?: Answer; failed?: boolean };
 
 export default function Assistant() {
-  const { state } = useStore();
+  const { state, mode } = useStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState('');
   const [thinking, setThinking] = useState(false);
   const scroll = useRef<ScrollView>(null);
   const nextId = useRef(1);
+  // The conversation so far in Gemini's own shape, so follow-up questions make sense to it.
+  const history = useRef<Turn[]>([]);
 
   if (state.session?.role !== 'admin') return <Redirect href="/" />;
 
-  const ask = (question: string) => {
+  const say = (answer: Answer, failed?: boolean) =>
+    setMessages((m) => [...m, { id: nextId.current++, from: 'ai', text: answer.text, answer, failed }]);
+
+  const ask = async (question: string) => {
     const q = question.trim();
     if (!q || thinking) return;
     setDraft('');
     setMessages((m) => [...m, { id: nextId.current++, from: 'you', text: q }]);
     setThinking(true);
-    // A short pause so it feels like the real thing, which takes a moment to answer.
+    if (mode === 'live') {
+      try {
+        const reply = await askGemini(state, history.current, q);
+        history.current = reply.history;
+        say({ text: reply.text });
+      } catch (e) {
+        say({ text: e instanceof Error ? e.message : 'The AI Assistant could not answer right now. Please try again.' }, true);
+      }
+      setThinking(false);
+      return;
+    }
+    // Demo: a short pause so it feels like the real thing, which takes a moment to answer.
     setTimeout(() => {
-      const answer = demoAnswer(state, q);
-      setMessages((m) => [...m, { id: nextId.current++, from: 'ai', text: answer.text, answer }]);
+      say(demoAnswer(state, q));
       setThinking(false);
     }, 700);
   };
@@ -69,7 +86,11 @@ export default function Assistant() {
           ) : null}
 
           {messages.map((m) =>
-            m.from === 'you' ? <YourBubble key={m.id} text={m.text} /> : <AiBubble key={m.id} answer={m.answer!} />,
+            m.from === 'you' ? (
+              <YourBubble key={m.id} text={m.text} />
+            ) : (
+              <AiBubble key={m.id} answer={m.answer!} failed={m.failed} />
+            ),
           )}
 
           {thinking ? (
@@ -136,14 +157,14 @@ function YourBubble({ text }: { text: string }) {
   );
 }
 
-function AiBubble({ answer }: { answer: Answer }) {
+function AiBubble({ answer, failed }: { answer: Answer; failed?: boolean }) {
   return (
     <View style={st.aiRow}>
       <View style={st.aiAvatar}>
         <AiIcon name="spark" size={16} color={colors.orange} />
       </View>
       <View style={st.aiBubble}>
-        <Text style={st.aiText}>{answer.text}</Text>
+        <Text style={[st.aiText, failed && { color: colors.red }]}>{answer.text}</Text>
         {answer.facts?.length ? (
           <View style={st.facts}>
             {answer.facts.map((f, i) => (
