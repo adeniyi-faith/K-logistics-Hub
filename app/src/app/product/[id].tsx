@@ -2,8 +2,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button, Card, H2, LinkText, Muted, Row, Screen, TopBar } from '../../components/ui';
-import { count, naira } from '../../lib/format';
-import { stockFor } from '../../lib/stock';
+import { count, dayLabel, naira } from '../../lib/format';
+import { shiftDay, stockFor } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
 
@@ -75,6 +75,30 @@ export default function ProductDetail() {
           <Row title="Nearest expiry" right={latest ? `${latest.expiry} · batch ${latest.batch}` : 'Not recorded'} />
           <Row title="Warn me below" right={count(p.lowAt, p.unit)} />
         </Card>
+
+        <Card>
+          <H2 right={<LinkText onPress={() => router.push('/day-record')}>Full history</LinkText>}>Last 5 days</H2>
+          <View style={st.tr}>
+            <Text style={[st.th, { flex: 1, textAlign: 'left' }]}>Day</Text>
+            <Text style={st.th}>Open</Text>
+            <Text style={st.th}>In</Text>
+            <Text style={st.th}>Out</Text>
+            <Text style={st.th}>Close</Text>
+          </View>
+          {[0, 1, 2, 3, 4].map((n) => {
+            const day = shiftDay(state.day, -n);
+            const l = stockFor(state, p.id, day);
+            return (
+              <View key={day} style={st.tr}>
+                <Text style={[st.td, { flex: 1, textAlign: 'left' }]}>{dayLabel(day).slice(0, 5)}</Text>
+                <Text style={st.td}>{l.opening}</Text>
+                <Text style={st.td}>+{l.received}</Text>
+                <Text style={st.td}>−{l.delivered}</Text>
+                <Text style={[st.td, { fontFamily: fonts.bodyBold }]}>{l.closing}</Text>
+              </View>
+            );
+          })}
+        </Card>
       </Screen>
     </View>
   );
@@ -90,6 +114,9 @@ function Part({ label, value, strong }: { label: string; value: number; strong?:
 }
 
 const st = StyleSheet.create({
+  tr: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 30 },
+  th: { width: 48, textAlign: 'right', fontFamily: fonts.bodyBold, fontSize: 12, color: colors.muted },
+  td: { width: 48, textAlign: 'right', fontFamily: fonts.body, fontSize: 14, color: colors.navy },
   sum: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingVertical: 8 },
   op: { fontFamily: fonts.head, fontSize: 18, color: colors.muted, paddingBottom: 2 },
   partLabel: { fontFamily: fonts.bodyBold, fontSize: 10, color: colors.muted, letterSpacing: 0.4 },

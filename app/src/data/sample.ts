@@ -166,6 +166,7 @@ export function sampleState(day: string): AppState {
       ...(delivered
         ? {
             deliveredAt: at(d, delivered),
+            deliveredDay: d,
             receivedBy,
             collected:
               payment === 'transfer' ? { method: 'paid_before' as const, amount: 0 } : { method: 'cash' as const, amount: total },
@@ -216,12 +217,28 @@ export function sampleState(day: string): AppState {
     }
   }
 
+  // Work out earlier days' opening stock backwards: yesterday's closing is today's opening,
+  // so yesterday's opening = today's opening − yesterday's received + yesterday's delivered.
+  const openings: AppState['openings'] = { [day]: opening };
+  for (let k = 1; k <= 7; k++) {
+    const d = before(k);
+    const later = openings[before(k - 1)];
+    openings[d] = Object.fromEntries(
+      products.map((p) => {
+        const net = moves
+          .filter((m) => m.day === d && m.productId === p.id)
+          .reduce((s, m) => s + (m.kind === 'received' ? m.qty : -m.qty), 0);
+        return [p.id, later[p.id] - net];
+      }),
+    );
+  }
+
   return {
     version: 1,
     day,
     session: null,
     products,
-    opening,
+    openings,
     moves,
     riders,
     customers,

@@ -45,4 +45,6 @@ export type LiveEngine = {
   updatePrices: (input: PriceInput) => Promise<void>;
   /** Saves a new sale and returns its id. */
   createSale: (input: SaleInput) => Promise<string>;
+  /** Copies each product's closing stock into the next day as opening stock, and moves the business to that day. */
+  closeDay: () => Promise<void>;
 };
