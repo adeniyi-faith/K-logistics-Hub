@@ -44,8 +44,19 @@ export function greeting(): string {
   return 'Good evening';
 }
 
-/** (3, "box") -> "3 boxes", (1, "bottle") -> "1 bottle" */
+/** (3, "box") -> "3 boxes", (2, "delivery") -> "2 deliveries", (1, "bottle") -> "1 bottle" */
 export function count(n: number, unit: string): string {
   if (n === 1) return `${n} ${unit}`;
+  if (/[^aeiou]y$/.test(unit)) return `${n} ${unit.slice(0, -1)}ies`;
   return `${n} ${/(x|s|ch|sh)$/.test(unit) ? `${unit}es` : `${unit}s`}`;
+}
+
+/** "Emeka Obi" -> "EO" */
+export function initialsOf(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .join('');
 }

@@ -7,13 +7,16 @@ import { Platform } from 'react-native';
  * asDataUri: return the picture inside the text itself (used in demo mode, where photos stay on the phone).
  * Returns null if the person cancels, or a message if the camera isn't allowed.
  */
-export async function takeDeliveryPhoto(asDataUri: boolean): Promise<{ uri: string } | { error: string } | null> {
+export async function takeDeliveryPhoto(
+  asDataUri: boolean,
+  what = 'delivery photos',
+): Promise<{ uri: string } | { error: string } | null> {
   let result: ImagePicker.ImagePickerResult;
   if (Platform.OS === 'web') {
     result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
   } else {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) return { error: 'Allow the camera for K-Logistics Hub in your phone settings to take delivery photos.' };
+    if (!perm.granted) return { error: `Allow the camera for K-Logistics Hub in your phone settings to take ${what}.` };
     result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 });
   }
   if (result.canceled || !result.assets?.[0]) return null;

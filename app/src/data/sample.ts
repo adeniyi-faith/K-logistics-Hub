@@ -1,7 +1,7 @@
 // Sample data so the app has something to show before the online database exists.
 // Products are the real list from the design. Prices, stock and orders are made up:
 // the cost price (₦14,000) and rider pay (₦5,000 per delivery) are placeholders.
-import { AppState, Customer, Order, Product, StockMove } from './types';
+import { AppState, Customer, Expense, Order, Product, Rider, Staff, StockMove } from './types';
 
 const P = (
   id: string,
@@ -142,6 +142,41 @@ export function sampleState(day: string): AppState {
     [0, 19, 'c3', 'r1', [['p20', 2]], 'on_delivery', '10:30'],
   ];
 
+  // [daysAgo, category, note, amount, frequency, bike?, payee?]
+  type ExpenseSeed = [number, string, string, number, Expense['frequency'], string?, string?];
+  const expenseSeeds: ExpenseSeed[] = [
+    [0, 'Fuel', 'Fuel for 3 bikes', 18000, 'daily'],
+    [0, 'Repairs', 'Brake pads', 15500, 'one_time', 'Bike 2'],
+    [0, 'Packaging', 'Nylon and tape', 6500, 'daily'],
+    [1, 'Fuel', 'Fuel for 3 bikes', 18000, 'daily'],
+    [1, 'Transport', 'Supplier pickup', 20000, 'daily'],
+    [2, 'Fuel', 'Fuel for 3 bikes', 17000, 'daily'],
+    [2, 'Staff pay', 'Weekly pay, Bola Johnson', 25000, 'weekly', undefined, 's2'],
+    [3, 'Fuel', 'Fuel for 2 bikes', 12000, 'daily'],
+    [3, 'Packaging', 'Cartons', 8000, 'daily'],
+    [5, 'Fuel', 'Fuel for 3 bikes', 18000, 'daily'],
+    [6, 'Bike care', 'Oil change', 9000, 'monthly', 'Bike 1'],
+    [9, 'Staff pay', 'Weekly pay, Bola Johnson', 25000, 'weekly', undefined, 's2'],
+    [12, 'Fuel', 'Fuel for 3 bikes', 18000, 'daily'],
+    [16, 'Staff pay', 'Weekly pay, Bola Johnson', 25000, 'weekly', undefined, 's2'],
+    [20, 'Repairs', 'Clutch', 35000, 'one_time', 'Bike 3'],
+    [30, 'Staff pay', 'Monthly pay, Kemi Eze', 150000, 'monthly', undefined, 's1'],
+    [3, 'Staff pay', 'Pay, Tunde Bello', 5000, 'weekly', undefined, 'r2'],
+    [31, 'Bike care', 'Service all bikes', 25000, 'monthly'],
+  ];
+  const expenses: Expense[] = expenseSeeds.map(([ago, category, note, amount, frequency, bike, payee], i) => ({
+    id: `e${i + 1}`,
+    day: before(ago),
+    category,
+    note,
+    amount,
+    frequency,
+    bike,
+    payee,
+    at: at(before(ago), '17:00'),
+    by: 'Kasim',
+  }));
+
   const orders: Order[] = seeds.map(([ago, n, customerId, riderId, items, payment, taken, delivered, receivedBy]) => {
     const d = before(ago);
     const c = byId.get(customerId)!;
@@ -175,10 +210,23 @@ export function sampleState(day: string): AppState {
     };
   });
 
-  const riders = [
+  const riders: Rider[] = [
     { id: 'r1', name: 'Emeka Obi', initials: 'EO', phone: '0803 456 7788', bike: 'Bike 1 · PHC-234KA', ratePerDelivery: 5000 },
     { id: 'r2', name: 'Tunde Bello', initials: 'TB', phone: '0806 991 2210', bike: 'Bike 2 · PHC-118KB', ratePerDelivery: 5000 },
     { id: 'r3', name: 'Musa Ali', initials: 'MA', phone: '0810 334 9087', bike: 'Bike 3 · PHC-772KC', ratePerDelivery: 5000 },
+    { id: 'r4', name: 'Femi Lawal', initials: 'FL', phone: '0802 765 4321', bike: 'Bike 4 · PHC-902KD', ratePerDelivery: 5000 },
+  ].map((r, i) => ({
+    ...r,
+    status: i === 3 ? 'bike_repair' : 'active',
+    statusSince: i === 3 ? before(5) : undefined,
+    address: 'Port Harcourt',
+    idType: 'NIN slip',
+    joined: before(300 - i * 40),
+  }));
+
+  const staff: Staff[] = [
+    { id: 's1', name: 'Kemi Eze', initials: 'KE', job: 'Manager', phone: '0803 222 1111', pay: 150000, payEvery: 'month', active: true },
+    { id: 's2', name: 'Bola Johnson', initials: 'BJ', job: 'Store keeper', phone: '0816 333 4455', pay: 25000, payEvery: 'week', active: true },
   ];
   const riderName = new Map(riders.map((r) => [r.id, r.name]));
 
@@ -242,13 +290,10 @@ export function sampleState(day: string): AppState {
     openings,
     moves,
     riders,
+    staff,
     customers,
     orders,
-    expenses: [
-      { id: 'e1', day, category: 'Fuel', note: 'Fuel for 3 bikes', amount: 18000 },
-      { id: 'e2', day, category: 'Bike repairs', note: 'Brake pads, Bike 2', amount: 15500 },
-      { id: 'e3', day, category: 'Data & airtime', note: 'Office data', amount: 8000 },
-    ],
+    expenses,
     pending: [],
   };
 }
