@@ -64,5 +64,6 @@ PowerSync stores data in its own database on the phone. The free Expo Go app doe
 
 - Profit is worked out from each product's **current** cost price. Change a cost price and today's profit figures update to match.
 - Receiving stock at a new cost price also updates that product's cost price.
+- **Delivery photos** are off at first. Admin turns them on in **More → Business settings**. When they're on, riders must take a photo before confirming a delivery. The photo is kept on the rider's phone and uploads to Supabase Storage (the private `delivery-photos` folder the migration files create) as soon as there's internet.
 - Every change is saved on the phone first. The badge at the top shows **Synced**, **Syncing**, or **Offline · N** (N changes still waiting to upload). Tap it to see them.
 - If the server refuses a change (for example, a rider trying something they aren't allowed to do), that change is dropped and the phone's copy is put back in line with the server.

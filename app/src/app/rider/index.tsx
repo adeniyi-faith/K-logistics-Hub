@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Badge, Button, Card, H2, Muted, Row, Screen, Stat, SyncPill } from '../../components/ui';
 import { OrderSummary } from '../../components/OrderSummary';
 import { clock, naira } from '../../lib/format';
-import { orderTotal, riderDay } from '../../lib/stock';
+import { deliveredOn, orderTotal, riderDay } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
 
@@ -14,7 +14,8 @@ export default function RiderDeliveries() {
   const riderId = state.session?.riderId ?? '';
   const rider = state.riders.find((r) => r.id === riderId);
   const day = riderDay(state, riderId);
-  const mine = state.orders.filter((o) => o.riderId === riderId && o.day === state.day);
+  // Every pending delivery (including ones carried over from earlier days), plus what was done today.
+  const mine = state.orders.filter((o) => o.riderId === riderId && (o.status === 'pending' || deliveredOn(o) === state.day));
   const pending = mine.filter((o) => o.status === 'pending');
   const done = mine.filter((o) => o.status !== 'pending');
   const [next, ...later] = pending;
