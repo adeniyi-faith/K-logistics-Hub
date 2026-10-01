@@ -44,6 +44,31 @@ export type Rider = {
   ratePerDelivery: number;
 };
 
+export type Customer = {
+  id: string;
+  name: string;
+  phone: string;
+  /** Delivery area, e.g. "Rumuola". */
+  area: string;
+  address: string;
+  /** Day they were added, "YYYY-MM-DD". */
+  since: string;
+};
+
+/** Delivery areas from the design (editable in Business settings later). */
+export const AREAS = [
+  'GRA',
+  'Rumuola',
+  'Trans-Amadi',
+  'Rumuokoro',
+  'Mile 1',
+  'D-Line',
+  'Ada George',
+  'Choba',
+  'Eleme',
+  'Outside PH',
+];
+
 export type OrderItem = { productId: string; qty: number; unitPrice: number };
 
 export type Order = {
@@ -52,6 +77,10 @@ export type Order = {
   code: string;
   day: string;
   createdAt: string;
+  /** Name of the person who took the order. */
+  takenBy: string;
+  customerId: string;
+  /** Customer details are copied onto the order so riders see them without the customer list. */
   customer: string;
   phone: string;
   area: string;
@@ -82,6 +111,7 @@ export type AppState = {
   opening: Record<string, number>;
   moves: StockMove[];
   riders: Rider[];
+  customers: Customer[];
   orders: Order[];
   expenses: Expense[];
   pending: PendingChange[];
