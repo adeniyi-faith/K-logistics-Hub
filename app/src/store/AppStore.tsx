@@ -16,12 +16,14 @@ import { liveAvailable } from '../live/config';
 import { createLiveEngine } from '../live/engine';
 import {
   AccessInput,
+  ClashChoice,
   ConfirmInput,
   ExpenseInput,
   LiveEngine,
   LiveSnapshot,
   Phase,
   PriceInput,
+  ProductInput,
   ReceiveInput,
   RiderInput,
   SaleInput,
@@ -32,7 +34,7 @@ import { uuid } from '../lib/id';
 import { nextOrderCode } from '../lib/sales';
 import { closingStock, nextDay } from '../lib/stock';
 
-const KEY = 'klh-state-v8';
+const KEY = 'klh-state-v9';
 
 export type Store = {
   mode: 'demo' | 'live';
@@ -51,13 +53,21 @@ export type Store = {
   createSale: (input: SaleInput) => Promise<string>;
   /** Closing stock becomes tomorrow's opening stock, and the app moves to tomorrow. */
   closeDay: () => void;
-  /** Admin: business settings such as asking riders for a delivery photo. */
+  /** Admin: business settings such as the logo, lists, words and the delivery photo switch. */
   updateSettings: (settings: Settings) => void;
+  /** Saves a new product and returns its id. */
+  addProduct: (input: ProductInput) => Promise<string>;
+  updateProduct: (id: string, changes: Partial<ProductInput>) => void;
   /** Admin and Staff: write down money spent. */
   addExpense: (input: ExpenseInput) => void;
   /** Admin: saves a new rider and returns their id. */
   addRider: (input: RiderInput) => Promise<string>;
+  /** Admin, or a rider changing their own details. */
   updateRider: (id: string, changes: Partial<RiderInput>) => void;
+  /** Needs internet in live mode. Returns an error message, or null when done. */
+  changePassword: (password: string) => Promise<string | null>;
+  /** Admin: keep one of the two values after a sync clash. */
+  resolveClash: (id: string, keep: ClashChoice) => void;
   addStaff: (input: StaffInput) => void;
   updateStaff: (id: string, changes: Partial<StaffInput>) => void;
   /** Admin: give a staff member a role and any changes just for them. */
@@ -112,6 +122,10 @@ function LiveProvider({ children }: { children: ReactNode }) {
       createSale: e.createSale,
       closeDay: () => report(e.closeDay()),
       updateSettings: (settings) => report(e.updateSettings(settings)),
+      addProduct: e.addProduct,
+      updateProduct: (id, changes) => report(e.updateProduct(id, changes)),
+      changePassword: e.changePassword,
+      resolveClash: (id, keep) => report(e.resolveClash(id, keep)),
       addExpense: (input) => report(e.addExpense(input)),
       addRider: e.addRider,
       updateRider: (id, changes) => report(e.updateRider(id, changes)),
@@ -315,6 +329,36 @@ function DemoProvider({ children }: { children: ReactNode }) {
           settings,
           pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: 'Business settings', ref: 'settings' }],
         })),
+      addProduct: async (input) => {
+        const id = newId('p');
+        update((s) => ({
+          ...s,
+          products: [...s.products, { ...input, id }],
+          // A new product starts with nothing in the store; Receive stock adds to it.
+          openings: { ...s.openings, [s.day]: { ...(s.openings[s.day] ?? {}), [id]: 0 } },
+          pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: `New product ${input.name}`, ref: id }],
+        }));
+        return id;
+      },
+      updateProduct: (id, changes) =>
+        update((s) => ({
+          ...s,
+          products: s.products.map((p) => (p.id === id ? { ...p, ...changes } : p)),
+          pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: 'Product details', ref: id }],
+        })),
+      changePassword: async () => 'Demo accounts have no password. This works with real accounts.',
+      resolveClash: (id, keep) =>
+        update((s) => {
+          const c = s.clashes.find((x) => x.id === id);
+          if (!c) return s;
+          const keepMine = keep === 'mine' && c.table === 'products' && c.field === 'sell_price';
+          return {
+            ...s,
+            products: keepMine ? s.products.map((p) => (p.id === c.rowId ? { ...p, sellPrice: Number(c.mine) } : p)) : s.products,
+            clashes: s.clashes.filter((x) => x.id !== id),
+            pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: 'Sync clash choice', ref: id }],
+          };
+        }),
       addExpense: (input) =>
         update((s) => {
           const now = new Date().toISOString();

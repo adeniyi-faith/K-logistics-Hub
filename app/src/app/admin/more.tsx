@@ -5,8 +5,10 @@ import { Icon } from '../../components/Icon';
 import { SignedInMenu } from '../../components/SignedInMenu';
 import { Card, IconTile, Row, Screen, TopBar } from '../../components/ui';
 import { colors } from '../../theme';
+import { useWords } from '../../lib/words';
 
 export default function More() {
+  const w = useWords();
   return (
     <View style={{ flex: 1 }}>
       <TopBar title="More" />
@@ -16,7 +18,7 @@ export default function More() {
             first
             lead={<IconTile name="file" />}
             title="Daily record"
-            sub="Each day's stock, money and rider earnings"
+            sub={`Each day's stock, money and ${w.rider} earnings`}
             rightSub={<Icon name="chev" color={colors.muted} />}
             onPress={() => router.push('/day-record')}
           />
@@ -36,8 +38,8 @@ export default function More() {
           />
           <Row
             lead={<IconTile name="bike" />}
-            title="Riders & bikes"
-            sub="Riders, bikes and earnings"
+            title={`${w.Riders} & bikes`}
+            sub={`${w.Riders}, bikes and earnings`}
             rightSub={<Icon name="chev" color={colors.muted} />}
             onPress={() => router.push('/riders')}
           />
@@ -65,7 +67,7 @@ export default function More() {
           <Row
             lead={<IconTile name="sliders" />}
             title="Business settings"
-            sub="Delivery photo on or off"
+            sub="Logo, lists, words and delivery photo"
             rightSub={<Icon name="chev" color={colors.muted} />}
             onPress={() => router.push('/settings')}
           />

@@ -4,11 +4,13 @@ import Tabs from 'expo-router/tabs';
 import { TabBarIcon, tabScreenOptions } from '../../components/TabBarIcon';
 import { useAccess } from '../../lib/useAccess';
 import { useStore } from '../../store/AppStore';
+import { useWords } from '../../lib/words';
 
 /** The staff app: only the areas this person may use, plus Me. */
 export default function StaffTabs() {
   const { state } = useStore();
   const { canView } = useAccess();
+  const w = useWords();
   if (state.session?.role !== 'staff') return <Redirect href="/" />;
   return (
     <Tabs screenOptions={tabScreenOptions}>
@@ -27,7 +29,7 @@ export default function StaffTabs() {
       <Tabs.Screen
         name="sales"
         options={{
-          title: 'Sales',
+          title: w.Sales,
           href: canView('sales') ? undefined : null,
           tabBarIcon: ({ focused }) => <TabBarIcon name="cart" focused={focused} />,
         }}

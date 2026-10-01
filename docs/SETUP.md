@@ -20,7 +20,7 @@ Until these steps are done, the app runs in **demo mode** with sample data that 
 2. Connect it to the Supabase database. In Supabase, **Connect → Direct connection** shows the details it needs.
 3. Turn on **Use Supabase Auth** so PowerSync trusts the same accounts.
 4. Open **Sync Rules**, paste in [`powersync/sync-rules.yaml`](../powersync/sync-rules.yaml), and deploy. This decides what each phone downloads:
-   - Admin and Staff phones get everything.
+   - Admin and Staff phones get everything. Only Admin phones get sync clashes.
    - Rider phones only get their own deliveries, and they don't get cost prices.
 5. Copy the instance URL.
 
@@ -77,4 +77,8 @@ PowerSync stores data in its own database on the phone. The free Expo Go app doe
 - **Paying staff and riders** (More → Staff & pay) is saved as a "Staff pay" expense, so it counts in Finance and profit. Receipt photos on expenses go to the same private storage folder as delivery photos.
 - **Staff access** (More → Users & access) is checked twice: the app hides what a person can't use, and Supabase refuses changes they aren't allowed to make. Staff phones still download the business's data, so someone very technical could read hidden figures from their own phone's storage.
 - Every change is saved on the phone first. The badge at the top shows **Synced**, **Syncing**, or **Offline · N** (N changes still waiting to upload). Tap it to see them.
+- **Business settings** (logo, lists, words) are kept with the business row, so every phone gets them. A new logo, rider photos and receipt photos go in the same private storage folder as delivery photos.
+- **Riders can change their own details** (phone, address, next of kin, where to pay them, photo). The server stops them changing their name, ID, bike, pay rate or status. When a rider changes where to pay them, the server writes down the day so Admin sees a notice.
+- **Sync clashes**: changes to existing records (products, customers, riders, staff, roles, business settings) go through the `save_change` function in the migration files. It saves each changed value unless another phone changed it meanwhile; then it keeps the value already there and writes the other into `sync_clashes` for Admin to pick in the Sync centre. Only Admin phones download clashes.
+- **Putting the app in the stores**: see [RELEASE.md](RELEASE.md).
 - If the server refuses a change (for example, a rider trying something they aren't allowed to do), that change is dropped and the phone's copy is put back in line with the server.

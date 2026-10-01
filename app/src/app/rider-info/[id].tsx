@@ -1,30 +1,35 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Avatar, Badge, Button, Card, Chips, Field, H2, Muted, Row, Screen, Stat, TopBar } from '../../components/ui';
+import { Icon } from '../../components/Icon';
+import { RiderAvatar } from '../../components/RiderAvatar';
+import { Badge, Button, Card, Chips, Field, H2, Muted, Row, Screen, Stat, TopBar } from '../../components/ui';
 import { RiderStatus } from '../../data/types';
 import { dayLabel, naira } from '../../lib/format';
+import { shiftDay } from '../../lib/stock';
 import { periodOf, riderDays } from '../../lib/money';
 import { bikeParts, riderNow, riderOwed } from '../../lib/riders';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
 import { useAccess } from '../../lib/useAccess';
+import { useWords } from '../../lib/words';
 
 /** One rider, as Admin and Staff see them. */
 export default function RiderInfo() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, updateRider } = useStore();
   const acc = useAccess();
+  const w = useWords();
   const r = state.riders.find((x) => x.id === id);
   const [rate, setRate] = useState(r ? String(r.ratePerDelivery) : '');
 
   if (!r || !acc.canView('riders')) {
     return (
       <View style={{ flex: 1 }}>
-        <TopBar title="Rider" back />
+        <TopBar title={w.Rider} back />
         <Screen>
-          <Muted>This rider can't be found.</Muted>
+          <Muted>This {w.rider} can't be found.</Muted>
         </Screen>
       </View>
     );
@@ -38,10 +43,25 @@ export default function RiderInfo() {
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title={r.name} back />
+      <TopBar
+        title={r.name}
+        back
+        right={
+          acc.canEdit('riders') ? (
+            <Pressable
+              onPress={() => router.push(`/add-rider?id=${r.id}`)}
+              accessibilityRole="button"
+              accessibilityLabel="Edit details"
+              style={st.edit}
+            >
+              <Icon name="pen" size={20} />
+            </Pressable>
+          ) : undefined
+        }
+      />
       <Screen>
         <View style={st.head}>
-          <Avatar initials={r.initials} size={56} />
+          <RiderAvatar rider={r} size={56} />
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={st.name}>{r.name}</Text>
             <Badge kind={now.kind}>{now.label}</Badge>
@@ -58,7 +78,12 @@ export default function RiderInfo() {
           </View>
           {acc.canEdit('staffpay') ? (
             <View style={{ flex: 1 }}>
-              <Button title="Pay rider" kind="primary" icon="cash" onPress={() => router.push(`/pay?who=${r.id}`)} />
+              <Button
+                title={`Pay ${r.name.split(' ')[0]}`}
+                kind="primary"
+                icon="cash"
+                onPress={() => router.push(`/pay?who=${r.id}`)}
+              />
             </View>
           ) : null}
         </View>
@@ -75,12 +100,36 @@ export default function RiderInfo() {
               value={r.status}
               onChange={(status) => updateRider(r.id, { status, statusSince: state.day })}
             />
-            <Muted>Riders who are off duty or have a bike in repair can't be picked for a new sale.</Muted>
+            <Muted>
+              {w.Riders} who are off duty or have a bike in repair can't be picked for a new {w.sale}.
+            </Muted>
+          </Card>
+        ) : null}
+
+        {r.changeRequest && acc.canEdit('riders') ? (
+          <Card style={st.ask}>
+            <H2>Asked you to change</H2>
+            <Text style={st.askText}>"{r.changeRequest}"</Text>
+            {r.changeRequestAt ? <Muted>Sent {dayLabel(r.changeRequestAt)}</Muted> : null}
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Button title="Edit details" kind="primary" icon="pen" onPress={() => router.push(`/add-rider?id=${r.id}`)} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  title="Mark as done"
+                  kind="ghost"
+                  icon="check"
+                  onPress={() => updateRider(r.id, { changeRequest: '', changeRequestAt: '' })}
+                />
+              </View>
+            </View>
           </Card>
         ) : null}
 
         <Card style={{ paddingVertical: 4 }}>
           <Row first title="Phone" right={r.phone} />
+          {r.phone2 ? <Row title="Other phone" right={r.phone2} /> : null}
           <Row title="Bike" right={bike.name} />
           <Row title="Plate number" right={bike.plate || '—'} />
           {r.bikeModel || r.bikeColour ? (
@@ -90,6 +139,32 @@ export default function RiderInfo() {
           {r.idType ? <Row title="ID" right={[r.idType, r.idNumber].filter(Boolean).join(' · ')} /> : null}
           {r.joined ? <Row title="Joined" right={dayLabel(r.joined)} /> : null}
           <Row title="Pay per delivery" right={naira(r.ratePerDelivery)} />
+        </Card>
+
+        <Card style={{ paddingVertical: 4 }}>
+          <H2>Next of kin</H2>
+          {r.kinName ? (
+            <Row first title={r.kinName} sub={r.kinRelation} right={r.kinPhone} />
+          ) : (
+            <Muted style={{ paddingVertical: 8 }}>Not added yet. The {w.rider} can add it from their profile.</Muted>
+          )}
+        </Card>
+
+        <Card style={{ paddingVertical: 4 }}>
+          <H2>Where to pay</H2>
+          {r.payAccount ? (
+            <Row first title={r.payBank ?? ''} sub={r.payName} right={r.payAccount} />
+          ) : (
+            <Muted style={{ paddingVertical: 8 }}>Not added yet. The {w.rider} can add it from their profile.</Muted>
+          )}
+          {r.payChanged && r.payChanged >= shiftDay(state.day, -14) ? (
+            <View style={st.warn}>
+              <Icon name="alert" size={18} color={colors.orangeText} />
+              <Text style={st.warnText}>
+                The {w.rider} changed this on {dayLabel(r.payChanged)}. Check it with them before the next payment.
+              </Text>
+            </View>
+          ) : null}
         </Card>
 
         {acc.canEdit('riders') ? (
@@ -113,4 +188,25 @@ export default function RiderInfo() {
 const st = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   name: { fontFamily: fonts.head, fontSize: 20, color: colors.navy },
+  edit: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ask: { borderColor: colors.orange, borderWidth: 1.5 },
+  askText: { fontFamily: fonts.body, fontSize: 15, color: colors.navy },
+  warn: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'flex-start',
+    padding: 10,
+    marginVertical: 8,
+    borderRadius: 12,
+    backgroundColor: colors.orangeBg,
+  },
+  warnText: { flex: 1, fontFamily: fonts.bodyBold, fontSize: 13, color: colors.orangeText },
 });

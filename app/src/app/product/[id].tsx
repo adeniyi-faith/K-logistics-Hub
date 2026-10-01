@@ -84,9 +84,17 @@ export default function ProductDetail() {
         )}
 
         <Card style={{ paddingVertical: 8 }}>
-          <H2>Product info</H2>
-          <Row first title="NAFDAC reg. no." right={p.nafdac} />
-          <Row title="Supplier" right={p.supplier} />
+          <H2
+            right={
+              canEdit('stock') ? (
+                <LinkText onPress={() => router.push(`/product-form?id=${p.id}`)}>Edit details</LinkText>
+              ) : undefined
+            }
+          >
+            Product info
+          </H2>
+          <Row first title="NAFDAC reg. no." right={p.nafdac || '—'} />
+          <Row title="Supplier" right={p.supplier || '—'} />
           <Row title="Nearest expiry" right={latest ? `${latest.expiry} · batch ${latest.batch}` : 'Not recorded'} />
           <Row title="Warn me below" right={count(p.lowAt, p.unit)} />
         </Card>

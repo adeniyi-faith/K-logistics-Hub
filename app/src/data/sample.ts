@@ -2,6 +2,7 @@
 // Products are the real list from the design. Prices, stock and orders are made up:
 // the cost price (₦14,000) and rider pay (₦5,000 per delivery) are placeholders.
 import { DEFAULT_ROLES } from './access';
+import { DEFAULT_SETTINGS } from './settings';
 import { AppState, Customer, Expense, Order, Product, Rider, Staff, StockMove } from './types';
 
 const P = (
@@ -223,6 +224,18 @@ export function sampleState(day: string): AppState {
     address: 'Port Harcourt',
     idType: 'NIN slip',
     joined: before(300 - i * 40),
+    ...(i === 0
+      ? {
+          address: 'Rumuokoro, Port Harcourt',
+          bikeModel: 'Bajaj Boxer',
+          kinName: 'Ngozi Obi',
+          kinPhone: '0803 555 0101',
+          kinRelation: 'Wife',
+          payBank: 'Opay',
+          payAccount: '8123454521',
+          payName: 'Emeka Obi',
+        }
+      : {}),
   }));
 
   const staff: Staff[] = [
@@ -322,7 +335,7 @@ export function sampleState(day: string): AppState {
     version: 1,
     day,
     session: null,
-    settings: { requirePhoto: false },
+    settings: DEFAULT_SETTINGS,
     products,
     openings,
     moves,
@@ -332,6 +345,19 @@ export function sampleState(day: string): AppState {
     customers,
     orders,
     expenses,
+    // The design's example: Glow Serum's selling price was changed on two phones while one was offline.
+    clashes: [
+      {
+        id: 'x1',
+        table: 'products',
+        rowId: 'p08',
+        field: 'sell_price',
+        mine: 23000,
+        mineBy: 'Kemi',
+        theirs: 21500,
+        at: at(day, '09:40'),
+      },
+    ],
     pending: [],
   };
 }

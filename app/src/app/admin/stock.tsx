@@ -13,7 +13,7 @@ type Tab = 'store' | 'received';
 
 export default function Stock() {
   const { state } = useStore();
-  const { canEdit } = useAccess();
+  const { canEdit, can } = useAccess();
   const [tab, setTab] = useState<Tab>('store');
   const [filter, setFilter] = useState('all');
 
@@ -30,7 +30,16 @@ export default function Stock() {
       <Screen
         footer={
           canEdit('stock') ? (
-            <Button title="Receive stock" kind="accent" icon="plus" onPress={() => router.push('/receive-stock')} />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {can('seeCost') ? (
+                <View style={{ flex: 1 }}>
+                  <Button title="Add product" kind="ghost" icon="plus" onPress={() => router.push('/product-form')} />
+                </View>
+              ) : null}
+              <View style={{ flex: 1 }}>
+                <Button title="Receive stock" kind="accent" icon="box" onPress={() => router.push('/receive-stock')} />
+              </View>
+            </View>
           ) : undefined
         }
       >
