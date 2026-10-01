@@ -34,14 +34,43 @@ export type StockMove = {
   orderId?: string;
 };
 
+/** active: can be given deliveries. The app shows "On delivery" or "Available" from their orders. */
+export type RiderStatus = 'active' | 'off_duty' | 'bike_repair';
+
 export type Rider = {
   id: string;
   name: string;
   initials: string;
   phone: string;
+  /** Bike name and plate, e.g. "Bike 1 · PHC-234KA". */
   bike: string;
   /** Pay per completed delivery (₦5,000 in the design, to be confirmed). */
   ratePerDelivery: number;
+  status: RiderStatus;
+  /** The day the status last changed, "YYYY-MM-DD". */
+  statusSince?: string;
+  address?: string;
+  bikeModel?: string;
+  bikeColour?: string;
+  /** NIN slip, driver's licence, voter's card or passport. */
+  idType?: string;
+  idNumber?: string;
+  /** Day they joined, "YYYY-MM-DD". */
+  joined?: string;
+};
+
+/** Someone on the payroll who is not a rider (riders are paid per delivery). */
+export type Staff = {
+  id: string;
+  name: string;
+  initials: string;
+  /** Their job, e.g. "Manager" or "Store keeper". */
+  job: string;
+  phone: string;
+  /** Pay for each month or week. */
+  pay: number;
+  payEvery: 'month' | 'week';
+  active: boolean;
 };
 
 export type Customer = {
@@ -106,7 +135,37 @@ export type Settings = {
   requirePhoto: boolean;
 };
 
-export type Expense = { id: string; day: string; category: string; note: string; amount: number };
+/** How often an expense comes up. It is a label for grouping; nothing repeats by itself. */
+export type Frequency = 'daily' | 'weekly' | 'monthly' | 'one_time';
+
+export const FREQUENCIES: { value: Frequency; label: string }[] = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'one_time', label: 'One-time' },
+];
+
+/** Expense categories from the design (editable in Business settings later). */
+export const EXPENSE_CATEGORIES = ['Fuel', 'Staff pay', 'Transport', 'Bike care', 'Repairs', 'Packaging', 'Other'] as const;
+
+export type Expense = {
+  id: string;
+  /** The business day the money was spent on (counts against that day's profit). */
+  day: string;
+  category: string;
+  note: string;
+  amount: number;
+  frequency: Frequency;
+  /** Which bike it was for, if any. */
+  bike?: string;
+  /** When it was written down, and by whom. */
+  at: string;
+  by: string;
+  /** For pay: the staff member or rider who was paid. */
+  payee?: string;
+  /** Receipt photo: a file on this phone, or its name in online storage. */
+  receipt?: string;
+};
 
 /** A change saved on this phone that has not been uploaded yet. */
 export type PendingChange = { id: string; at: string; label: string; /** The record this change saved. */ ref: string };
@@ -122,6 +181,7 @@ export type AppState = {
   openings: Record<string, Record<string, number>>;
   moves: StockMove[];
   riders: Rider[];
+  staff: Staff[];
   customers: Customer[];
   orders: Order[];
   expenses: Expense[];

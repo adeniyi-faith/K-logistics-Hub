@@ -33,7 +33,8 @@
           "photosPermission": false,
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "scheme": "klogistics"
   }
