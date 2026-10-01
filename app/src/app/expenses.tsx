@@ -8,6 +8,7 @@ import { Frequency, FREQUENCIES } from '../data/types';
 import { categoryIcon, frequencyLabel } from '../lib/expenses';
 import { dayLabel, naira } from '../lib/format';
 import { byCategory, expensesIn, periodOf, shortNaira } from '../lib/money';
+import { payeeName } from '../lib/pay';
 import { notSynced } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 
@@ -57,8 +58,9 @@ export default function Expenses() {
               key={e.id}
               first={i === 0}
               lead={<IconTile name={categoryIcon(e.category)} />}
-              title={e.bike ? `${e.category} · ${e.bike}` : e.category}
-              sub={[frequencyLabel(e.frequency), e.note].filter(Boolean).join(' · ')}
+              title={[e.category, e.bike, payeeName(state, e.payee)].filter(Boolean).join(' · ')}
+              sub={[frequencyLabel(e.frequency), e.note, e.receipt && 'Receipt'].filter(Boolean).join(' · ')}
+              onPress={() => router.push(`/expense/${e.id}`)}
               right={naira(e.amount)}
               rightSub={
                 notSynced(state, e.id) ? (
