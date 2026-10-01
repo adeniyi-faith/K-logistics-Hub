@@ -14,6 +14,8 @@ export const DEFAULT_SETTINGS: Settings = {
   allowZeroStock: false,
   areas: [...AREAS],
   words: { sale: 'Sale', rider: 'Rider' },
+  customerDetails: true,
+  titles: { Faith: 'Developer' },
 };
 
 /** The words Admin can pick for "sale" and "rider". */
@@ -32,5 +34,7 @@ export function withDefaults(saved: Partial<Settings> | null | undefined): Setti
     units: list(s.units, DEFAULT_SETTINGS.units),
     areas: list(s.areas, DEFAULT_SETTINGS.areas),
     words: { ...DEFAULT_SETTINGS.words, ...(s.words ?? {}) },
+    customerDetails: s.customerDetails !== false,
+    titles: s.titles && typeof s.titles === 'object' ? s.titles : DEFAULT_SETTINGS.titles,
   };
 }

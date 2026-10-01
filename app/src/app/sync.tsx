@@ -1,4 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+
+import { Text } from '../components/Text';
 
 import { Icon } from '../components/Icon';
 import { Badge, Button, Card, H2, Muted, Row, Screen, TopBar } from '../components/ui';

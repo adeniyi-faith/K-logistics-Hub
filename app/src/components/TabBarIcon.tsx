@@ -17,6 +17,8 @@ export function TabBarIcon({ name, focused }: { name: IconName; focused: boolean
 
 export const tabScreenOptions = {
   headerShown: false,
+  // Fade gently between tabs instead of switching at once.
+  animation: 'fade' as const,
   tabBarActiveTintColor: colors.navy,
   tabBarInactiveTintColor: colors.tabIdle,
   tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.line, height: 72, paddingTop: 4 },

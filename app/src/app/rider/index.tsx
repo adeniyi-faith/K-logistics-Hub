@@ -1,5 +1,7 @@
 import { router } from 'expo-router';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
+
+import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar, Badge, Button, Card, H2, Muted, Row, Screen, Stat, SyncPill } from '../../components/ui';
@@ -7,6 +9,7 @@ import { OrderSummary } from '../../components/OrderSummary';
 import { clock, naira } from '../../lib/format';
 import { deliveredOn, orderTotal, riderDay } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
+import { orderFor } from '../../lib/sales';
 import { colors, fonts } from '../../theme';
 
 export default function RiderDeliveries() {
@@ -80,7 +83,7 @@ export default function RiderDeliveries() {
               <Row
                 key={o.id}
                 first={i === 0}
-                title={o.customer}
+                title={orderFor(o)}
                 sub={`#${o.code} · ${o.area}`}
                 right={o.payment === 'on_delivery' ? `Collect ${naira(orderTotal(o))}` : 'Paid'}
                 rightSub={<Badge kind="amber">Pending</Badge>}
@@ -97,7 +100,7 @@ export default function RiderDeliveries() {
               <Row
                 key={o.id}
                 first={i === 0}
-                title={o.customer}
+                title={orderFor(o)}
                 sub={`${o.deliveredAt ? clock(o.deliveredAt) : ''} · ${o.area}`}
                 rightSub={o.status === 'delivered' ? <Badge kind="green">Delivered</Badge> : <Badge kind="red">Failed</Badge>}
               />

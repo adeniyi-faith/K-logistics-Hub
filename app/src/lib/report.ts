@@ -96,7 +96,7 @@ export function buildReport(state: AppState, kind: ReportKind, p: Period, f: Fil
       rows: orders.map((o) => [
         dayLabel(o.day),
         o.code,
-        o.customer,
+        o.customer || '—',
         itemsText(state, o),
         riders.get(o.riderId)?.name ?? '',
         o.takenBy,
@@ -233,7 +233,7 @@ export function buildReport(state: AppState, kind: ReportKind, p: Period, f: Fil
       dayLabel(deliveredOn(o)),
       riders.get(o.riderId)?.name ?? '',
       o.code,
-      o.customer,
+      o.customer || '—',
       o.area,
       o.receivedBy ?? '',
       naira(riders.get(o.riderId)?.ratePerDelivery ?? 0),

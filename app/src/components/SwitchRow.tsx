@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
+
+import { Text } from './Text';
 
 import { colors, fonts } from '../theme';
 import { Muted } from './ui';

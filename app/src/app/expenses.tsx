@@ -3,13 +3,12 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { CategoryBar } from '../components/CategoryBar';
-import { Badge, Button, Card, Chips, H2, IconTile, Muted, Row, Screen, Stat, TopBar } from '../components/ui';
+import { Button, Card, Chips, H2, IconTile, Muted, Row, Screen, Stat, TopBar } from '../components/ui';
 import { Frequency, FREQUENCIES } from '../data/types';
 import { categoryIcon, frequencyLabel } from '../lib/expenses';
 import { dayLabel, naira } from '../lib/format';
 import { byCategory, expensesIn, periodOf, shortNaira } from '../lib/money';
 import { payeeName } from '../lib/pay';
-import { notSynced } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { useAccess } from '../lib/useAccess';
 
@@ -70,13 +69,7 @@ export default function Expenses() {
               sub={[frequencyLabel(e.frequency), e.note, e.receipt && 'Receipt'].filter(Boolean).join(' · ')}
               onPress={() => router.push(`/expense/${e.id}`)}
               right={naira(e.amount)}
-              rightSub={
-                notSynced(state, e.id) ? (
-                  <Badge kind="amber">Not synced</Badge>
-                ) : (
-                  <Muted>{e.day === state.day ? 'Today' : dayLabel(e.day)}</Muted>
-                )
-              }
+              rightSub={<Muted>{e.day === state.day ? 'Today' : dayLabel(e.day)}</Muted>}
             />
           ))}
         </Card>

@@ -1,5 +1,7 @@
 import { router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+
+import { Text } from '../components/Text';
 
 import { Button, Card, IconTile, LinkText, Muted, Screen, TopBar } from '../components/ui';
 import { AREAS_LIST, PERMS_LIST } from '../data/access';

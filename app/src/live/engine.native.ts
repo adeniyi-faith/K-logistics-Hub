@@ -11,7 +11,20 @@ import { AppState as AppVisibility } from 'react-native';
 
 import { DEFAULT_ROLES, parseJson, withOverrides } from '../data/access';
 import { DEFAULT_SETTINGS, withDefaults } from '../data/settings';
-import { AppState, Clash, Customer, Order, PendingChange, Product, Rider, Role, Settings, Staff, StockMove } from '../data/types';
+import {
+  AppState,
+  Clash,
+  Customer,
+  Order,
+  PendingChange,
+  Product,
+  Rider,
+  RiderDoc,
+  Role,
+  Settings,
+  Staff,
+  StockMove,
+} from '../data/types';
 import { uuid } from '../lib/id';
 import { nextOrderCode } from '../lib/sales';
 import { closingStock, nextDay } from '../lib/stock';
@@ -334,6 +347,15 @@ export function createLiveEngine(): LiveEngine {
       // A new photo is a file on this phone: keep it, and upload it when there's internet.
       const photo =
         changes.photo && changes.photo !== before?.photo ? await keepPhoto(`rider-${uuid()}`, changes.photo) : undefined;
+      // New document photos are files on this phone too: keep each one like the photo above.
+      let documents: string | undefined;
+      if (changes.documents) {
+        const known = new Set((before?.documents ?? []).map((d) => d.photo));
+        const docs = [];
+        for (const d of changes.documents)
+          docs.push(known.has(d.photo) ? d : { ...d, photo: await keepPhoto(`doc-${uuid()}`, d.photo) });
+        documents = JSON.stringify(docs);
+      }
       const cols: Record<string, unknown> = {
         name: changes.name,
         initials: changes.name ? initialsOf(changes.name) : undefined,
@@ -358,9 +380,10 @@ export function createLiveEngine(): LiveEngine {
         photo_path: photo,
         change_request: changes.changeRequest,
         change_request_at: changes.changeRequestAt,
+        documents,
       };
       await updateRow('riders', id, cols);
-      if (photo) uploadWaitingPhotos(supabase).catch(() => {});
+      if (photo || documents) uploadWaitingPhotos(supabase).catch(() => {});
     },
     async addStaff(input) {
       const role = snap.state.roles.find((r) => r.id === input.roleId);
@@ -444,10 +467,12 @@ export function createLiveEngine(): LiveEngine {
       const s = snap.state;
       const at = now();
       await db.writeTransaction(async (tx) => {
-        let customerId = input.customerId;
+        let customerId: string | null = input.customerId ?? null;
         let name = '';
         let phone = '';
-        if (customerId) {
+        if (!customerId && !input.newCustomer) {
+          // The business doesn't take customer details: the order has no customer.
+        } else if (customerId) {
           const c = s.customers.find((x) => x.id === customerId);
           name = c?.name ?? '';
           phone = c?.phone ?? '';
@@ -523,6 +548,17 @@ export function createLiveEngine(): LiveEngine {
 
 // ------------------------------------------------------------ reading data
 
+/** A rider's documents, saved as JSON text. Anything unreadable counts as none. */
+function readDocs(text: unknown): RiderDoc[] | undefined {
+  if (typeof text !== 'string' || !text) return undefined;
+  try {
+    const list = JSON.parse(text);
+    return Array.isArray(list) ? list.filter((d) => d && typeof d.photo === 'string') : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function emptyState(): AppState {
   return {
     version: 1,
@@ -554,7 +590,9 @@ async function readSnapshot(
   session: Session | null,
   net: { online: boolean; syncing: boolean },
 ): Promise<LiveSnapshot> {
-  const waiting = await db.all<{ seq: number; tbl: string; row_id: string }>('SELECT seq, tbl, row_id FROM sync_outbox ORDER BY seq');
+  const waiting = await db.all<{ seq: number; tbl: string; row_id: string }>(
+    'SELECT seq, tbl, row_id FROM sync_outbox ORDER BY seq',
+  );
   const pending: PendingChange[] = waiting.map((c) => ({
     id: String(c.seq),
     at: '',
@@ -660,6 +698,7 @@ async function readSnapshot(
       photo: r.photo_path ?? undefined,
       changeRequest: r.change_request ?? undefined,
       changeRequestAt: r.change_request_at ?? undefined,
+      documents: readDocs(r.documents),
     }),
   );
   state.staff = staff.map(
