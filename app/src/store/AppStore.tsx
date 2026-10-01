@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { sampleState } from '../data/sample';
-import { AppState, Role } from '../data/types';
+import { AppState, Role, Settings } from '../data/types';
 import { today } from '../lib/format';
 import { liveAvailable } from '../live/config';
 import { createLiveEngine } from '../live/engine';
@@ -18,7 +18,7 @@ import { uuid } from '../lib/id';
 import { nextOrderCode } from '../lib/sales';
 import { closingStock, nextDay } from '../lib/stock';
 
-const KEY = 'klh-state-v4';
+const KEY = 'klh-state-v5';
 
 export type Store = {
   mode: 'demo' | 'live';
@@ -37,6 +37,10 @@ export type Store = {
   createSale: (input: SaleInput) => Promise<string>;
   /** Closing stock becomes tomorrow's opening stock, and the app moves to tomorrow. */
   closeDay: () => void;
+  /** Admin: business settings such as asking riders for a delivery photo. */
+  updateSettings: (settings: Settings) => void;
+  /** Something the app can show for a delivery photo, or null when it can't be loaded now. */
+  photoUrl: (photo: string) => Promise<string | null>;
   /** Demo only: put the sample data back the way it started. */
   resetDemo: () => void;
 };
@@ -82,6 +86,8 @@ function LiveProvider({ children }: { children: ReactNode }) {
       updatePrices: (input) => report(e.updatePrices(input)),
       createSale: e.createSale,
       closeDay: () => report(e.closeDay()),
+      updateSettings: (settings) => report(e.updateSettings(settings)),
+      photoUrl: e.photoUrl,
       resetDemo: () => {},
     };
   }, [snap]);
@@ -166,7 +172,7 @@ function DemoProvider({ children }: { children: ReactNode }) {
             ],
           };
         }),
-      confirmDelivery: ({ orderId, receivedBy, method, amount }) =>
+      confirmDelivery: ({ orderId, receivedBy, method, amount, photo }) =>
         update((s) => {
           const order = s.orders.find((o) => o.id === orderId);
           if (!order || order.status !== 'pending') return s;
@@ -175,7 +181,15 @@ function DemoProvider({ children }: { children: ReactNode }) {
             ...s,
             orders: s.orders.map((o) =>
               o.id === orderId
-                ? { ...o, status: 'delivered', deliveredAt: now, deliveredDay: s.day, receivedBy, collected: { method, amount } }
+                ? {
+                    ...o,
+                    status: 'delivered',
+                    deliveredAt: now,
+                    deliveredDay: s.day,
+                    receivedBy,
+                    collected: { method, amount },
+                    photo,
+                  }
                 : o,
             ),
             // Delivered goods leave the store, so stock goes down by itself.
@@ -263,6 +277,14 @@ function DemoProvider({ children }: { children: ReactNode }) {
             pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: `Closed ${s.day}`, ref: next }],
           };
         }),
+      updateSettings: (settings) =>
+        update((s) => ({
+          ...s,
+          settings,
+          pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: 'Business settings', ref: 'settings' }],
+        })),
+      // Demo photos stay on this phone, so the saved address can be shown as it is.
+      photoUrl: async (photo) => photo,
       resetDemo: () => setState({ ...sampleState(today()), session: state.session }),
     };
   }, [state, update]);
