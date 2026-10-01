@@ -106,7 +106,33 @@ export type Settings = {
   requirePhoto: boolean;
 };
 
-export type Expense = { id: string; day: string; category: string; note: string; amount: number };
+/** How often an expense comes up. It is a label for grouping; nothing repeats by itself. */
+export type Frequency = 'daily' | 'weekly' | 'monthly' | 'one_time';
+
+export const FREQUENCIES: { value: Frequency; label: string }[] = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'one_time', label: 'One-time' },
+];
+
+/** Expense categories from the design (editable in Business settings later). */
+export const EXPENSE_CATEGORIES = ['Fuel', 'Staff pay', 'Transport', 'Bike care', 'Repairs', 'Packaging', 'Other'] as const;
+
+export type Expense = {
+  id: string;
+  /** The business day the money was spent on (counts against that day's profit). */
+  day: string;
+  category: string;
+  note: string;
+  amount: number;
+  frequency: Frequency;
+  /** Which bike it was for, if any. */
+  bike?: string;
+  /** When it was written down, and by whom. */
+  at: string;
+  by: string;
+};
 
 /** A change saved on this phone that has not been uploaded yet. */
 export type PendingChange = { id: string; at: string; label: string; /** The record this change saved. */ ref: string };

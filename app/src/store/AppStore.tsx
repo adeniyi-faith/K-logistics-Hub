@@ -10,15 +10,25 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 
 import { sampleState } from '../data/sample';
 import { AppState, Role, Settings } from '../data/types';
-import { today } from '../lib/format';
+import { naira, today } from '../lib/format';
 import { liveAvailable } from '../live/config';
 import { createLiveEngine } from '../live/engine';
-import { ConfirmInput, LiveEngine, LiveSnapshot, Phase, PriceInput, ReceiveInput, SaleInput, SyncInfo } from '../live/types';
+import {
+  ConfirmInput,
+  ExpenseInput,
+  LiveEngine,
+  LiveSnapshot,
+  Phase,
+  PriceInput,
+  ReceiveInput,
+  SaleInput,
+  SyncInfo,
+} from '../live/types';
 import { uuid } from '../lib/id';
 import { nextOrderCode } from '../lib/sales';
 import { closingStock, nextDay } from '../lib/stock';
 
-const KEY = 'klh-state-v5';
+const KEY = 'klh-state-v6';
 
 export type Store = {
   mode: 'demo' | 'live';
@@ -39,6 +49,8 @@ export type Store = {
   closeDay: () => void;
   /** Admin: business settings such as asking riders for a delivery photo. */
   updateSettings: (settings: Settings) => void;
+  /** Admin and Staff: write down money spent. */
+  addExpense: (input: ExpenseInput) => void;
   /** Something the app can show for a delivery photo, or null when it can't be loaded now. */
   photoUrl: (photo: string) => Promise<string | null>;
   /** Demo only: put the sample data back the way it started. */
@@ -87,6 +99,7 @@ function LiveProvider({ children }: { children: ReactNode }) {
       createSale: e.createSale,
       closeDay: () => report(e.closeDay()),
       updateSettings: (settings) => report(e.updateSettings(settings)),
+      addExpense: (input) => report(e.addExpense(input)),
       photoUrl: e.photoUrl,
       resetDemo: () => {},
     };
@@ -283,6 +296,19 @@ function DemoProvider({ children }: { children: ReactNode }) {
           settings,
           pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: 'Business settings', ref: 'settings' }],
         })),
+      addExpense: (input) =>
+        update((s) => {
+          const now = new Date().toISOString();
+          const id = newId('e');
+          return {
+            ...s,
+            expenses: [...s.expenses, { ...input, id, at: now, by: s.session?.name ?? '' }],
+            pending: [
+              ...s.pending,
+              { id: newId('c'), at: now, label: `${input.category} expense, ${naira(input.amount)}`, ref: id },
+            ],
+          };
+        }),
       // Demo photos stay on this phone, so the saved address can be shown as it is.
       photoUrl: async (photo) => photo,
       resetDemo: () => setState({ ...sampleState(today()), session: state.session }),

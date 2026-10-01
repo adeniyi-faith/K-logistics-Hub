@@ -100,7 +100,16 @@ const schema = new Schema({
     cost_price: column.integer,
     order_id: column.text,
   }),
-  expenses: new Table({ day: column.text, category: column.text, note: column.text, amount: column.integer }),
+  expenses: new Table({
+    day: column.text,
+    category: column.text,
+    note: column.text,
+    amount: column.integer,
+    frequency: column.text,
+    bike: column.text,
+    at: column.text,
+    by_name: column.text,
+  }),
 });
 
 const TABLES = Object.keys(schema.props);
@@ -269,6 +278,13 @@ export function createLiveEngine(): LiveEngine {
     },
     async updateSettings(settings) {
       await db.execute('UPDATE business SET require_photo = ?', [settings.requirePhoto ? 1 : 0]);
+    },
+    async addExpense({ day, category, note, amount, frequency, bike }) {
+      await db.execute(
+        `INSERT INTO expenses (id, day, category, note, amount, frequency, bike, at, by_name)
+         VALUES (uuid(), ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [day, category, note, amount, frequency, bike ?? null, now(), by()],
+      );
     },
     async photoUrl(photo) {
       const local = localPhoto(photo);
@@ -507,6 +523,10 @@ async function readSnapshot(db: PowerSyncDatabase, session: Session | null): Pro
     category: e.category ?? '',
     note: e.note ?? '',
     amount: e.amount ?? 0,
+    frequency: e.frequency ?? 'one_time',
+    bike: e.bike ?? undefined,
+    at: e.at ?? '',
+    by: e.by_name ?? '',
   }));
 
   return { phase: 'ready', state, sync };

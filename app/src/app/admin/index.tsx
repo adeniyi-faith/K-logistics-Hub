@@ -29,7 +29,12 @@ export default function AdminHome() {
     <View style={{ flex: 1 }}>
       <TopBar sub={longDay(state.day)} title={`${greeting()}, ${state.session?.name ?? ''}`} />
       <Screen>
-        <View style={st.hero}>
+        <Pressable
+          onPress={() => router.push('/finance')}
+          accessibilityRole="button"
+          accessibilityLabel="Open finance"
+          style={st.hero}
+        >
           <Text style={st.heroLabel}>Today's sales</Text>
           <Text style={st.heroValue}>{naira(money.sales)}</Text>
           <Text style={st.heroSub}>{money.salesCount} sales</Text>
@@ -38,12 +43,12 @@ export default function AdminHome() {
             <HeroBit label="Expenses" value={naira(money.expenses)} />
             <HeroBit label="Profit" value={naira(money.profit)} highlight />
           </View>
-        </View>
+        </Pressable>
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Quick icon="plus" label="New sale" onPress={() => router.push('/new-sale')} />
           <Quick icon="box" label="Receive stock" onPress={() => router.push('/receive-stock')} />
-          <Quick icon="receipt" label="Add expense" soon />
+          <Quick icon="receipt" label="Add expense" onPress={() => router.push('/add-expense')} />
           <Quick icon="check" label="Delivered" onPress={() => router.push('/admin/sales?tab=delivered')} />
         </View>
 
