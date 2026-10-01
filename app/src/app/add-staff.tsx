@@ -14,6 +14,7 @@ export default function AddStaff() {
   const [phone, setPhone] = useState('');
   const [pay, setPay] = useState('');
   const [every, setEvery] = useState<'month' | 'week'>('month');
+  const [roleId, setRoleId] = useState(state.roles[0]?.id ?? '');
   const [error, setError] = useState('');
 
   if (state.session?.role !== 'admin') {
@@ -32,7 +33,7 @@ export default function AddStaff() {
     if (!name.trim()) return setError('Enter their full name.');
     if (!job.trim()) return setError('Enter their job, e.g. Store keeper.');
     if (n <= 0) return setError('Enter their pay.');
-    addStaff({ name: name.trim(), job: job.trim(), phone: phone.trim(), pay: n, payEvery: every, active: true });
+    addStaff({ name: name.trim(), job: job.trim(), phone: phone.trim(), pay: n, payEvery: every, active: true, roleId });
     router.back();
   };
 
@@ -63,7 +64,16 @@ export default function AddStaff() {
             onChange={setEvery}
           />
         </Card>
-        <Muted>Riders are added under Riders & bikes. Giving staff their own sign-in comes with the staff app (step 6).</Muted>
+        <Card>
+          <Text style={st.label}>Staff role</Text>
+          <Chips<string> options={state.roles.map((r) => ({ value: r.id, label: r.name }))} value={roleId} onChange={setRoleId} />
+          <Muted>{state.roles.find((r) => r.id === roleId)?.summary}</Muted>
+          <Muted>You can change single things just for this person afterwards, in Users & access.</Muted>
+        </Card>
+        <Muted>
+          Riders are added under Riders & bikes. To let this person sign in, create their account in Supabase and link it to them
+          (setup guide, step 3).
+        </Muted>
       </Screen>
     </View>
   );

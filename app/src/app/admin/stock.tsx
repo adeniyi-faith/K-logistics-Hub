@@ -7,11 +7,13 @@ import { clock, count, dayLabel } from '../../lib/format';
 import { isLow, notSynced, stockFor } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
+import { useAccess } from '../../lib/useAccess';
 
 type Tab = 'store' | 'received';
 
 export default function Stock() {
   const { state } = useStore();
+  const { canEdit } = useAccess();
   const [tab, setTab] = useState<Tab>('store');
   const [filter, setFilter] = useState('all');
 
@@ -25,7 +27,13 @@ export default function Stock() {
   return (
     <View style={{ flex: 1 }}>
       <TopBar title="Stock" />
-      <Screen footer={<Button title="Receive stock" kind="accent" icon="plus" onPress={() => router.push('/receive-stock')} />}>
+      <Screen
+        footer={
+          canEdit('stock') ? (
+            <Button title="Receive stock" kind="accent" icon="plus" onPress={() => router.push('/receive-stock')} />
+          ) : undefined
+        }
+      >
         <Chips
           full
           value={tab}

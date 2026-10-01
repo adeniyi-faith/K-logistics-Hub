@@ -9,11 +9,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { sampleState } from '../data/sample';
+import { StaffRole } from '../data/access';
 import { AppState, Role, Settings } from '../data/types';
 import { initialsOf, naira, today } from '../lib/format';
 import { liveAvailable } from '../live/config';
 import { createLiveEngine } from '../live/engine';
 import {
+  AccessInput,
   ConfirmInput,
   ExpenseInput,
   LiveEngine,
@@ -30,7 +32,7 @@ import { uuid } from '../lib/id';
 import { nextOrderCode } from '../lib/sales';
 import { closingStock, nextDay } from '../lib/stock';
 
-const KEY = 'klh-state-v7';
+const KEY = 'klh-state-v8';
 
 export type Store = {
   mode: 'demo' | 'live';
@@ -58,6 +60,10 @@ export type Store = {
   updateRider: (id: string, changes: Partial<RiderInput>) => void;
   addStaff: (input: StaffInput) => void;
   updateStaff: (id: string, changes: Partial<StaffInput>) => void;
+  /** Admin: give a staff member a role and any changes just for them. */
+  saveStaffAccess: (staffId: string, input: AccessInput) => void;
+  /** Admin: add or change a staff role. Everyone with the role gets the change. */
+  saveRole: (role: StaffRole) => void;
   /** Something the app can show for a delivery photo, or null when it can't be loaded now. */
   photoUrl: (photo: string) => Promise<string | null>;
   /** Demo only: put the sample data back the way it started. */
@@ -111,6 +117,8 @@ function LiveProvider({ children }: { children: ReactNode }) {
       updateRider: (id, changes) => report(e.updateRider(id, changes)),
       addStaff: (input) => report(e.addStaff(input)),
       updateStaff: (id, changes) => report(e.updateStaff(id, changes)),
+      saveStaffAccess: (id, input) => report(e.saveStaffAccess(id, input)),
+      saveRole: (role) => report(e.saveRole(role)),
       photoUrl: e.photoUrl,
       resetDemo: () => {},
     };
@@ -163,7 +171,7 @@ function DemoProvider({ children }: { children: ReactNode }) {
               ? { role, name: 'Kasim' }
               : role === 'rider'
                 ? { role, name: 'Emeka', riderId: 'r1' }
-                : { role, name: 'Kemi' },
+                : { role, name: 'Kemi', staffId: 's1' },
         })),
       signIn: async () => 'Real accounts need Supabase and PowerSync set up. Use a demo button below.',
       signOut: () => update((s) => ({ ...s, session: null })),
@@ -353,6 +361,21 @@ function DemoProvider({ children }: { children: ReactNode }) {
             x.id === id ? { ...x, ...changes, initials: changes.name ? initialsOf(changes.name) : x.initials } : x,
           ),
           pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: 'Staff details', ref: id }],
+        })),
+      saveStaffAccess: (id, { job, roleId, overrides, canSignIn }) =>
+        update((s) => ({
+          ...s,
+          staff: s.staff.map((x) => (x.id === id ? { ...x, job, roleId, overrides, canSignIn } : x)),
+          pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: 'Staff access', ref: id }],
+        })),
+      saveRole: (role) =>
+        update((s) => ({
+          ...s,
+          roles: s.roles.some((r) => r.id === role.id) ? s.roles.map((r) => (r.id === role.id ? role : r)) : [...s.roles, role],
+          pending: [
+            ...s.pending,
+            { id: newId('c'), at: new Date().toISOString(), label: `Staff role ${role.name}`, ref: role.id },
+          ],
         })),
       // Demo photos stay on this phone, so the saved address can be shown as it is.
       photoUrl: async (photo) => photo,

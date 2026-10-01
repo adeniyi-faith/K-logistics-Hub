@@ -7,17 +7,21 @@ import { daysIn, inPeriod, Period, periodLabel, periodMoney } from './money';
 import { payeeName, PAY_CATEGORY } from './pay';
 import { itemsText } from './sales';
 import { deliveredOn, orderTotal, orderUnits, stockFor } from './stock';
+import { Area, Perm } from '../data/access';
 
 export type ReportKind = 'sales' | 'stock' | 'expenses' | 'profit' | 'customer' | 'rider' | 'pay';
 
-export const REPORTS: { value: ReportKind; label: string; adminOnly?: boolean }[] = [
-  { value: 'sales', label: 'Sales' },
-  { value: 'stock', label: 'Stock' },
-  { value: 'expenses', label: 'Expenses' },
-  { value: 'profit', label: 'Profit & loss', adminOnly: true },
-  { value: 'customer', label: 'Customer statement' },
-  { value: 'rider', label: 'Rider deliveries' },
-  { value: 'pay', label: 'Staff pay', adminOnly: true },
+type Allowed = { canView: (a: Area) => boolean; can: (p: Perm) => boolean };
+
+/** Each report, and what someone needs to be allowed to see it. */
+export const REPORTS: { value: ReportKind; label: string; needs: (a: Allowed) => boolean }[] = [
+  { value: 'sales', label: 'Sales', needs: (a) => a.canView('sales') },
+  { value: 'stock', label: 'Stock', needs: (a) => a.canView('stock') },
+  { value: 'expenses', label: 'Expenses', needs: (a) => a.canView('expenses') },
+  { value: 'profit', label: 'Profit & loss', needs: (a) => a.canView('finance') && a.can('seeCost') },
+  { value: 'customer', label: 'Customer statement', needs: (a) => a.canView('customers') || a.canView('sales') },
+  { value: 'rider', label: 'Rider deliveries', needs: (a) => a.canView('riders') },
+  { value: 'pay', label: 'Staff pay', needs: (a) => a.canView('staffpay') },
 ];
 
 /** Which filters each report uses. */
@@ -47,7 +51,7 @@ export type Report = {
   empty?: string;
 };
 
-export function buildReport(state: AppState, kind: ReportKind, p: Period, f: Filters): Report {
+export function buildReport(state: AppState, kind: ReportKind, p: Period, f: Filters, seeCost = false): Report {
   const title = REPORTS.find((r) => r.value === kind)!.label;
   const base = { title, period: periodLabel(p) };
   const products = new Map(state.products.map((x) => [x.id, x]));
@@ -79,7 +83,7 @@ export function buildReport(state: AppState, kind: ReportKind, p: Period, f: Fil
       summary: [
         ['Total sales', naira(sales)],
         ['Units sold', String(orders.reduce((s, o) => s + orderUnits(o), 0))],
-        ...(state.session?.role === 'admin' ? [['Profit on goods', naira(profit)] as [string, string]] : []),
+        ...(seeCost ? [['Profit on goods', naira(profit)] as [string, string]] : []),
         ['Deliveries', String(delivered.length)],
         ['Top customer', top((o) => o.customer) ?? '—'],
         ['Top product', topProduct ? (products.get(topProduct)?.name ?? '—') : '—'],

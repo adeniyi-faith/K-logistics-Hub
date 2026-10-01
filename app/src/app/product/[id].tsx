@@ -6,10 +6,12 @@ import { count, dayLabel, naira } from '../../lib/format';
 import { shiftDay, stockFor } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
+import { useAccess } from '../../lib/useAccess';
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state } = useStore();
+  const { canEdit, can } = useAccess();
   const p = state.products.find((x) => x.id === id);
   if (!p) {
     return (
@@ -34,7 +36,14 @@ export default function ProductDetail() {
       <TopBar title={p.name} sub={`${p.group} · ${p.pack}`} back />
       <Screen
         footer={
-          <Button title="Receive stock" kind="accent" icon="plus" onPress={() => router.push(`/receive-stock?product=${p.id}`)} />
+          canEdit('stock') ? (
+            <Button
+              title="Receive stock"
+              kind="accent"
+              icon="plus"
+              onPress={() => router.push(`/receive-stock?product=${p.id}`)}
+            />
+          ) : undefined
         }
       >
         <Card>
@@ -52,21 +61,27 @@ export default function ProductDetail() {
           <Muted>Tonight's closing stock ({line.closing}) becomes tomorrow's opening stock.</Muted>
         </Card>
 
-        <Card style={{ paddingVertical: 8 }}>
-          <H2
-            right={
-              state.session?.role === 'admin' ? (
-                <LinkText onPress={() => router.push(`/edit-prices?product=${p.id}`)}>Edit prices</LinkText>
-              ) : undefined
-            }
-          >
-            Price & profit
-          </H2>
-          <Row first title="Cost price" right={`${naira(p.costPrice)} per ${p.unit}`} />
-          <Row title="Selling price" right={`${naira(p.sellPrice)} per ${p.unit}`} />
-          <Row title={`Profit per ${p.unit}`} sub={`${margin.toFixed(1)}% margin`} right={naira(profitEach)} />
-          <Row title="Profit today" sub={`${count(line.delivered, p.unit)} sold`} right={naira(profitEach * line.delivered)} />
-        </Card>
+        {can('seeCost') ? (
+          <Card style={{ paddingVertical: 8 }}>
+            <H2
+              right={
+                canEdit('stock') ? (
+                  <LinkText onPress={() => router.push(`/edit-prices?product=${p.id}`)}>Edit prices</LinkText>
+                ) : undefined
+              }
+            >
+              Price & profit
+            </H2>
+            <Row first title="Cost price" right={`${naira(p.costPrice)} per ${p.unit}`} />
+            <Row title="Selling price" right={`${naira(p.sellPrice)} per ${p.unit}`} />
+            <Row title={`Profit per ${p.unit}`} sub={`${margin.toFixed(1)}% margin`} right={naira(profitEach)} />
+            <Row title="Profit today" sub={`${count(line.delivered, p.unit)} sold`} right={naira(profitEach * line.delivered)} />
+          </Card>
+        ) : (
+          <Card style={{ paddingVertical: 8 }}>
+            <Row first title="Selling price" right={`${naira(p.sellPrice)} per ${p.unit}`} />
+          </Card>
+        )}
 
         <Card style={{ paddingVertical: 8 }}>
           <H2>Product info</H2>
