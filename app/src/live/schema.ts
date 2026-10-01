@@ -43,6 +43,7 @@ export const TABLES: Record<string, TableDef> = {
       pay_bank: 'text',
       pay_account: 'text',
       pay_name: 'text',
+      documents: 'text',
       pay_changed: 'text',
       photo_path: 'text',
       change_request: 'text',
@@ -165,7 +166,7 @@ export const TABLE_NAMES = Object.keys(TABLES);
 export const YES_NO = ['require_photo', 'active', 'can_sign_in', 'resolved'];
 
 /** Bump when a table above changes. The phone's copy is then rebuilt from the server. */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 /** A random id in the usual uuid shape, made inside SQLite. */
 const UUID_SQL =
@@ -215,8 +216,5 @@ export function setupSql(): string[] {
 
 /** Statements that throw away the downloaded copy (keeping what is still waiting to upload). */
 export function resetSql(): string[] {
-  return [
-    ...TABLE_NAMES.map((t) => `DROP TABLE IF EXISTS ${t}`),
-    "DELETE FROM sync_meta WHERE key LIKE 'cursor:%'",
-  ];
+  return [...TABLE_NAMES.map((t) => `DROP TABLE IF EXISTS ${t}`), "DELETE FROM sync_meta WHERE key LIKE 'cursor:%'"];
 }

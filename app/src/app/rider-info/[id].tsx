@@ -1,6 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { Text } from '../../components/Text';
 
 import { Icon } from '../../components/Icon';
 import { RiderAvatar } from '../../components/RiderAvatar';
@@ -12,6 +14,8 @@ import { periodOf, riderDays } from '../../lib/money';
 import { bikeParts, riderNow, riderOwed } from '../../lib/riders';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
+import { DocumentsCard } from '../../components/DocumentsCard';
+import { LoginCard } from '../../components/LoginCard';
 import { useAccess } from '../../lib/useAccess';
 import { useWords } from '../../lib/words';
 
@@ -180,6 +184,10 @@ export default function RiderInfo() {
             <Muted>The new rate counts for all of this rider's deliveries, including earlier ones.</Muted>
           </Card>
         ) : null}
+
+        <DocumentsCard rider={r} canAdd={acc.canEdit('riders')} />
+
+        {state.session?.role === 'admin' ? <LoginCard kind="rider" id={r.id} name={r.name} /> : null}
       </Screen>
     </View>
   );

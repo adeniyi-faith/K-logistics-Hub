@@ -1,6 +1,9 @@
 import { router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { Text } from '../../components/Text';
+
+import { DocumentsCard } from '../../components/DocumentsCard';
 import { RiderAvatar } from '../../components/RiderAvatar';
 import { SignedInMenu } from '../../components/SignedInMenu';
 import { Badge, Button, Card, H2, Row, Screen, TopBar } from '../../components/ui';
@@ -74,6 +77,8 @@ export default function RiderProfile() {
           <Row title="Earned this week" right={naira(week)} />
           <Row title="Paid into" right={masked} />
         </Card>
+
+        <DocumentsCard rider={rider} canAdd mine />
 
         <SignedInMenu />
       </Screen>

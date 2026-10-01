@@ -1,6 +1,8 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Image, Platform, StyleSheet, Text, View } from 'react-native';
+import { Image, Platform, StyleSheet, View } from 'react-native';
+
+import { Text } from '../components/Text';
 
 import { BusinessLogo } from '../components/BusinessLogo';
 import { SwitchRow } from '../components/SwitchRow';
@@ -177,6 +179,21 @@ export default function Settings() {
         </Card>
 
         <Card>
+          <H2>Customers</H2>
+          <SwitchRow
+            label={`Take customer details on each ${w.sale}`}
+            sub={
+              draft.customerDetails
+                ? `On: each ${w.sale} needs the customer's name (phone optional).`
+                : `Off: ${w.sales} are saved without a customer. Only the delivery area and address are taken.`
+            }
+            value={draft.customerDetails}
+            onChange={(customerDetails) => set({ customerDetails })}
+            onColor={colors.navy}
+          />
+        </Card>
+
+        <Card>
           <H2>Proof of delivery</H2>
           <SwitchRow
             label={`Ask ${w.riders} for a delivery photo`}
@@ -191,7 +208,7 @@ export default function Settings() {
           />
         </Card>
 
-        <Muted>Other phones pick up the changes the next time they sync.</Muted>
+        <Muted>Other phones get the changes when they're online.</Muted>
       </Screen>
     </View>
   );

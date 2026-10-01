@@ -3,7 +3,9 @@
 // common questions itself from the sample data (src/lib/assistant.ts).
 import { Href, Redirect, router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+
+import { Text, TextInput } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AiIcon } from '../components/AskAiButton';

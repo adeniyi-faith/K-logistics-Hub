@@ -1,5 +1,7 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { Text } from '../../components/Text';
 
 import { Icon } from '../../components/Icon';
 import { IconName } from '../../components/icons';

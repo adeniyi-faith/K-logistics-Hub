@@ -3,6 +3,11 @@ import { AppState, Order } from '../data/types';
 import { orderTotal } from './stock';
 
 /** Newest first. */
+/** Who an order is for. Orders saved without customer details show where they are going instead. */
+export function orderFor(o: Pick<Order, 'customer' | 'area'>): string {
+  return o.customer || (o.area ? `Delivery to ${o.area}` : 'No customer');
+}
+
 export function byNewest(a: Order, b: Order): number {
   return b.createdAt.localeCompare(a.createdAt);
 }

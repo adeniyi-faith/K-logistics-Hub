@@ -1,6 +1,8 @@
 // The AI Assistant's own icons, and the small floating "Ask AI" button that opens it.
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+
+import { Text } from './Text';
 import { SvgXml } from 'react-native-svg';
 
 import { colors, fonts } from '../theme';

@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+
+import { Text } from '../components/Text';
 
 import { PeriodPicker } from '../components/PeriodPicker';
 import { Button, Card, Chips, H2, Muted, Screen, TopBar } from '../components/ui';

@@ -1,5 +1,7 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { Text } from '../../components/Text';
 
 import { Icon } from '../../components/Icon';
 import { IconName } from '../../components/icons';
@@ -24,7 +26,7 @@ export default function AdminHome() {
   const delivered = state.orders.filter((o) => o.status === 'delivered' && deliveredOn(o) === state.day);
   // Pending deliveries carry over from earlier days until they are done.
   const pending = state.orders.filter((o) => o.status === 'pending');
-  const customersServed = new Set(delivered.map((o) => o.customer)).size;
+  const customersServed = new Set(delivered.map((o) => o.customer).filter(Boolean)).size;
   const ridersOut = new Set(pending.map((o) => o.riderId)).size;
 
   return (

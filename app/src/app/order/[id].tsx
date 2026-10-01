@@ -1,12 +1,14 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
+
+import { Text } from '../../components/Text';
 
 import { StatusBadge } from '../../components/OrderCard';
 import { ProofPhoto } from '../../components/ProofPhoto';
 import { Avatar, Button, Card, H2, Muted, Row, Screen, TopBar } from '../../components/ui';
 import { clock, dayLabel, naira } from '../../lib/format';
-import { itemsText, paymentText } from '../../lib/sales';
-import { notSynced, orderTotal } from '../../lib/stock';
+import { itemsText, orderFor, paymentText } from '../../lib/sales';
+import { orderTotal } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
 import { useAccess } from '../../lib/useAccess';
@@ -36,13 +38,12 @@ export default function OrderDetail() {
 
   const rider = state.riders.find((r) => r.id === o.riderId);
   const delivered = o.status === 'delivered';
-  const waiting = notSynced(state, o.id);
   const total = orderTotal(o);
 
   const share = () => {
     const text = [
       `K-logistics Hub · Order #${o.code}`,
-      `${o.customer}, ${o.area}`,
+      o.customer ? `${o.customer}, ${o.area}` : o.area,
       itemsText(state, o),
       `Amount: ${naira(total)} (${paymentText(o)})`,
       delivered
@@ -59,19 +60,18 @@ export default function OrderDetail() {
   ];
   if (delivered)
     steps.push([`Delivered${o.photo ? ' and photo taken' : ''}, received by ${o.receivedBy ?? '—'}`, clock(o.deliveredAt ?? '')]);
-  steps.push([waiting ? 'Waiting to upload (saved on this phone)' : 'Uploaded', '']);
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title={delivered ? 'Delivery proof' : 'Order'} sub={`#${o.code} ${o.customer}`} back />
+      <TopBar title={delivered ? 'Delivery proof' : 'Order'} sub={`#${o.code} ${orderFor(o)}`} back />
       <Screen
         footer={
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View style={{ flex: 1 }}>
-              <Button title="Share on WhatsApp" kind="ghost" icon="share" onPress={share} />
+            <View style={{ flex: 2 }}>
+              <Button title="WhatsApp" kind="ghost" icon="share" onPress={share} />
             </View>
             {acc.canEdit('sales') ? (
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 3 }}>
                 <Button
                   title={`New order${rider ? ` with ${rider.name.split(' ')[0]}` : ''}`}
                   kind="accent"
@@ -94,7 +94,7 @@ export default function OrderDetail() {
           <Row
             first
             title="Customer"
-            right={o.customer}
+            right={o.customer || '—'}
             onPress={o.customerId ? () => router.push(`/customer/${o.customerId}`) : undefined}
           />
           <Row title="Area" right={o.area} />

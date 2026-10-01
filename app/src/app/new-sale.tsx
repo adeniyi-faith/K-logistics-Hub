@@ -1,6 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+
+import { Text } from '../components/Text';
 
 import { Icon } from '../components/Icon';
 import { Button, Card, Chips, Field, H2, LinkText, Muted, Row, Screen, TopBar } from '../components/ui';
@@ -73,7 +75,8 @@ export default function NewSale() {
     );
 
   const save = async () => {
-    if (!picked && !(isNew && name.trim())) return setError('Pick a customer, or add a new one with their name.');
+    const takeCustomer = state.settings.customerDetails;
+    if (takeCustomer && !picked && !(isNew && name.trim())) return setError('Pick a customer, or add a new one with their name.');
     if (!lines.length) return setError('Add at least one product.');
     const short = lines.find((l) => l.qty > available(l.productId));
     if (short && !state.settings.allowZeroStock)
@@ -82,8 +85,8 @@ export default function NewSale() {
     if (!area) return setError('Pick the delivery area.');
     setSaving(true);
     const id = await createSale({
-      customerId: picked?.id,
-      newCustomer: picked ? undefined : { name: name.trim(), phone: phone.trim() },
+      customerId: takeCustomer ? picked?.id : undefined,
+      newCustomer: takeCustomer && !picked ? { name: name.trim(), phone: phone.trim() } : undefined,
       area,
       address: address.trim(),
       riderId,
@@ -123,40 +126,44 @@ export default function NewSale() {
           </View>
         }
       >
-        <Card style={picked ? undefined : { paddingVertical: 8 }}>
-          <H2
-            right={picked || isNew ? <LinkText onPress={() => (setCustomerId(''), setIsNew(false))}>Change</LinkText> : undefined}
-          >
-            Customer
-          </H2>
-          {picked ? (
-            <View style={{ gap: 2 }}>
-              <Text style={st.big}>{picked.name}</Text>
-              <Muted>
-                {picked.phone} · {picked.area}
-              </Muted>
-            </View>
-          ) : isNew ? (
-            <>
-              <Field label="Customer name" value={name} onChangeText={setName} />
-              <Field label="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-            </>
-          ) : (
-            <>
-              <Field label="Find a customer" placeholder="Name, phone or area" value={search} onChangeText={setSearch} />
-              {customerMatches.slice(0, 6).map((c, i) => (
-                <Row
-                  key={c.id}
-                  first={i === 0}
-                  title={c.name}
-                  sub={`${c.phone} · ${c.area}`}
-                  onPress={() => pickCustomer(c.id)}
-                />
-              ))}
-              <Row title="+ New customer" onPress={() => setIsNew(true)} />
-            </>
-          )}
-        </Card>
+        {state.settings.customerDetails ? (
+          <Card style={picked ? undefined : { paddingVertical: 8 }}>
+            <H2
+              right={
+                picked || isNew ? <LinkText onPress={() => (setCustomerId(''), setIsNew(false))}>Change</LinkText> : undefined
+              }
+            >
+              Customer
+            </H2>
+            {picked ? (
+              <View style={{ gap: 2 }}>
+                <Text style={st.big}>{picked.name}</Text>
+                <Muted>
+                  {picked.phone} · {picked.area}
+                </Muted>
+              </View>
+            ) : isNew ? (
+              <>
+                <Field label="Customer name" value={name} onChangeText={setName} />
+                <Field label="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+              </>
+            ) : (
+              <>
+                <Field label="Find a customer" placeholder="Name, phone or area" value={search} onChangeText={setSearch} />
+                {customerMatches.slice(0, 6).map((c, i) => (
+                  <Row
+                    key={c.id}
+                    first={i === 0}
+                    title={c.name}
+                    sub={`${c.phone} · ${c.area}`}
+                    onPress={() => pickCustomer(c.id)}
+                  />
+                ))}
+                <Row title="+ New customer" onPress={() => setIsNew(true)} />
+              </>
+            )}
+          </Card>
+        ) : null}
 
         <Card>
           <H2>Items</H2>

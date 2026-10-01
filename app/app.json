@@ -37,7 +37,15 @@
         }
       ],
       "expo-sharing",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0F1E3B",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180
+        }
+      ]
     ],
     "scheme": "klogistics"
   }
