@@ -4,7 +4,7 @@ import { Linking, StyleSheet, View } from 'react-native';
 import { Text } from '../../components/Text';
 
 import { StatusBadge } from '../../components/OrderCard';
-import { Avatar, Button, Card, H2, Muted, Row, Screen, TopBar } from '../../components/ui';
+import { Avatar, Button, Card, H2, LinkText, Muted, Row, Screen, TopBar } from '../../components/ui';
 import { count, dayLabel, naira } from '../../lib/format';
 import { customerStats, itemsText } from '../../lib/sales';
 import { orderTotal } from '../../lib/stock';
@@ -37,7 +37,14 @@ export default function CustomerProfile() {
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title={c.name} sub={since} back />
+      <TopBar
+        title={c.name}
+        sub={since}
+        back
+        right={
+          canEdit('customers') ? <LinkText onPress={() => router.push(`/customer-form?id=${c.id}`)}>Change</LinkText> : undefined
+        }
+      />
       <Screen>
         <Card style={{ gap: 6 }}>
           <Text style={st.big}>{c.phone}</Text>

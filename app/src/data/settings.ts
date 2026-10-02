@@ -13,13 +13,12 @@ export const DEFAULT_SETTINGS: Settings = {
   lowStockAt: 5,
   allowZeroStock: false,
   areas: [...AREAS],
-  words: { sale: 'Sale', rider: 'Rider' },
+  words: { sale: 'Order', rider: 'Rider' },
   customerDetails: true,
   titles: { Faith: 'Developer' },
 };
 
 /** The words Admin can pick for "sale" and "rider". */
-export const SALE_WORDS = ['Sale', 'Order', 'Waybill', 'Delivery'];
 export const RIDER_WORDS = ['Rider', 'Dispatch rider', 'Driver'];
 
 /** Fills in anything missing (e.g. settings saved by an older version of the app). */

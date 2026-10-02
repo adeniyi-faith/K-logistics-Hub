@@ -1,19 +1,85 @@
 // The automatic sums from design/DESIGN.md, kept in one place so every screen agrees.
 import { AppState, Order, Product } from '../data/types';
 
-export type StockLine = { opening: number; received: number; delivered: number; closing: number };
+export type StockLine = {
+  opening: number;
+  received: number;
+  delivered: number;
+  /** Stock count changes (damage, returns, recounts): added minus removed. */
+  adjusted: number;
+  closing: number;
+};
 
-/** Closing stock = Opening + Received − Delivered, for one day (the open day unless given). */
-export function stockFor(state: AppState, productId: string, day = state.day): StockLine {
-  const opening = state.openings[day]?.[productId] ?? 0;
-  let received = 0;
-  let delivered = 0;
-  for (const m of state.moves) {
-    if (m.day !== day || m.productId !== productId) continue;
-    if (m.kind === 'received') received += m.qty;
-    else delivered += m.qty;
+type DayMoves = { received: number; delivered: number; adjusted: number };
+type Ledger = {
+  /** Per product: its first recorded opening stock (the starting count). */
+  start: Map<string, { day: string; qty: number }>;
+  /** Per product, per day: what came in and went out. */
+  days: Map<string, Map<string, DayMoves>>;
+};
+
+// Worked out once per change of the data, not for every product on every screen.
+const ledgers = new WeakMap<AppState['moves'], { openings: AppState['openings']; ledger: Ledger }>();
+
+function ledgerOf(state: AppState): Ledger {
+  const hit = ledgers.get(state.moves);
+  if (hit && hit.openings === state.openings) return hit.ledger;
+  const start = new Map<string, { day: string; qty: number }>();
+  for (const day of Object.keys(state.openings).sort()) {
+    for (const [productId, qty] of Object.entries(state.openings[day])) {
+      if (!start.has(productId)) start.set(productId, { day, qty });
+    }
   }
-  return { opening, received, delivered, closing: opening + received - delivered };
+  const days = new Map<string, Map<string, DayMoves>>();
+  for (const m of state.moves) {
+    const byDay = days.get(m.productId) ?? new Map<string, DayMoves>();
+    days.set(m.productId, byDay);
+    const d = byDay.get(m.day) ?? { received: 0, delivered: 0, adjusted: 0 };
+    byDay.set(m.day, d);
+    if (m.kind === 'received') d.received += m.qty;
+    else if (m.kind === 'delivered') d.delivered += m.qty;
+    else if (m.kind === 'added') d.adjusted += m.qty;
+    else d.adjusted -= m.qty;
+  }
+  const ledger = { start, days };
+  ledgers.set(state.moves, { openings: state.openings, ledger });
+  return ledger;
+}
+
+/**
+ * Closing stock = Opening + Received − Delivered ± count changes, for one day (the open day unless given).
+ * Opening stock is the product's starting count plus everything since, so a sale or delivery that
+ * reaches this phone late (another phone was offline) still lands in the right place.
+ */
+export function stockFor(state: AppState, productId: string, day = state.day): StockLine {
+  const { start, days } = ledgerOf(state);
+  const first = start.get(productId);
+  let opening = first && first.day <= day ? first.qty : 0;
+  const today: DayMoves = { received: 0, delivered: 0, adjusted: 0 };
+  for (const [d, x] of days.get(productId) ?? []) {
+    if (d === day) Object.assign(today, x);
+    else if (d < day && (!first || first.day > day || d >= first.day)) opening += x.received - x.delivered + x.adjusted;
+  }
+  const { received, delivered, adjusted } = today;
+  return { opening, received, delivered, adjusted, closing: opening + received - delivered + adjusted };
+}
+
+/** For tables with only In and Out columns: count changes go into whichever side they belong. */
+export function inOut(line: StockLine): { in: number; out: number } {
+  return {
+    in: line.received + Math.max(line.adjusted, 0),
+    out: line.delivered + Math.max(-line.adjusted, 0),
+  };
+}
+
+/** Units already promised to orders that are not delivered yet, per product. */
+export function promisedStock(state: AppState): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const o of state.orders) {
+    if (o.status !== 'pending') continue;
+    for (const it of o.items) m.set(it.productId, (m.get(it.productId) ?? 0) + it.qty);
+  }
+  return m;
 }
 
 export function isLow(p: Product, line: StockLine): boolean {

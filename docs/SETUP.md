@@ -53,7 +53,9 @@ npx supabase functions deploy manage-login
 
 Then, in the app, Admin types an email and password when adding a staff member or rider (Add staff, Add a rider), or later opens them (More → Users & access, or More → Riders & bikes) and fills in **Sign-in details**. The same card changes the email or resets the password later. The function uses Supabase's secret service-role key, which stays on Supabase's servers and never goes in the app.
 
-To stop someone signing in, set `can_sign_in` to `false` on their profile.
+To stop someone signing in, Admin turns off **Can sign in** on their page (staff in Users & access, riders in Riders & bikes).
+
+**Forgot password:** the sign-in page emails a 6-digit code. For the email to show the code, open Supabase → Authentication → Emails (Templates) → **Reset password** and put this in the message body: `Your code to set a new password is {{ .Token }}`. Supabase's built-in email sender only allows a few emails an hour; for real use, add your own email sender under Authentication → Emails → SMTP settings.
 
 ## 3. Point the app at Supabase
 
@@ -78,6 +80,7 @@ The app keeps its data in a database on the phone (`expo-sqlite`). The free Expo
 - **Riders can change their own details** (phone, address, next of kin, where to pay them, photo). The server stops them changing their name, ID, bike, pay rate or status. When a rider changes where to pay them, the server writes down the day so Admin sees a notice.
 - **Sync clashes**: changes to existing records (products, customers, riders, staff, roles, business settings) go through the `save_change` function in the migration files. It saves each changed value unless another phone changed it meanwhile; then it keeps the value already there and writes the other into `sync_clashes` for Admin to pick in the Sync centre. Only Admin phones download clashes.
 - **How sync works**: each change made on a phone is noted in a waiting list (`sync_outbox`) and sent oldest first, so orders arrive before the things that depend on them. Each table has an `updated_at` time that the server sets (see the `own_sync` migration), and each phone asks only for rows changed since it last looked. Deleted rows are written to `sync_deletes` so other phones can remove them too. A download never overwrites a change still waiting to upload from this phone.
+- **Sales fixes, stock counts, photo rules** (`sales_stock_photos` migration): changing a sale, "couldn't deliver", Admin or staff marking a delivery, Count stock (damage, returns, recounts), changing expenses, unique order numbers, and who can see which photos. Run it before installing an app build that has these, or count changes and some photos will be refused.
 - **Deleting** (Admin only): a sale, expense, stock entry, customer, product, rider or staff member, plus **Clear old data** in Business settings. Run the `admin_deletes` migration first, or the server refuses the deletes. Deleting a rider or staff member also removes their sign-in through `manage-login`, so deploy the latest version of that function again. The same migration also lets riders upload the stock record for a delivery they confirm.
 - **Rider documents** (licence, ID, bike papers) are photos in the same private storage folder, listed on the rider's row. Run the `rider_documents` migration before installing an app build that has this, or the phone's sync will stop with a missing-column error.
 - **Putting the app in the stores**: see [RELEASE.md](RELEASE.md).

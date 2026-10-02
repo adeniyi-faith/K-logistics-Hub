@@ -129,6 +129,7 @@ export const TABLES: Record<string, TableDef> = {
       expiry: 'text',
       cost_price: 'integer',
       order_id: 'text',
+      note: 'text',
     },
   },
   expenses: {
@@ -166,7 +167,7 @@ export const TABLE_NAMES = Object.keys(TABLES);
 export const YES_NO = ['require_photo', 'active', 'can_sign_in', 'resolved'];
 
 /** Bump when a table above changes. The phone's copy is then rebuilt from the server. */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 /** A random id in the usual uuid shape, made inside SQLite. */
 const UUID_SQL =
@@ -192,6 +193,8 @@ export function setupSql(): string[] {
     'CREATE TABLE IF NOT EXISTS sync_outbox (seq INTEGER PRIMARY KEY AUTOINCREMENT, tbl TEXT NOT NULL, op TEXT NOT NULL, row_id TEXT NOT NULL, data TEXT, prev TEXT)',
     'CREATE TABLE IF NOT EXISTS sync_meta (key TEXT PRIMARY KEY, value TEXT)',
     "INSERT OR IGNORE INTO sync_meta (key, value) VALUES ('applying', '0')",
+    // Changes the server refused, so Admin can see what did not go through.
+    'CREATE TABLE IF NOT EXISTS sync_refused (seq INTEGER PRIMARY KEY AUTOINCREMENT, tbl TEXT NOT NULL, op TEXT NOT NULL, row_id TEXT NOT NULL, at TEXT NOT NULL, reason TEXT)',
   ];
   for (const [name, def] of Object.entries(TABLES)) {
     const cols = Object.keys(def.cols);

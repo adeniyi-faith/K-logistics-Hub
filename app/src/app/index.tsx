@@ -1,6 +1,6 @@
 import { Redirect, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -43,7 +43,20 @@ function IconField({
 }
 
 export default function SignIn() {
-  const { state, mode, phase, signInAs, signIn } = useStore();
+  const { state, mode, phase, signInAs, signIn, signOut, sendResetCode, resetPassword } = useStore();
+  // forgot: asking for a code by email. reset: typing the code and a new password.
+  const [view, setView] = useState<'signin' | 'forgot' | 'reset'>('signin');
+  const [code, setCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [info, setInfo] = useState('');
+  const [slow, setSlow] = useState(false);
+
+  // Still "getting your account ready" after a while: say what might be wrong and offer a way out.
+  useEffect(() => {
+    if (phase !== 'loading') return setSlow(false);
+    const t = setTimeout(() => setSlow(true), 15000);
+    return () => clearTimeout(t);
+  }, [phase]);
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
@@ -63,6 +76,33 @@ export default function SignIn() {
     const error = await signIn(login.trim(), password);
     setBusy(false);
     if (error) setNote(error);
+  };
+
+  const sendCode = async () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(login.trim())) return setNote('Enter the email you sign in with.');
+    setBusy(true);
+    setNote('');
+    const error = await sendResetCode(login.trim());
+    setBusy(false);
+    if (error) return setNote(error);
+    setInfo(`We sent a code to ${login.trim()}. It can take a minute; check spam too.`);
+    setView('reset');
+  };
+
+  const saveNewPassword = async () => {
+    if (!code.trim()) return setNote('Enter the code from the email.');
+    if (newPassword.length < 8) return setNote('The new password needs at least 8 characters.');
+    setBusy(true);
+    setNote('');
+    const error = await resetPassword(login.trim(), code, newPassword);
+    setBusy(false);
+    if (error) setNote(error);
+  };
+
+  const go = (v: typeof view) => {
+    setNote('');
+    setInfo('');
+    setView(v);
   };
 
   const openAs = (role: Role) => {
@@ -87,12 +127,105 @@ export default function SignIn() {
 
             <View style={st.sheet}>
               <View style={{ gap: 4 }}>
-                <Text style={st.title}>Sign in</Text>
-                <Text style={st.sub}>Welcome back. Let's run today's business.</Text>
+                <Text style={st.title}>{view === 'signin' ? 'Sign in' : 'New password'}</Text>
+                <Text style={st.sub}>
+                  {view === 'signin'
+                    ? "Welcome back. Let's run today's business."
+                    : view === 'forgot'
+                      ? "Enter your email and we'll send you a code to set a new password."
+                      : info}
+                </Text>
               </View>
 
-              {phase === 'loading' ? (
-                <Text style={st.sub}>Getting your account ready. This needs internet the first time.</Text>
+              {phase === 'blocked' ? (
+                <View style={{ gap: 16 }}>
+                  <View style={st.note}>
+                    <Icon name="lock" size={18} color={colors.red} />
+                    <Text style={st.noteText}>Your access to the app has been turned off. Ask Admin if this is a mistake.</Text>
+                  </View>
+                  <Button title="Sign out" kind="ghost" onPress={signOut} />
+                </View>
+              ) : phase === 'loading' ? (
+                <View style={{ gap: 16 }}>
+                  <Text style={st.sub}>Getting your account ready. This needs internet the first time.</Text>
+                  {slow ? (
+                    <>
+                      <Text style={st.sub}>
+                        This is taking long. Check your internet. If it keeps happening, your account may not be set up yet; ask
+                        Admin to check your sign-in details.
+                      </Text>
+                      <Button title="Sign out" kind="ghost" onPress={signOut} />
+                    </>
+                  ) : null}
+                </View>
+              ) : view === 'forgot' ? (
+                <View style={{ gap: 16 }}>
+                  <IconField
+                    icon="user"
+                    label="Email"
+                    placeholder="you@example.com"
+                    value={login}
+                    onChangeText={setLogin}
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    keyboardType="email-address"
+                    returnKeyType="send"
+                    onSubmitEditing={sendCode}
+                  />
+                  {note ? (
+                    <View style={st.note}>
+                      <Icon name="alert" size={18} color={colors.red} />
+                      <Text style={st.noteText}>{note}</Text>
+                    </View>
+                  ) : null}
+                  <Button title={busy ? 'Sending…' : 'Send code'} kind="accent" onPress={sendCode} disabled={busy} />
+                  <Pressable onPress={() => go('signin')} accessibilityRole="button" style={st.linkBtn}>
+                    <Text style={st.link}>Back to sign in</Text>
+                  </Pressable>
+                </View>
+              ) : view === 'reset' ? (
+                <View style={{ gap: 16 }}>
+                  <IconField
+                    icon="lock"
+                    label="Code from the email"
+                    placeholder="6-digit code"
+                    value={code}
+                    onChangeText={setCode}
+                    keyboardType="number-pad"
+                    autoComplete="one-time-code"
+                  />
+                  <IconField
+                    icon="lock"
+                    label="New password"
+                    placeholder="At least 8 characters"
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    secureTextEntry={!show}
+                    autoComplete="new-password"
+                    returnKeyType="go"
+                    onSubmitEditing={saveNewPassword}
+                    right={
+                      <Pressable
+                        onPress={() => setShow(!show)}
+                        hitSlop={10}
+                        accessibilityRole="button"
+                        accessibilityLabel={show ? 'Hide password' : 'Show password'}
+                      >
+                        <Icon name="eye" size={20} color={show ? colors.navy : colors.muted} />
+                      </Pressable>
+                    }
+                  />
+                  {note ? (
+                    <View style={st.note}>
+                      <Icon name="alert" size={18} color={colors.red} />
+                      <Text style={st.noteText}>{note}</Text>
+                    </View>
+                  ) : null}
+                  <Button title={busy ? 'Saving…' : 'Save and sign in'} kind="accent" onPress={saveNewPassword} disabled={busy} />
+                  <Pressable onPress={() => go('forgot')} accessibilityRole="button" style={st.linkBtn}>
+                    <Text style={st.link}>Send a new code</Text>
+                  </Pressable>
+                </View>
               ) : (
                 <View style={{ gap: 16 }}>
                   <IconField
@@ -134,10 +267,13 @@ export default function SignIn() {
                     </View>
                   ) : null}
                   <Button title={busy ? 'Signing in…' : 'Sign in'} kind="accent" onPress={submit} disabled={busy} />
+                  <Pressable onPress={() => go('forgot')} accessibilityRole="button" style={st.linkBtn}>
+                    <Text style={st.link}>Forgot password?</Text>
+                  </Pressable>
                 </View>
               )}
 
-              {showDemo ? (
+              {showDemo && view === 'signin' ? (
                 <View style={st.demo}>
                   <View style={st.orRow}>
                     <View style={st.orLine} />
@@ -211,6 +347,8 @@ const st = StyleSheet.create({
   note: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 12, backgroundColor: colors.redBg },
   noteText: { flex: 1, fontFamily: fonts.body, fontSize: 14, color: colors.red },
   demo: { gap: 12 },
+  linkBtn: { alignSelf: 'center', minHeight: 40, justifyContent: 'center', paddingHorizontal: 12 },
+  link: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.orangeText },
   orRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   orLine: { flex: 1, height: 1, backgroundColor: colors.line },
   orText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.muted },

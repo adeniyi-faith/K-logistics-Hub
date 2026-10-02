@@ -30,7 +30,7 @@ export function OrderCard({ order, first, showReceiver }: { order: Order; first?
     >
       <View style={st.line}>
         <Text style={st.code}>
-          #{order.code} · {clock(time)}
+          Order #{order.code} · {clock(time)}
         </Text>
         <View style={{ flexDirection: 'row', gap: 6 }}>
           <StatusBadge order={order} />

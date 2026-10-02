@@ -28,7 +28,8 @@ export type StockMove = {
   id: string;
   day: string;
   productId: string;
-  kind: 'received' | 'delivered';
+  /** added / removed: a stock count change (damage, a return, a recount), with the reason in note. */
+  kind: 'received' | 'delivered' | 'added' | 'removed';
   qty: number;
   at: string;
   by: string;
@@ -36,6 +37,8 @@ export type StockMove = {
   expiry?: string;
   costPrice?: number;
   orderId?: string;
+  /** Why a count change was made, e.g. "Damaged". */
+  note?: string;
 };
 
 /** active: can be given deliveries. The app shows "On delivery" or "Available" from their orders. */
@@ -79,6 +82,8 @@ export type Rider = {
   changeRequestAt?: string;
   /** Papers the rider uploaded, e.g. driver's licence. */
   documents?: RiderDoc[];
+  /** Whether their account may sign in (undefined: no sign-in yet). */
+  canSignIn?: boolean;
 };
 
 /** A photo of one of a rider's papers. photo: a file on this phone, or its name in online storage. */
@@ -136,7 +141,7 @@ export type OrderItem = { productId: string; qty: number; unitPrice: number };
 
 export type Order = {
   id: string;
-  /** Short number people read out, e.g. "S-0930-18". */
+  /** Short number people read out, e.g. "ORD-0930-18". */
   code: string;
   day: string;
   createdAt: string;
@@ -264,4 +269,9 @@ export type AppState = {
   /** Sync clashes waiting for Admin to pick a value. */
   clashes: Clash[];
   pending: PendingChange[];
+  /** Changes the server refused (e.g. not allowed). The phone has been put back in line with the server. */
+  refused?: RefusedChange[];
 };
+
+/** A change saved on this phone that the server said no to. */
+export type RefusedChange = { id: string; at: string; label: string; reason: string };

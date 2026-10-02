@@ -5,20 +5,28 @@ import { Image, StyleSheet, View } from 'react-native';
 import { Text } from '../../components/Text';
 
 import { OrderSummary } from '../../components/OrderSummary';
-import { Button, Card, Chips, Field, H2, Muted, Screen, TopBar } from '../../components/ui';
+import { NoAccess } from '../../components/NoAccess';
+import { Button, Card, Chips, Field, H2, LinkText, Muted, Screen, TopBar } from '../../components/ui';
 import { Order } from '../../data/types';
 import { naira } from '../../lib/format';
 import { takeDeliveryPhoto } from '../../lib/photo';
 import { orderTotal } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { orderFor } from '../../lib/sales';
+import { useAccess } from '../../lib/useAccess';
 import { colors, fonts } from '../../theme';
 
 type Method = NonNullable<Order['collected']>['method'];
 
+const REASONS = ['Customer not around', 'Wrong address', 'Customer refused it', 'Customer cancelled', 'Other'];
+
 export default function ConfirmDelivery() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { state, mode, confirmDelivery } = useStore();
+  const { id, fail } = useLocalSearchParams<{ id: string; fail?: string }>();
+  const { state, mode, confirmDelivery, markFailed } = useStore();
+  const acc = useAccess();
+  const [failing, setFailing] = useState(fail === '1');
+  const [reason, setReason] = useState(REASONS[0]);
+  const [reasonNote, setReasonNote] = useState('');
   const order = state.orders.find((o) => o.id === id);
   const due = order ? orderTotal(order) : 0;
   const [method, setMethod] = useState<Method>(order?.payment === 'transfer' ? 'paid_before' : 'cash');
@@ -54,7 +62,18 @@ export default function ConfirmDelivery() {
     );
   }
 
+  // Riders confirm their own deliveries; Admin and staff who handle sales can do it for them.
+  const mine = state.session?.role === 'rider' ? order.riderId === state.session.riderId : acc.canEdit('sales');
+  if (!mine) return <NoAccess title="Confirm delivery" />;
+
   const done = order.status !== 'pending';
+
+  const saveFailed = () => {
+    const why = reason === 'Other' ? reasonNote.trim() : [reason, reasonNote.trim()].filter(Boolean).join(': ');
+    if (!why) return setError('Write why it could not be delivered.');
+    markFailed(order.id, why);
+    router.back();
+  };
 
   const confirm = () => {
     const paid = method === 'paid_before' ? 0 : Number(amount.replace(/[^\d]/g, '')) || 0;
@@ -67,13 +86,17 @@ export default function ConfirmDelivery() {
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title="Confirm delivery" sub={`#${order.code} ${orderFor(order)}`} back />
+      <TopBar title={failing ? "Couldn't deliver" : 'Confirm delivery'} sub={`#${order.code} ${orderFor(order)}`} back />
       <Screen
         footer={
           done ? undefined : (
             <View style={{ gap: 8 }}>
               {error ? <Text style={st.error}>{error}</Text> : null}
-              <Button title="Confirm delivered" kind="accent" icon="check" onPress={confirm} />
+              {failing ? (
+                <Button title="Save: couldn't deliver" kind="danger" icon="x" onPress={saveFailed} />
+              ) : (
+                <Button title="Confirm delivered" kind="accent" icon="check" onPress={confirm} />
+              )}
             </View>
           )
         }
@@ -84,13 +107,30 @@ export default function ConfirmDelivery() {
           <Muted>Phone {order.phone}</Muted>
         </Card>
 
-        {done ? (
+        {order.status === 'failed' ? (
+          <Card>
+            <H2>Couldn't deliver</H2>
+            <Muted>{order.failReason || 'No reason written.'}</Muted>
+          </Card>
+        ) : done ? (
           <Card>
             <H2>Delivered</H2>
             <Muted>
               Received by {order.receivedBy}
               {order.collected?.amount ? ` · collected ${naira(order.collected.amount)}` : ''}
             </Muted>
+          </Card>
+        ) : failing ? (
+          <Card>
+            <H2>Why couldn't it be delivered?</H2>
+            <Chips<string> options={REASONS.map((r) => ({ value: r, label: r }))} value={reason} onChange={setReason} />
+            <Field
+              label={reason === 'Other' ? 'What happened?' : 'More detail (optional)'}
+              value={reasonNote}
+              onChangeText={(t) => (setError(''), setReasonNote(t))}
+            />
+            <Muted>Nothing leaves the stock. The office can try it again or delete it.</Muted>
+            <LinkText onPress={() => (setError(''), setFailing(false))}>It was delivered after all</LinkText>
           </Card>
         ) : (
           <>
@@ -137,6 +177,7 @@ export default function ConfirmDelivery() {
                 </View>
               ) : null}
             </Card>
+            <LinkText onPress={() => (setError(''), setFailing(true))}>Couldn't deliver it?</LinkText>
             <View style={st.offline}>
               <Text style={st.offlineText}>
                 No internet here? That's fine. This delivery is saved on your phone and will upload by itself.

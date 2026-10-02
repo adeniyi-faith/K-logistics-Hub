@@ -67,9 +67,9 @@ export function customerStats(state: AppState, customerId: string) {
   };
 }
 
-/** Next order number for a day on this phone, e.g. "S-1001-20". */
+/** Next order number for a day on this phone, e.g. "ORD-1001-20" (orders made before this start with "S-"). */
 export function nextOrderCode(state: AppState): string {
-  const prefix = `S-${state.day.slice(5).replace('-', '')}-`;
+  const prefix = `ORD-${state.day.slice(5).replace('-', '')}-`;
   const used = state.orders.filter((o) => o.code.startsWith(prefix)).map((o) => Number(o.code.slice(prefix.length)) || 0);
   return `${prefix}${String(Math.max(0, ...used) + 1).padStart(2, '0')}`;
 }

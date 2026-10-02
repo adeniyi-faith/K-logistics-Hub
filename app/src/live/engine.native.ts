@@ -27,7 +27,7 @@ import {
 } from '../data/types';
 import { uuid } from '../lib/id';
 import { nextOrderCode } from '../lib/sales';
-import { closingStock, nextDay } from '../lib/stock';
+import { closingStock, nextDay, shiftDay } from '../lib/stock';
 import { initialsOf, today } from '../lib/format';
 import { config } from './config';
 import { connectAssistant } from './assistant';
@@ -146,6 +146,10 @@ export function createLiveEngine(): LiveEngine {
 
   let loading = false;
   let again = false;
+  // Reading every table is the slow part, so it is only done when something was saved or
+  // downloaded (or the person changed). Sync status changes reuse the data already read.
+  let dirty = true;
+  let readFor: string | undefined;
   async function reload() {
     if (loading) {
       again = true;
@@ -155,7 +159,11 @@ export function createLiveEngine(): LiveEngine {
     try {
       do {
         again = false;
-        emit(await readSnapshot(await opened, session, { online, syncing }));
+        const who = session?.user.id;
+        const fresh = dirty || who !== readFor || snap.phase !== 'ready';
+        dirty = false;
+        readFor = who;
+        emit(await readSnapshot(await opened, session, { online, syncing }, fresh ? undefined : snap));
       } while (again);
     } catch (e) {
       console.warn('Could not read the phone database', e);
@@ -166,6 +174,7 @@ export function createLiveEngine(): LiveEngine {
 
   opened.then((local) =>
     local.onChange((kind) => {
+      dirty = true;
       reload();
       if (kind === 'save') syncSoon(); // Something was saved on this phone.
     }),
@@ -346,14 +355,14 @@ export function createLiveEngine(): LiveEngine {
       const before = snap.state.riders.find((r) => r.id === id);
       // A new photo is a file on this phone: keep it, and upload it when there's internet.
       const photo =
-        changes.photo && changes.photo !== before?.photo ? await keepPhoto(`rider-${uuid()}`, changes.photo) : undefined;
+        changes.photo && changes.photo !== before?.photo ? await keepPhoto(`rider-${id}-${uuid()}`, changes.photo) : undefined;
       // New document photos are files on this phone too: keep each one like the photo above.
       let documents: string | undefined;
       if (changes.documents) {
         const known = new Set((before?.documents ?? []).map((d) => d.photo));
         const docs = [];
         for (const d of changes.documents)
-          docs.push(known.has(d.photo) ? d : { ...d, photo: await keepPhoto(`doc-${uuid()}`, d.photo) });
+          docs.push(known.has(d.photo) ? d : { ...d, photo: await keepPhoto(`doc-${id}-${uuid()}`, d.photo) });
         documents = JSON.stringify(docs);
       }
       const cols: Record<string, unknown> = {
@@ -458,6 +467,128 @@ export function createLiveEngine(): LiveEngine {
           ]);
         }
       });
+    },
+    async updateSale(orderId, input) {
+      const s = snap.state;
+      const o = s.orders.find((x) => x.id === orderId);
+      if (!o || o.status !== 'pending') return;
+      await db.writeTransaction(async (tx) => {
+        let customerId: string | null = input.customerId ?? null;
+        let name = '';
+        let phone = '';
+        if (customerId) {
+          const c = s.customers.find((x) => x.id === customerId);
+          name = c?.name ?? o.customer;
+          phone = c?.phone ?? o.phone;
+        } else if (input.newCustomer) {
+          customerId = uuid();
+          name = input.newCustomer.name;
+          phone = input.newCustomer.phone;
+          await tx.execute('INSERT INTO customers (id, name, phone, area, address, created_at) VALUES (?, ?, ?, ?, ?, ?)', [
+            customerId,
+            name,
+            phone,
+            input.area,
+            input.address,
+            now(),
+          ]);
+        }
+        await tx.execute(
+          'UPDATE orders SET customer_id = ?, customer = ?, phone = ?, area = ?, address = ?, rider_id = ?, payment = ? WHERE id = ?',
+          [customerId, name, phone, input.area, input.address, input.riderId, input.payment, orderId],
+        );
+        // Change the lines that stay, remove the ones taken off, add the new ones.
+        const old = await tx.getAll<Row>('SELECT id, product_id FROM order_items WHERE order_id = ?', [orderId]);
+        for (const row of old) {
+          const it = input.items.find((x) => x.productId === row.product_id);
+          if (it) {
+            await tx.execute('UPDATE order_items SET qty = ?, unit_price = ?, rider_id = ? WHERE id = ?', [
+              it.qty,
+              it.unitPrice,
+              input.riderId,
+              row.id,
+            ]);
+          } else {
+            await tx.execute('DELETE FROM order_items WHERE id = ?', [row.id]);
+          }
+        }
+        for (const it of input.items.filter((x) => !old.some((r) => r.product_id === x.productId))) {
+          await tx.execute(
+            'INSERT INTO order_items (id, order_id, rider_id, product_id, qty, unit_price) VALUES (uuid(), ?, ?, ?, ?, ?)',
+            [orderId, input.riderId, it.productId, it.qty, it.unitPrice],
+          );
+        }
+      });
+    },
+    async markFailed(orderId, reason) {
+      await db.execute("UPDATE orders SET status = 'failed', fail_reason = ? WHERE id = ? AND status = 'pending'", [
+        reason,
+        orderId,
+      ]);
+    },
+    async retrySale(orderId) {
+      await db.execute("UPDATE orders SET status = 'pending', fail_reason = NULL WHERE id = ? AND status = 'failed'", [orderId]);
+    },
+    async countStock({ productId, change, reason }) {
+      if (!change) return;
+      await db.execute(
+        `INSERT INTO stock_moves (id, day, product_id, kind, qty, at, by_name, note) VALUES (uuid(), ?, ?, ?, ?, ?, ?, ?)`,
+        [snap.state.day, productId, change > 0 ? 'added' : 'removed', Math.abs(change), now(), by(), reason || null],
+      );
+    },
+    async updateExpense(id, e) {
+      await updateRow('expenses', id, {
+        day: e.day,
+        category: e.category,
+        note: e.note,
+        amount: e.amount,
+        frequency: e.frequency,
+        bike: e.bike === undefined ? undefined : e.bike || null,
+      });
+    },
+    async updateCustomer(id, c) {
+      await db.writeTransaction(async (tx) => {
+        const set = Object.entries({ name: c.name, phone: c.phone, area: c.area, address: c.address }).filter(
+          ([, v]) => v !== undefined,
+        );
+        if (!set.length) return;
+        await tx.execute(`UPDATE customers SET ${set.map(([k]) => `${k} = ?`).join(', ')} WHERE id = ?`, [
+          ...set.map(([, v]) => v),
+          id,
+        ]);
+        // Orders not delivered yet carry the new name and phone to the rider.
+        if (c.name !== undefined || c.phone !== undefined) {
+          const cur = snap.state.customers.find((x) => x.id === id);
+          await tx.execute("UPDATE orders SET customer = ?, phone = ? WHERE customer_id = ? AND status = 'pending'", [
+            c.name ?? cur?.name ?? '',
+            c.phone ?? cur?.phone ?? '',
+            id,
+          ]);
+        }
+      });
+    },
+    async reopenDay() {
+      const s = snap.state;
+      await db.execute('UPDATE business SET current_day = ? WHERE current_day = ?', [shiftDay(s.day, -1), s.day]);
+    },
+    async setRiderSignIn(riderId, on) {
+      await db.execute('UPDATE profiles SET can_sign_in = ? WHERE rider_id = ?', [on ? 1 : 0, riderId]);
+    },
+    async dismissRefused() {
+      await db.execute('DELETE FROM sync_refused');
+    },
+    async sendResetCode(email) {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+      if (!error) return null;
+      return /rate|seconds|many/i.test(error.message)
+        ? 'Too many tries. Please wait a few minutes and try again.'
+        : 'The code could not be sent. Check the email and your internet, then try again.';
+    },
+    async resetPassword(email, code, password) {
+      const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: code.trim(), type: 'recovery' });
+      if (error) return 'That code is wrong or has expired. Ask for a new one.';
+      const r = await supabase.auth.updateUser({ password });
+      return r.error ? 'The new password could not be saved. Please try again.' : null;
     },
     async uploadNow(rowId) {
       // A sync may already be running; wait for it, then run one more so this change goes too.
@@ -666,6 +797,8 @@ async function readSnapshot(
   db: LocalDb,
   session: Session | null,
   net: { online: boolean; syncing: boolean },
+  /** The last snapshot, when nothing was saved or downloaded since: only the sync status is read again. */
+  same?: LiveSnapshot,
 ): Promise<LiveSnapshot> {
   const waiting = await db.all<{ seq: number; tbl: string; row_id: string }>(
     'SELECT seq, tbl, row_id FROM sync_outbox ORDER BY seq',
@@ -677,6 +810,7 @@ async function readSnapshot(
     ref: c.row_id,
   }));
   const sync = syncInfo(net, pending.length);
+  if (same) return { ...same, state: { ...same.state, pending }, sync };
   const state = emptyState();
   state.pending = pending;
 
@@ -684,7 +818,7 @@ async function readSnapshot(
 
   const profile = (await db.first<Row>('SELECT * FROM profiles WHERE id = ?', [session.user.id])) ?? null;
   if (!profile) return { phase: 'loading', state, sync };
-  if (!profile.can_sign_in) return { phase: 'signedOut', state, sync };
+  if (!profile.can_sign_in) return { phase: 'blocked', state, sync };
 
   const business = await db.first<Row>('SELECT current_day, require_photo, settings FROM business LIMIT 1');
   state.day = business?.current_day ?? today();
@@ -711,7 +845,7 @@ async function readSnapshot(
       db.all<Row>('SELECT * FROM expenses'),
       db.all<Row>('SELECT * FROM staff ORDER BY name'),
       db.all<Row>('SELECT * FROM staff_roles ORDER BY name'),
-      db.all<Row>('SELECT staff_id, can_sign_in FROM profiles WHERE staff_id IS NOT NULL'),
+      db.all<Row>('SELECT staff_id, rider_id, can_sign_in FROM profiles WHERE staff_id IS NOT NULL OR rider_id IS NOT NULL'),
       // Only Admin phones download these (the server only lets Admin read them).
       db.all<Row>('SELECT * FROM sync_clashes WHERE resolved IS NULL OR resolved = 0 ORDER BY at'),
     ]);
@@ -746,6 +880,7 @@ async function readSnapshot(
       expiry: m.expiry ?? undefined,
       costPrice: m.cost_price ?? undefined,
       orderId: m.order_id ?? undefined,
+      note: m.note ?? undefined,
     }),
   );
   state.riders = riders.map(
@@ -776,6 +911,10 @@ async function readSnapshot(
       changeRequest: r.change_request ?? undefined,
       changeRequestAt: r.change_request_at ?? undefined,
       documents: readDocs(r.documents),
+      canSignIn: (() => {
+        const login = logins.find((l) => l.rider_id === r.id);
+        return login ? Boolean(login.can_sign_in) : undefined;
+      })(),
     }),
   );
   state.staff = staff.map(
@@ -857,6 +996,13 @@ async function readSnapshot(
     by: e.by_name ?? '',
     payee: e.payee ?? undefined,
     receipt: e.receipt_path ?? undefined,
+  }));
+  const refused = await db.all<Row>('SELECT seq, tbl, op, at, reason FROM sync_refused ORDER BY seq DESC LIMIT 50');
+  state.refused = refused.map((r) => ({
+    id: String(r.seq),
+    at: r.at ?? '',
+    label: `${LABELS[r.tbl] ?? 'Change'}${r.op === 'DELETE' ? ' (delete)' : r.op === 'PUT' ? ' (new)' : ''}`,
+    reason: r.reason ?? '',
   }));
   state.clashes = clashes.map(
     (c): Clash => ({

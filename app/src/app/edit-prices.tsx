@@ -69,7 +69,7 @@ export default function EditPrices() {
             keyboardType="number-pad"
             value={sell}
             onChangeText={setSell}
-            helper={`Now ${naira(p.sellPrice)}. New sales use this price.`}
+            helper={`Now ${naira(p.sellPrice)}. New orders use this price.`}
           />
           <Field label="Warn me when stock falls to" keyboardType="number-pad" value={lowAt} onChangeText={setLowAt} />
         </Card>
