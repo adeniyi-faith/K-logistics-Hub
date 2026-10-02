@@ -88,7 +88,7 @@ export default function SignIn() {
             <View style={st.sheet}>
               <View style={{ gap: 4 }}>
                 <Text style={st.title}>Sign in</Text>
-                <Text style={st.sub}>Admin, staff and riders all sign in here. You'll go straight to your own pages.</Text>
+                <Text style={st.sub}>Welcome back. Let's run today's business.</Text>
               </View>
 
               {phase === 'loading' ? (
