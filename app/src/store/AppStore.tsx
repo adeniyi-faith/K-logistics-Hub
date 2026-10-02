@@ -13,10 +13,12 @@ import { StaffRole } from '../data/access';
 import { AppState, Role, Settings } from '../data/types';
 import { initialsOf, naira, today } from '../lib/format';
 import { liveAvailable } from '../live/config';
+import { removeLogin } from '../live/logins';
 import { createLiveEngine } from '../live/engine';
 import {
   AccessInput,
   ClashChoice,
+  ClearPart,
   ConfirmInput,
   ExpenseInput,
   LiveEngine,
@@ -68,7 +70,8 @@ export type Store = {
   changePassword: (password: string) => Promise<string | null>;
   /** Admin: keep one of the two values after a sync clash. */
   resolveClash: (id: string, keep: ClashChoice) => void;
-  addStaff: (input: StaffInput) => void;
+  /** Saves a new staff member and returns their id. */
+  addStaff: (input: StaffInput) => Promise<string>;
   updateStaff: (id: string, changes: Partial<StaffInput>) => void;
   /** Admin: give a staff member a role and any changes just for them. */
   saveStaffAccess: (staffId: string, input: AccessInput) => void;
@@ -78,12 +81,73 @@ export type Store = {
   photoUrl: (photo: string) => Promise<string | null>;
   /** Demo only: put the sample data back the way it started. */
   resetDemo: () => void;
+  /** Sends what is waiting now (needs internet). True once the given record has reached the server. */
+  uploadNow: (rowId?: string) => Promise<boolean>;
+  /** Admin: removes a sale and any stock it took out (the stock goes back). */
+  deleteSale: (orderId: string) => void;
+  deleteExpense: (id: string) => void;
+  /** Admin: removes one "received" stock entry. */
+  deleteStockMove: (id: string) => void;
+  /** Admin: removes a customer; their past sales keep the name copied onto them. */
+  deleteCustomer: (id: string) => void;
+  /** Admin: hides a product that is in past sales, or removes any other product with its stock records. */
+  removeProduct: (id: string) => void;
+  /** Admin: removes a rider or staff member and their sign-in. Returns an error message, or null when done. */
+  deleteRider: (id: string) => Promise<string | null>;
+  deleteStaff: (id: string) => Promise<string | null>;
+  /** Admin: wipes whole kinds of records, e.g. the sample data the business started with. */
+  clearData: (parts: ClearPart[]) => Promise<void>;
+  /** Admin: who the app is shown as right now (see "See the app as"), or null for Admin's own view. */
+  viewAs: ViewAs | null;
+  setViewAs: (v: ViewAs | null) => void;
 };
+
+/** Admin looking at the app the way one staff member or rider sees it. */
+export type ViewAs = { role: 'staff' | 'rider'; id: string };
 
 const Ctx = createContext<Store | null>(null);
 
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   return liveAvailable ? <LiveProvider>{children}</LiveProvider> : <DemoProvider>{children}</DemoProvider>;
+}
+
+type BaseStore = Omit<Store, 'viewAs' | 'setViewAs'>;
+
+/** Removes the person's sign-in first, so nobody is left with an account that points at nothing. */
+async function withoutLogin(kind: 'staff' | 'rider', id: string, remove: () => unknown) {
+  const r = await removeLogin(kind, id);
+  if (r.error) return r.error;
+  await remove();
+  return null;
+}
+
+/**
+ * Lets Admin see the app as one staff member or rider. Only what the screens are told about
+ * the signed-in person changes; everything is still saved as Admin.
+ */
+function ViewAsLayer({ base, children }: { base: BaseStore; children: ReactNode }) {
+  const [viewAs, setViewAs] = useState<ViewAs | null>(null);
+  const real = base.state.session;
+  const store = useMemo<Store>(() => {
+    const person =
+      real?.role === 'admin' && viewAs
+        ? viewAs.role === 'staff'
+          ? base.state.staff.find((x) => x.id === viewAs.id)
+          : base.state.riders.find((x) => x.id === viewAs.id)
+        : undefined;
+    const signOut = () => {
+      setViewAs(null);
+      base.signOut();
+    };
+    if (!viewAs || !person) return { ...base, signOut, viewAs: null, setViewAs };
+    const name = person.name.split(' ')[0];
+    const session =
+      viewAs.role === 'staff'
+        ? { role: 'staff' as const, name, staffId: person.id, viewing: true }
+        : { role: 'rider' as const, name, riderId: person.id, viewing: true };
+    return { ...base, signOut, state: { ...base.state, session }, viewAs, setViewAs };
+  }, [base, viewAs, real]);
+  return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }
 
 export function useStore(): Store {
@@ -104,7 +168,7 @@ function LiveProvider({ children }: { children: ReactNode }) {
     return engine.subscribe(setSnap);
   }, []);
 
-  const store = useMemo<Store | null>(() => {
+  const store = useMemo<BaseStore | null>(() => {
     if (!snap || !engine) return null;
     const e = engine;
     const report = (p: Promise<unknown>) => p.catch((err) => console.warn('Could not save on the phone', err));
@@ -129,17 +193,26 @@ function LiveProvider({ children }: { children: ReactNode }) {
       addExpense: (input) => report(e.addExpense(input)),
       addRider: e.addRider,
       updateRider: (id, changes) => report(e.updateRider(id, changes)),
-      addStaff: (input) => report(e.addStaff(input)),
+      addStaff: e.addStaff,
       updateStaff: (id, changes) => report(e.updateStaff(id, changes)),
       saveStaffAccess: (id, input) => report(e.saveStaffAccess(id, input)),
       saveRole: (role) => report(e.saveRole(role)),
       photoUrl: e.photoUrl,
       resetDemo: () => {},
+      uploadNow: e.uploadNow,
+      deleteSale: (id) => report(e.deleteSale(id)),
+      deleteExpense: (id) => report(e.deleteExpense(id)),
+      deleteStockMove: (id) => report(e.deleteStockMove(id)),
+      deleteCustomer: (id) => report(e.deleteCustomer(id)),
+      removeProduct: (id) => report(e.removeProduct(id)),
+      deleteRider: (id) => withoutLogin('rider', id, () => e.deleteRider(id)),
+      deleteStaff: (id) => withoutLogin('staff', id, () => e.deleteStaff(id)),
+      clearData: e.clearData,
     };
   }, [snap]);
 
   if (!store) return null;
-  return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
+  return <ViewAsLayer base={store}>{children}</ViewAsLayer>;
 }
 
 // ------------------------------------------------------------------- demo
@@ -169,13 +242,15 @@ function DemoProvider({ children }: { children: ReactNode }) {
     setState((s) => (s ? fn(s) : s));
   }, []);
 
-  const store = useMemo<Store | null>(() => {
+  const store = useMemo<BaseStore | null>(() => {
     if (!state) return null;
     const waiting = state.pending.length;
+    const note = (label: string, ref: string) => ({ id: newId('c'), at: new Date().toISOString(), label, ref });
     return {
       mode: 'demo',
       phase: state.session ? 'ready' : 'signedOut',
-      state,
+      // Hidden products stay in the saved data (old sales point at them) but are not shown.
+      state: state.products.some((p) => p.hidden) ? { ...state, products: state.products.filter((p) => !p.hidden) } : state,
       // Demo mode never goes online, so there's no "no internet" sign to show.
       sync: { status: 'synced', waiting },
       signInAs: (role) =>
@@ -395,15 +470,15 @@ function DemoProvider({ children }: { children: ReactNode }) {
           ),
           pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: 'Rider details', ref: id }],
         })),
-      addStaff: (input) =>
-        update((s) => {
-          const id = newId('s');
-          return {
-            ...s,
-            staff: [...s.staff, { ...input, id, initials: initialsOf(input.name) }],
-            pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: `New staff ${input.name}`, ref: id }],
-          };
-        }),
+      addStaff: async (input) => {
+        const id = newId('s');
+        update((s) => ({
+          ...s,
+          staff: [...s.staff, { ...input, id, initials: initialsOf(input.name) }],
+          pending: [...s.pending, { id: newId('c'), at: new Date().toISOString(), label: `New staff ${input.name}`, ref: id }],
+        }));
+        return id;
+      },
       updateStaff: (id, changes) =>
         update((s) => ({
           ...s,
@@ -430,9 +505,92 @@ function DemoProvider({ children }: { children: ReactNode }) {
       // Demo photos stay on this phone, so the saved address can be shown as it is.
       photoUrl: async (photo) => photo,
       resetDemo: () => setState({ ...sampleState(today()), session: state.session }),
+      // Demo mode never goes online: everything is already "uploaded".
+      uploadNow: async () => true,
+      deleteSale: (orderId) =>
+        update((s) => ({
+          ...s,
+          orders: s.orders.filter((o) => o.id !== orderId),
+          moves: s.moves.filter((m) => m.orderId !== orderId),
+          pending: [...s.pending, note('Deleted a sale', orderId)],
+        })),
+      deleteExpense: (id) =>
+        update((s) => ({
+          ...s,
+          expenses: s.expenses.filter((e) => e.id !== id),
+          pending: [...s.pending, note('Deleted an expense', id)],
+        })),
+      deleteStockMove: (id) =>
+        update((s) => ({
+          ...s,
+          moves: s.moves.filter((m) => !(m.id === id && m.kind === 'received')),
+          pending: [...s.pending, note('Deleted a stock entry', id)],
+        })),
+      deleteCustomer: (id) =>
+        update((s) => ({
+          ...s,
+          customers: s.customers.filter((c) => c.id !== id),
+          orders: s.orders.map((o) => (o.customerId === id ? { ...o, customerId: '' } : o)),
+          pending: [...s.pending, note('Deleted a customer', id)],
+        })),
+      removeProduct: (id) =>
+        update((s) => {
+          const sold = s.orders.some((o) => o.items.some((it) => it.productId === id));
+          if (sold) {
+            return {
+              ...s,
+              products: s.products.map((p) => (p.id === id ? { ...p, hidden: true } : p)),
+              pending: [...s.pending, note('Hid a product', id)],
+            };
+          }
+          return {
+            ...s,
+            products: s.products.filter((p) => p.id !== id),
+            moves: s.moves.filter((m) => m.productId !== id),
+            openings: Object.fromEntries(
+              Object.entries(s.openings).map(([day, list]) => [
+                day,
+                Object.fromEntries(Object.entries(list).filter(([p]) => p !== id)),
+              ]),
+            ),
+            pending: [...s.pending, note('Removed a product', id)],
+          };
+        }),
+      deleteRider: (id) =>
+        withoutLogin('rider', id, () =>
+          update((s) =>
+            s.orders.some((o) => o.riderId === id)
+              ? s
+              : { ...s, riders: s.riders.filter((r) => r.id !== id), pending: [...s.pending, note('Removed a rider', id)] },
+          ),
+        ),
+      deleteStaff: (id) =>
+        withoutLogin('staff', id, () =>
+          update((s) => ({
+            ...s,
+            staff: s.staff.filter((x) => x.id !== id),
+            pending: [...s.pending, note('Removed staff', id)],
+          })),
+        ),
+      clearData: async (parts) => {
+        const has = (p: ClearPart) => parts.includes(p);
+        const products = has('products');
+        const sales = products || has('sales');
+        const stock = products || has('stock');
+        update((s) => ({
+          ...s,
+          moves: stock ? [] : sales ? s.moves.filter((m) => !m.orderId) : s.moves,
+          openings: stock ? {} : s.openings,
+          orders: sales ? [] : has('customers') ? s.orders.map((o) => ({ ...o, customerId: '' })) : s.orders,
+          customers: has('customers') ? [] : s.customers,
+          expenses: has('expenses') ? [] : s.expenses,
+          products: products ? [] : s.products,
+          pending: [...s.pending, note('Cleared old data', parts.join(','))],
+        }));
+      },
     };
   }, [state, update]);
 
   if (!store) return null;
-  return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
+  return <ViewAsLayer base={store}>{children}</ViewAsLayer>;
 }

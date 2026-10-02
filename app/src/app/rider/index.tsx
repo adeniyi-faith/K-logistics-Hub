@@ -4,7 +4,7 @@ import { Linking, StyleSheet, View } from 'react-native';
 import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Avatar, Badge, Button, Card, H2, Muted, Row, Screen, Stat, SyncPill } from '../../components/ui';
+import { Avatar, Badge, Button, Card, H2, Muted, Row, Screen, Stat, SyncPill, ViewingBar } from '../../components/ui';
 import { OrderSummary } from '../../components/OrderSummary';
 import { clock, naira } from '../../lib/format';
 import { deliveredOn, orderTotal, riderDay } from '../../lib/stock';
@@ -29,11 +29,12 @@ export default function RiderDeliveries() {
         <View style={st.head}>
           <Avatar initials={rider?.initials ?? '?'} />
           <View style={{ flex: 1 }}>
-            <Text style={st.hi}>Hi, {rider?.name.split(' ')[0]}</Text>
+            <Text style={st.hi}>Hi, {rider?.name.split(' ')[0] ?? state.session?.name ?? ''}</Text>
             <Muted>{rider?.bike}</Muted>
           </View>
           <SyncPill />
         </View>
+        <ViewingBar />
       </SafeAreaView>
       <Screen>
         <View style={{ flexDirection: 'row', gap: 10 }}>

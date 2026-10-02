@@ -102,9 +102,50 @@ export function TopBar({ title, sub, back, right }: { title: string; sub?: strin
         {right}
         <SyncPill />
       </View>
+      <ViewingBar />
     </SafeAreaView>
   );
 }
+
+/** Shown while Admin is looking at the app as a staff member or rider, with a way back. */
+export function ViewingBar() {
+  const { state, setViewAs } = useStore();
+  const s = state.session;
+  if (!s?.viewing) return null;
+  return (
+    <View style={sv.bar}>
+      <Icon name="eye" size={16} color={colors.orange} />
+      <Text style={sv.text} numberOfLines={1}>
+        Viewing as {s.name} ({s.role === 'rider' ? 'rider' : 'staff'})
+      </Text>
+      <Pressable
+        onPress={() => {
+          setViewAs(null);
+          router.replace('/admin');
+        }}
+        accessibilityRole="button"
+        hitSlop={8}
+        style={sv.back}
+      >
+        <Text style={sv.backText}>Back to Admin</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const sv = StyleSheet.create({
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.navy,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  text: { flex: 1, fontFamily: fonts.bodyBold, fontSize: 13, color: colors.white },
+  back: { backgroundColor: colors.white, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
+  backText: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.navy },
+});
 
 export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   return <View style={[s.card, style]}>{children}</View>;

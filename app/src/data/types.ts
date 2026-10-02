@@ -16,6 +16,8 @@ export type Product = {
   lowAt: number;
   nafdac: string;
   supplier: string;
+  /** Demo only: removed by Admin but kept because past sales point at it. Never shown. */
+  hidden?: boolean;
 };
 
 /**
@@ -246,7 +248,8 @@ export type AppState = {
   version: 1;
   /** The day the shop is currently recording ("YYYY-MM-DD"). */
   day: string;
-  session: { role: Role; name: string; riderId?: string; staffId?: string } | null;
+  /** viewing: Admin is looking at the app as this staff member or rider (see "See the app as"). */
+  session: { role: Role; name: string; riderId?: string; staffId?: string; viewing?: boolean } | null;
   settings: Settings;
   products: Product[];
   /** Opening stock per day, then per product id: openings["2026-10-01"]["p01"]. */

@@ -11,13 +11,14 @@ import { orderTotal } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
 import { useAccess } from '../../lib/useAccess';
+import { DeleteButton } from '../../components/DeleteButton';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function CustomerProfile() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { state } = useStore();
-  const { canEdit } = useAccess();
+  const { state, deleteCustomer } = useStore();
+  const { canEdit, isAdmin } = useAccess();
   const c = state.customers.find((x) => x.id === id);
   if (!c) {
     return (
@@ -120,6 +121,14 @@ export default function CustomerProfile() {
               );
             })}
           </Card>
+        ) : null}
+        {isAdmin ? (
+          <DeleteButton
+            title="Delete this customer"
+            question={`Delete ${c.name}?`}
+            message={`${c.name} will be removed from the customer list on every phone. Their past orders stay in the records with their name. This can't be undone.`}
+            remove={() => deleteCustomer(c.id)}
+          />
         ) : null}
       </Screen>
     </View>
