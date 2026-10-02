@@ -87,11 +87,22 @@ export default function StaffPay() {
                   <Muted>
                     Paid this month <Text style={st.bold}>{naira(p.paidThisMonth)}</Text>
                   </Muted>
-                  {acc.canEdit('staffpay') ? (
-                    <Pressable onPress={() => router.push(`/pay?who=${p.id}`)} accessibilityRole="button" style={st.pay}>
-                      <Text style={st.payText}>Pay</Text>
-                    </Pressable>
-                  ) : null}
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    {acc.isAdmin && state.staff.some((x) => x.id === p.id) ? (
+                      <Pressable
+                        onPress={() => router.push(`/add-staff?id=${p.id}`)}
+                        accessibilityRole="button"
+                        style={[st.pay, st.change]}
+                      >
+                        <Text style={[st.payText, { color: colors.navy }]}>Change</Text>
+                      </Pressable>
+                    ) : null}
+                    {acc.canEdit('staffpay') ? (
+                      <Pressable onPress={() => router.push(`/pay?who=${p.id}`)} accessibilityRole="button" style={st.pay}>
+                        <Text style={st.payText}>Pay</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
                 </View>
               </View>
             ))}
@@ -117,6 +128,7 @@ export default function StaffPay() {
 }
 
 const st = StyleSheet.create({
+  change: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.inputLine },
   hero: { flexDirection: 'row', gap: 12, backgroundColor: colors.navy, borderRadius: 18, padding: 16 },
   heroLabel: { fontFamily: fonts.body, fontSize: 13, color: '#B8C3DB' },
   heroValue: { fontFamily: fonts.headBold, fontSize: 22, color: colors.white },

@@ -65,17 +65,23 @@ export function Screen({ children, footer }: { children: ReactNode; footer?: Rea
  * so there is nothing to show when all is well. Tapping it opens the Sync centre.
  */
 export function SyncPill() {
-  const { sync } = useStore();
-  if (sync.status !== 'offline') return null;
+  const { sync, state } = useStore();
+  // Some changes were not accepted by the business: worth a look in the Sync centre.
+  const refused = (state.refused?.length ?? 0) > 0;
+  if (sync.status !== 'offline' && !refused) return null;
   return (
     <Pressable
       onPress={() => router.push('/sync')}
       accessibilityRole="button"
-      accessibilityLabel="No internet. Your work is saved and will go up when you're back online."
+      accessibilityLabel={
+        refused
+          ? 'Some changes were not accepted. Open the Sync centre.'
+          : "No internet. Your work is saved and will go up when you're back online."
+      }
       hitSlop={10}
       style={s.pill}
     >
-      <Icon name="cloudoff" size={18} color={colors.muted} />
+      <Icon name={refused ? 'alert' : 'cloudoff'} size={18} color={refused ? colors.red : colors.muted} />
     </Pressable>
   );
 }

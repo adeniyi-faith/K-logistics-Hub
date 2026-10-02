@@ -11,7 +11,8 @@ import { colors, fonts } from '../theme';
 
 /** Sync centre: what is waiting to upload, and (for Admin) clashes to decide. */
 export default function SyncCentre() {
-  const { state, mode, sync, resolveClash } = useStore();
+  const { state, mode, sync, resolveClash, dismissRefused } = useStore();
+  const refused = state.refused ?? [];
   const waiting = [...state.pending].reverse();
   const isAdmin = state.session?.role === 'admin';
   const clashes = isAdmin ? state.clashes : [];
@@ -92,6 +93,25 @@ export default function SyncCentre() {
                 </View>
               );
             })}
+          </Card>
+        ) : null}
+
+        {refused.length ? (
+          <Card style={{ paddingVertical: 8 }}>
+            <H2 right={<Badge kind="red">{String(refused.length)}</Badge>}>Not accepted</H2>
+            <Muted>
+              The business didn't accept these changes from this phone, usually because this person isn't allowed to make them.
+              They were undone here, so this phone matches everyone else again. Ask Admin if one was needed.
+            </Muted>
+            {refused.map((c, i) => (
+              <Row
+                key={c.id}
+                first={i === 0}
+                title={c.label}
+                sub={`${c.at ? `${dayLabel(c.at.slice(0, 10))} at ${clock(c.at)} · ` : ''}${c.reason}`}
+              />
+            ))}
+            <Button title="Clear this list" kind="ghost" onPress={dismissRefused} />
           </Card>
         ) : null}
 

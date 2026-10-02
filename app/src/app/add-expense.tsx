@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 
@@ -18,22 +18,29 @@ import { NoAccess } from '../components/NoAccess';
 
 const toNumber = (t: string) => Number(t.replace(/[^\d]/g, '')) || 0;
 
+/** Write down money spent, or (with ?id=) fix one already written down. */
 export default function AddExpense() {
-  const { state, mode, addExpense } = useStore();
+  const { id: editId } = useLocalSearchParams<{ id?: string }>();
+  const { state, mode, addExpense, updateExpense } = useStore();
   const acc = useAccess();
-  const [amount, setAmount] = useState('');
-  const categories = state.settings.expenseCategories;
-  const [category, setCategory] = useState<string>(categories[0] ?? 'Other');
-  const [frequency, setFrequency] = useState<Frequency>('daily');
-  const [bike, setBike] = useState('');
-  const [day, setDay] = useState(state.day);
-  const [note, setNote] = useState('');
+  const old = editId ? state.expenses.find((e) => e.id === editId) : undefined;
+  const [amount, setAmount] = useState(old ? String(old.amount) : '');
+  const categories =
+    old && !state.settings.expenseCategories.includes(old.category)
+      ? [...state.settings.expenseCategories, old.category]
+      : state.settings.expenseCategories;
+  const [category, setCategory] = useState<string>(old?.category ?? categories[0] ?? 'Other');
+  const [frequency, setFrequency] = useState<Frequency>(old?.frequency ?? 'daily');
+  const [bike, setBike] = useState(old?.bike ?? '');
+  const [day, setDay] = useState(old?.day ?? state.day);
+  const [note, setNote] = useState(old?.note ?? '');
   const [error, setError] = useState('');
   const [receipt, setReceipt] = useState<string | null>(null);
   const [taking, setTaking] = useState(false);
 
   const bikes = [...new Set(state.riders.map((r) => r.bike.split(' · ')[0]).filter(Boolean))].sort();
   const days = [0, 1, 2, 3, 4, 5, 6].map((n) => shiftDay(state.day, -n));
+  if (old && !days.includes(old.day)) days.push(old.day);
   const n = toNumber(amount);
   const change =
     <T,>(set: (v: T) => void) =>
@@ -58,6 +65,11 @@ export default function AddExpense() {
   const save = () => {
     if (n <= 0) return setError('Enter how much was spent.');
     if (category === 'Other' && !note.trim()) return setError('Write what the money was for.');
+    if (old) {
+      updateExpense(old.id, { day, category, note: note.trim(), amount: n, frequency, bike });
+      router.back();
+      return;
+    }
     addExpense({
       day,
       category,
@@ -70,16 +82,18 @@ export default function AddExpense() {
     router.back();
   };
 
-  if (!acc.canEdit('expenses')) return <NoAccess title="Add expense" />;
+  const title = old ? (old.payee ? 'Change payment' : 'Change expense') : 'Add expense';
+  if (editId && !old) return <NoAccess title={title} />;
+  if (!acc.canEdit(old?.payee ? 'staffpay' : 'expenses')) return <NoAccess title={title} />;
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title="Add expense" back />
+      <TopBar title={title} back />
       <Screen
         footer={
           <View style={{ gap: 8 }}>
             {error ? <Text style={st.error}>{error}</Text> : null}
-            <Button title="Save expense" kind="accent" icon="check" onPress={save} />
+            <Button title={old ? 'Save changes' : 'Save expense'} kind="accent" icon="check" onPress={save} />
           </View>
         }
       >
@@ -96,26 +110,28 @@ export default function AddExpense() {
           />
         </View>
 
-        <View style={{ gap: 8 }}>
-          <Text style={st.label}>Category</Text>
-          <View style={st.grid}>
-            {categories.map((c) => {
-              const on = c === category;
-              return (
-                <Pressable
-                  key={c}
-                  onPress={() => change(setCategory)(c)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: on }}
-                  style={[st.cat, on ? st.catOn : st.catOff]}
-                >
-                  <Icon name={categoryIcon(c)} size={22} />
-                  <Text style={st.catText}>{c}</Text>
-                </Pressable>
-              );
-            })}
+        {old?.payee ? null : (
+          <View style={{ gap: 8 }}>
+            <Text style={st.label}>Category</Text>
+            <View style={st.grid}>
+              {categories.map((c) => {
+                const on = c === category;
+                return (
+                  <Pressable
+                    key={c}
+                    onPress={() => change(setCategory)(c)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: on }}
+                    style={[st.cat, on ? st.catOn : st.catOff]}
+                  >
+                    <Icon name={categoryIcon(c)} size={22} />
+                    <Text style={st.catText}>{c}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
-        </View>
+        )}
 
         <View style={{ gap: 8 }}>
           <Text style={st.label}>How often?</Text>
@@ -151,7 +167,7 @@ export default function AddExpense() {
           placeholder="e.g. Filled 4 bikes at the station"
         />
 
-        {receipt ? (
+        {old ? null : receipt ? (
           <View style={{ gap: 8 }}>
             <Image source={{ uri: receipt }} style={st.receipt} resizeMode="cover" accessibilityLabel="Receipt photo" />
             <Button title="Remove receipt photo" kind="danger" icon="x" onPress={() => setReceipt(null)} />

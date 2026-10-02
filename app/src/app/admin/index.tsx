@@ -11,6 +11,7 @@ import { dayMoney, deliveredOn, isLow, orderUnits, stockFor } from '../../lib/st
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
 import { useWords } from '../../lib/words';
+import { DayBehind } from '../../components/DayBehind';
 
 export default function AdminHome() {
   const { state } = useStore();
@@ -33,6 +34,7 @@ export default function AdminHome() {
     <View style={{ flex: 1 }}>
       <TopBar sub={longDay(state.day)} title={`${greeting()}, ${state.session?.name ?? ''}`} />
       <Screen>
+        <DayBehind />
         <Pressable
           onPress={() => router.push('/finance')}
           accessibilityRole="button"

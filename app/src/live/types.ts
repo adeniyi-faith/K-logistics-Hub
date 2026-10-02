@@ -1,5 +1,5 @@
 import { Overrides, StaffRole } from '../data/access';
-import { AppState, Expense, Order, Product, Rider, Settings, Staff } from '../data/types';
+import { AppState, Customer, Expense, Order, Product, Rider, Settings, Staff } from '../data/types';
 
 export type SyncInfo = {
   /** synced: all uploaded. offline: no connection. syncing: uploading or downloading now. */
@@ -8,8 +8,11 @@ export type SyncInfo = {
   waiting: number;
 };
 
-/** signedOut: show sign-in. loading: signed in, waiting for the first download. ready: show the app. */
-export type Phase = 'signedOut' | 'loading' | 'ready';
+/**
+ * signedOut: show sign-in. loading: signed in, waiting for the first download. ready: show the app.
+ * blocked: signed in, but Admin turned off this person's access.
+ */
+export type Phase = 'signedOut' | 'loading' | 'ready' | 'blocked';
 
 export type LiveSnapshot = { phase: Phase; state: AppState; sync: SyncInfo };
 
@@ -46,6 +49,14 @@ export type AccessInput = { job: string; roleId: string; overrides: Overrides; c
 export type PriceInput = { productId: string; costPrice: number; sellPrice: number; lowAt: number };
 
 export type ProductInput = Omit<Product, 'id'>;
+
+/** A stock count change: what was counted, or how many to take off or add, and why. */
+export type CountInput = { productId: string; change: number; reason: string };
+
+/** What can change on an expense after it is saved. */
+export type ExpenseChanges = Partial<Pick<Expense, 'day' | 'category' | 'note' | 'amount' | 'frequency' | 'bike'>>;
+
+export type CustomerChanges = Partial<Pick<Customer, 'name' | 'phone' | 'area' | 'address'>>;
 
 /** What "Clear old data" can wipe. */
 export type ClearPart = 'sales' | 'stock' | 'products' | 'customers' | 'expenses';
@@ -88,6 +99,26 @@ export type LiveEngine = {
   saveStaffAccess: (staffId: string, input: AccessInput) => Promise<void>;
   /** Admin: add or change a staff role. Everyone with the role gets the change. */
   saveRole: (role: StaffRole) => Promise<void>;
+  /** A pending sale: change its items, customer details, rider or payment. */
+  updateSale: (orderId: string, input: SaleInput) => Promise<void>;
+  /** The goods could not be delivered. Nothing leaves the stock. */
+  markFailed: (orderId: string, reason: string) => Promise<void>;
+  /** A failed sale goes back to pending, e.g. to try again tomorrow. */
+  retrySale: (orderId: string) => Promise<void>;
+  /** Damage, a return or a recount: change is how many to add (positive) or take off (negative). */
+  countStock: (input: CountInput) => Promise<void>;
+  updateExpense: (id: string, changes: ExpenseChanges) => Promise<void>;
+  updateCustomer: (id: string, changes: CustomerChanges) => Promise<void>;
+  /** Admin: go back to the day before the current one, to fix it. */
+  reopenDay: () => Promise<void>;
+  /** Admin: let a rider sign in, or block them. */
+  setRiderSignIn: (riderId: string, on: boolean) => Promise<void>;
+  /** Forget the changes the server refused (after Admin has read about them). */
+  dismissRefused: () => Promise<void>;
+  /** Emails a code for setting a new password. Returns an error message, or null when sent. */
+  sendResetCode: (email: string) => Promise<string | null>;
+  /** Checks the emailed code and sets the new password (this signs the person in). */
+  resetPassword: (email: string, code: string, password: string) => Promise<string | null>;
   /** Uploads what is waiting now. True when the given record (or everything) has reached the server. */
   uploadNow: (rowId?: string) => Promise<boolean>;
   /** Admin: removes a sale, its items and any stock it took out (the stock goes back). */
