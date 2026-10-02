@@ -2,8 +2,8 @@
 // The synced app asks Gemini (src/live/assistant.ts). Demo mode has no Gemini, so it answers
 // common questions itself from the sample data (src/lib/assistant.ts).
 import { Href, Redirect, router } from 'expo-router';
-import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text, TextInput } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +23,7 @@ export default function Assistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState('');
   const [thinking, setThinking] = useState(false);
+  const [step, setStep] = useState('Thinking');
   const scroll = useRef<ScrollView>(null);
   const nextId = useRef(1);
   // The conversation so far in Gemini's own shape, so follow-up questions make sense to it.
@@ -41,7 +42,8 @@ export default function Assistant() {
     setThinking(true);
     if (mode === 'live') {
       try {
-        const reply = await askGemini(state, history.current, q);
+        setStep('Thinking');
+        const reply = await askGemini(state, history.current, q, setStep);
         history.current = reply.history;
         say({ text: reply.text });
       } catch (e) {
@@ -100,8 +102,9 @@ export default function Assistant() {
               <View style={st.aiAvatar}>
                 <AiIcon name="spark" size={16} color={colors.orange} />
               </View>
-              <View style={[st.aiBubble, { paddingVertical: 12 }]}>
-                <Text style={st.thinking}>Thinking…</Text>
+              <View style={[st.aiBubble, st.thinkingBubble]} accessibilityLiveRegion="polite">
+                <Dots />
+                <Text style={st.thinking}>{mode === 'live' ? `${step}…` : 'Thinking…'}</Text>
               </View>
             </View>
           ) : null}
@@ -155,6 +158,28 @@ function YourBubble({ text }: { text: string }) {
       <View style={st.youBubble}>
         <Text style={st.youText}>{text}</Text>
       </View>
+    </View>
+  );
+}
+
+/** Three dots that pulse one after another while the answer is on its way. */
+function Dots() {
+  const v = useRef([0, 1, 2].map(() => new Animated.Value(0.3))).current;
+  useEffect(() => {
+    const pulse = (x: Animated.Value) =>
+      Animated.sequence([
+        Animated.timing(x, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(x, { toValue: 0.3, duration: 300, useNativeDriver: true }),
+      ]);
+    const loop = Animated.loop(Animated.stagger(180, v.map(pulse)));
+    loop.start();
+    return () => loop.stop();
+  }, [v]);
+  return (
+    <View style={st.dots}>
+      {v.map((x, i) => (
+        <Animated.View key={i} style={[st.dot, { opacity: x, transform: [{ scale: x }] }]} />
+      ))}
     </View>
   );
 }
@@ -248,6 +273,9 @@ const st = StyleSheet.create({
   },
   aiText: { fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.navy },
   thinking: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.muted },
+  thinkingBubble: { paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  dots: { flexDirection: 'row', gap: 5 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.orange },
   facts: { backgroundColor: colors.bg, borderRadius: 12, paddingHorizontal: 12 },
   fact: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 9 },
   factBorder: { borderTopWidth: 1, borderTopColor: colors.line },
