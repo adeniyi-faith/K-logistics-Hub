@@ -20,6 +20,9 @@ import {
   ClashChoice,
   ClearPart,
   ConfirmInput,
+  CountInput,
+  CustomerChanges,
+  ExpenseChanges,
   ExpenseInput,
   LiveEngine,
   LiveSnapshot,
@@ -34,7 +37,7 @@ import {
 } from '../live/types';
 import { uuid } from '../lib/id';
 import { nextOrderCode } from '../lib/sales';
-import { closingStock, nextDay } from '../lib/stock';
+import { closingStock, nextDay, shiftDay } from '../lib/stock';
 
 const KEY = 'klh-state-v9';
 
@@ -97,6 +100,24 @@ export type Store = {
   deleteStaff: (id: string) => Promise<string | null>;
   /** Admin: wipes whole kinds of records, e.g. the sample data the business started with. */
   clearData: (parts: ClearPart[]) => Promise<void>;
+  /** A pending sale: change its items, customer details, rider or payment. */
+  updateSale: (orderId: string, input: SaleInput) => void;
+  /** The goods could not be delivered. Nothing leaves the stock. */
+  markFailed: (orderId: string, reason: string) => void;
+  /** A failed sale goes back to pending. */
+  retrySale: (orderId: string) => void;
+  /** Damage, a return or a recount. */
+  countStock: (input: CountInput) => void;
+  updateExpense: (id: string, changes: ExpenseChanges) => void;
+  updateCustomer: (id: string, changes: CustomerChanges) => void;
+  /** Admin: go back to the day before the current one, to fix it. */
+  reopenDay: () => void;
+  /** Admin: let a rider sign in, or block them. */
+  setRiderSignIn: (riderId: string, on: boolean) => void;
+  dismissRefused: () => void;
+  /** Live only: emails a code for setting a new password. Returns an error message, or null. */
+  sendResetCode: (email: string) => Promise<string | null>;
+  resetPassword: (email: string, code: string, password: string) => Promise<string | null>;
   /** Admin: who the app is shown as right now (see "See the app as"), or null for Admin's own view. */
   viewAs: ViewAs | null;
   setViewAs: (v: ViewAs | null) => void;
@@ -208,6 +229,17 @@ function LiveProvider({ children }: { children: ReactNode }) {
       deleteRider: (id) => withoutLogin('rider', id, () => e.deleteRider(id)),
       deleteStaff: (id) => withoutLogin('staff', id, () => e.deleteStaff(id)),
       clearData: e.clearData,
+      updateSale: (id, input) => report(e.updateSale(id, input)),
+      markFailed: (id, reason) => report(e.markFailed(id, reason)),
+      retrySale: (id) => report(e.retrySale(id)),
+      countStock: (input) => report(e.countStock(input)),
+      updateExpense: (id, changes) => report(e.updateExpense(id, changes)),
+      updateCustomer: (id, changes) => report(e.updateCustomer(id, changes)),
+      reopenDay: () => report(e.reopenDay()),
+      setRiderSignIn: (id, on) => report(e.setRiderSignIn(id, on)),
+      dismissRefused: () => report(e.dismissRefused()),
+      sendResetCode: e.sendResetCode,
+      resetPassword: e.resetPassword,
     };
   }, [snap]);
 
@@ -588,6 +620,112 @@ function DemoProvider({ children }: { children: ReactNode }) {
           pending: [...s.pending, note('Cleared old data', parts.join(','))],
         }));
       },
+      updateSale: (orderId, input) =>
+        update((s) => {
+          const o = s.orders.find((x) => x.id === orderId);
+          if (!o || o.status !== 'pending') return s;
+          let customers = s.customers;
+          let customerId = input.customerId ?? '';
+          let name = '';
+          let phone = '';
+          if (customerId) {
+            const c = s.customers.find((x) => x.id === customerId);
+            name = c?.name ?? o.customer;
+            phone = c?.phone ?? o.phone;
+          } else if (input.newCustomer) {
+            customerId = uuid();
+            name = input.newCustomer.name;
+            phone = input.newCustomer.phone;
+            customers = [...customers, { id: customerId, name, phone, area: input.area, address: input.address, since: s.day }];
+          }
+          return {
+            ...s,
+            customers,
+            orders: s.orders.map((x) =>
+              x.id === orderId
+                ? {
+                    ...x,
+                    customerId,
+                    customer: name,
+                    phone,
+                    area: input.area,
+                    address: input.address,
+                    riderId: input.riderId,
+                    payment: input.payment,
+                    items: input.items,
+                  }
+                : x,
+            ),
+            pending: [...s.pending, note(`Changed #${o.code}`, orderId)],
+          };
+        }),
+      markFailed: (orderId, reason) =>
+        update((s) => ({
+          ...s,
+          orders: s.orders.map((o) =>
+            o.id === orderId && o.status === 'pending' ? { ...o, status: 'failed', failReason: reason } : o,
+          ),
+          pending: [...s.pending, note('Could not deliver', orderId)],
+        })),
+      retrySale: (orderId) =>
+        update((s) => ({
+          ...s,
+          orders: s.orders.map((o) =>
+            o.id === orderId && o.status === 'failed' ? { ...o, status: 'pending', failReason: undefined } : o,
+          ),
+          pending: [...s.pending, note('Trying again', orderId)],
+        })),
+      countStock: ({ productId, change, reason }) =>
+        update((s) =>
+          change
+            ? {
+                ...s,
+                moves: [
+                  ...s.moves,
+                  {
+                    id: newId('m'),
+                    day: s.day,
+                    productId,
+                    kind: change > 0 ? 'added' : 'removed',
+                    qty: Math.abs(change),
+                    at: new Date().toISOString(),
+                    by: s.session?.name ?? '',
+                    note: reason || undefined,
+                  },
+                ],
+                pending: [...s.pending, note('Stock count change', productId)],
+              }
+            : s,
+        ),
+      updateExpense: (id, changes) =>
+        update((s) => ({
+          ...s,
+          expenses: s.expenses.map((e) => (e.id === id ? { ...e, ...changes } : e)),
+          pending: [...s.pending, note('Changed an expense', id)],
+        })),
+      updateCustomer: (id, changes) =>
+        update((s) => {
+          const c = { ...s.customers.find((x) => x.id === id)!, ...changes };
+          return {
+            ...s,
+            customers: s.customers.map((x) => (x.id === id ? c : x)),
+            orders: s.orders.map((o) =>
+              o.customerId === id && o.status === 'pending' ? { ...o, customer: c.name, phone: c.phone } : o,
+            ),
+            pending: [...s.pending, note('Customer details', id)],
+          };
+        }),
+      reopenDay: () =>
+        update((s) => ({ ...s, day: shiftDay(s.day, -1), pending: [...s.pending, note('Reopened a day', s.day)] })),
+      setRiderSignIn: (riderId, on) =>
+        update((s) => ({
+          ...s,
+          riders: s.riders.map((r) => (r.id === riderId ? { ...r, canSignIn: on } : r)),
+          pending: [...s.pending, note('Rider sign-in', riderId)],
+        })),
+      dismissRefused: () => update((s) => ({ ...s, refused: [] })),
+      sendResetCode: async () => "This copy of the app isn't connected to the business, so there is no password to reset.",
+      resetPassword: async () => "This copy of the app isn't connected to the business.",
     };
   }, [state, update]);
 

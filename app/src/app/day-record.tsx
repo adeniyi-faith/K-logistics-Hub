@@ -6,7 +6,7 @@ import { Text } from '../components/Text';
 
 import { Badge, Button, Card, H2, Muted, Row, Screen, TopBar } from '../components/ui';
 import { naira } from '../lib/format';
-import { dayMoney, deliveredOn, riderDay, shiftDay, stockFor } from '../lib/stock';
+import { dayMoney, deliveredOn, riderDay, shiftDay, stockFor, inOut } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
 import { useAccess } from '../lib/useAccess';
@@ -130,8 +130,8 @@ export default function DayRecord() {
                 {p.name}
               </Text>
               <Text style={st.td}>{line.opening}</Text>
-              <Text style={st.td}>+{line.received}</Text>
-              <Text style={st.td}>−{line.delivered}</Text>
+              <Text style={st.td}>+{inOut(line).in}</Text>
+              <Text style={st.td}>−{inOut(line).out}</Text>
               <Text style={[st.td, st.tdStrong]}>{line.closing}</Text>
             </Pressable>
           ))}

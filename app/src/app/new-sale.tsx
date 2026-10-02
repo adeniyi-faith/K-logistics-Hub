@@ -10,54 +10,55 @@ import { Order } from '../data/types';
 import { useWords } from '../lib/words';
 import { count, dayLabel, naira } from '../lib/format';
 import { lastRiderFor } from '../lib/sales';
-import { stockFor } from '../lib/stock';
+import { promisedStock, stockFor } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
 import { useAccess } from '../lib/useAccess';
 import { NoAccess } from '../components/NoAccess';
 
-type Line = { productId: string; qty: number };
+/** unitPrice: kept from the sale being changed; new lines use today's selling price. */
+type Line = { productId: string; qty: number; unitPrice?: number };
 
+/** A new sale, or (with ?edit=) changes to one not delivered yet. */
 export default function NewSale() {
-  const params = useLocalSearchParams<{ customer?: string; rider?: string }>();
-  const { state, createSale } = useStore();
+  const params = useLocalSearchParams<{ customer?: string; rider?: string; edit?: string }>();
+  const { state, createSale, updateSale } = useStore();
   const w = useWords();
   const acc = useAccess();
+  const editing = params.edit ? state.orders.find((o) => o.id === params.edit && o.status === 'pending') : undefined;
 
-  const [customerId, setCustomerId] = useState(params.customer ?? '');
+  const [customerId, setCustomerId] = useState(editing?.customerId ?? params.customer ?? '');
   const [isNew, setIsNew] = useState(false);
   const [search, setSearch] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const picked = state.customers.find((c) => c.id === customerId);
 
-  const [lines, setLines] = useState<Line[]>([]);
+  const [lines, setLines] = useState<Line[]>(editing?.items.map((it) => ({ ...it })) ?? []);
   const [adding, setAdding] = useState(false);
   const [productSearch, setProductSearch] = useState('');
 
   const last = picked ? lastRiderFor(state, picked.id) : null;
   const [riderId, setRiderId] = useState(
-    params.rider ?? last?.riderId ?? state.riders.find((r) => r.status === 'active')?.id ?? '',
+    editing?.riderId ?? params.rider ?? last?.riderId ?? state.riders.find((r) => r.status === 'active')?.id ?? '',
   );
-  const [area, setArea] = useState(picked?.area ?? '');
-  const [address, setAddress] = useState(picked?.address ?? '');
-  const [payment, setPayment] = useState<Order['payment']>('on_delivery');
+  const [area, setArea] = useState(editing?.area ?? picked?.area ?? '');
+  const [address, setAddress] = useState(editing?.address ?? picked?.address ?? '');
+  const [payment, setPayment] = useState<Order['payment']>(editing?.payment ?? 'on_delivery');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Units already promised to orders that are not delivered yet.
+  // Units already promised to orders that are not delivered yet (not counting the sale being changed).
   const promised = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const o of state.orders) {
-      if (o.status !== 'pending') continue;
-      for (const it of o.items) m.set(it.productId, (m.get(it.productId) ?? 0) + it.qty);
-    }
+    const m = promisedStock(state);
+    for (const it of editing?.items ?? []) m.set(it.productId, (m.get(it.productId) ?? 0) - it.qty);
     return m;
-  }, [state.orders]);
+  }, [state, editing]);
   const available = (productId: string) => stockFor(state, productId).closing - (promised.get(productId) ?? 0);
 
   const product = (id: string) => state.products.find((p) => p.id === id);
-  const total = lines.reduce((s, l) => s + l.qty * (product(l.productId)?.sellPrice ?? 0), 0);
+  const priceOf = (l: Line) => l.unitPrice ?? product(l.productId)?.sellPrice ?? 0;
+  const total = lines.reduce((s, l) => s + l.qty * priceOf(l), 0);
 
   const pickCustomer = (id: string) => {
     const c = state.customers.find((x) => x.id === id);
@@ -76,7 +77,9 @@ export default function NewSale() {
 
   const save = async () => {
     const takeCustomer = state.settings.customerDetails;
-    if (takeCustomer && !picked && !(isNew && name.trim())) return setError('Pick a customer, or add a new one with their name.');
+    const keepNone = editing && !editing.customerId && !picked && !isNew;
+    if (takeCustomer && !keepNone && !picked && !(isNew && name.trim()))
+      return setError('Pick a customer, or add a new one with their name.');
     if (!lines.length) return setError('Add at least one product.');
     const short = lines.find((l) => l.qty > available(l.productId));
     if (short && !state.settings.allowZeroStock)
@@ -84,15 +87,21 @@ export default function NewSale() {
     if (!riderId) return setError(`Pick a ${w.rider}.`);
     if (!area) return setError('Pick the delivery area.');
     setSaving(true);
-    const id = await createSale({
-      customerId: takeCustomer ? picked?.id : undefined,
-      newCustomer: takeCustomer && !picked ? { name: name.trim(), phone: phone.trim() } : undefined,
+    const input = {
+      customerId: takeCustomer || editing ? picked?.id : undefined,
+      newCustomer: takeCustomer && !picked && isNew ? { name: name.trim(), phone: phone.trim() } : undefined,
       area,
       address: address.trim(),
       riderId,
       payment,
-      items: lines.map((l) => ({ productId: l.productId, qty: l.qty, unitPrice: product(l.productId)?.sellPrice ?? 0 })),
-    });
+      items: lines.map((l) => ({ productId: l.productId, qty: l.qty, unitPrice: priceOf(l) })),
+    };
+    if (editing) {
+      updateSale(editing.id, input);
+      router.back();
+      return;
+    }
+    const id = await createSale(input);
     router.replace(`/order/${id}`);
   };
 
@@ -102,13 +111,14 @@ export default function NewSale() {
   const productMatches = state.products.filter(
     (p) => !lines.some((l) => l.productId === p.id) && p.name.toLowerCase().includes(productSearch.trim().toLowerCase()),
   );
-  const lastRider = last ? state.riders.find((r) => r.id === last.riderId) : null;
+  const lastRider = last && !editing ? state.riders.find((r) => r.id === last.riderId) : null;
+  const title = editing ? `Change #${editing.code}` : `New ${w.sale}`;
 
-  if (!acc.canEdit('sales')) return <NoAccess title={`New ${w.sale}`} />;
+  if (!acc.canEdit('sales') || (params.edit && !editing)) return <NoAccess title={title} />;
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title={`New ${w.sale}`} back />
+      <TopBar title={title} back />
       <Screen
         footer={
           <View style={{ gap: 8 }}>
@@ -122,7 +132,12 @@ export default function NewSale() {
               </Muted>
             ) : null}
             {error ? <Text style={st.error}>{error}</Text> : null}
-            <Button title={saving ? 'Saving…' : `Save ${w.sale}`} kind="accent" onPress={save} disabled={saving} />
+            <Button
+              title={saving ? 'Saving…' : editing ? 'Save changes' : `Save ${w.sale}`}
+              kind="accent"
+              onPress={save}
+              disabled={saving}
+            />
           </View>
         }
       >
@@ -175,10 +190,10 @@ export default function NewSale() {
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text style={st.lineName}>{p.name}</Text>
                   <Muted>
-                    {naira(p.sellPrice)} each · {count(available(p.id), p.unit)} in stock
+                    {naira(priceOf(l))} each · {count(available(p.id), p.unit)} in stock
                   </Muted>
                   <Muted>
-                    {l.qty} × {naira(p.sellPrice)} = {naira(l.qty * p.sellPrice)}
+                    {l.qty} × {naira(priceOf(l))} = {naira(l.qty * priceOf(l))}
                   </Muted>
                 </View>
                 <Stepper value={l.qty} onChange={(q) => setQty(p.id, q)} />

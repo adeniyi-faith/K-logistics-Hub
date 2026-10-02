@@ -6,7 +6,7 @@ import { Text } from '../../components/Text';
 
 import { Badge, Button, Card, Chips, Muted, Row, Screen, Stat, TopBar } from '../../components/ui';
 import { clock, count, dayLabel } from '../../lib/format';
-import { isLow, stockFor } from '../../lib/stock';
+import { isLow, promisedStock, stockFor } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
 import { useAccess } from '../../lib/useAccess';
@@ -20,6 +20,7 @@ export default function Stock() {
   const [filter, setFilter] = useState('all');
 
   const lines = state.products.map((p) => ({ p, line: stockFor(state, p.id) }));
+  const waiting = promisedStock(state);
   const low = lines.filter((x) => isLow(x.p, x.line));
   const groups = [...new Set(state.products.map((p) => p.group))];
   const shown = lines
@@ -82,7 +83,9 @@ export default function Stock() {
                   key={p.id}
                   first={i === 0}
                   title={p.name}
-                  sub={`Open ${line.opening} · In +${line.received} · Out −${line.delivered}`}
+                  sub={`Open ${line.opening} · In +${line.received} · Out −${line.delivered}${
+                    line.adjusted ? ` · Count ${line.adjusted > 0 ? '+' : '−'}${Math.abs(line.adjusted)}` : ''
+                  }${waiting.get(p.id) ? ` · ${waiting.get(p.id)} waiting for delivery` : ''}`}
                   right={count(line.closing, p.unit)}
                   rightSub={isLow(p, line) ? <Badge kind="amber">Low stock</Badge> : <Badge kind="green">In stock</Badge>}
                   onPress={() => router.push(`/product/${p.id}`)}

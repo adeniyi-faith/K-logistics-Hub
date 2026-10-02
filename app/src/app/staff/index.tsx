@@ -14,6 +14,7 @@ import { useAccess } from '../../lib/useAccess';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
 import { useWords } from '../../lib/words';
+import { DayBehind } from '../../components/DayBehind';
 
 /** Areas that aren't tabs, opened from the home screen. */
 const OTHER: { area: Area; icon: IconName; title: string; sub: string; href: string }[] = [
@@ -50,6 +51,7 @@ export default function StaffHome() {
     <View style={{ flex: 1 }}>
       <TopBar sub={longDay(state.day)} title={`${greeting()}, ${state.session?.name ?? ''}`} />
       <Screen>
+        <DayBehind />
         {canView('sales') ? (
           <Card>
             <Text style={st.label}>Today's deliveries</Text>

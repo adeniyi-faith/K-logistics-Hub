@@ -24,7 +24,7 @@ function waNumber(phone: string): string {
 /** One order. Once delivered, this is the proof: who delivered it, when, where and who received it. */
 export default function OrderDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { state, deleteSale } = useStore();
+  const { state, deleteSale, retrySale } = useStore();
   const acc = useAccess();
   const w = useWords();
   const o = state.orders.find((x) => x.id === id);
@@ -41,6 +41,7 @@ export default function OrderDetail() {
 
   const rider = state.riders.find((r) => r.id === o.riderId);
   const delivered = o.status === 'delivered';
+  const failed = o.status === 'failed';
   const total = orderTotal(o);
 
   const share = () => {
@@ -85,12 +86,48 @@ export default function OrderDetail() {
           </View>
         }
       >
-        <View style={[st.banner, { backgroundColor: delivered ? colors.greenBg : colors.orangeBg }]}>
-          <Text style={[st.bannerText, { color: delivered ? colors.green : colors.orangeText }]}>
-            {delivered ? `Delivered ${dayLabel(o.day)} at ${clock(o.deliveredAt ?? '')}` : `Pending · taken ${dayLabel(o.day)}`}
+        <View style={[st.banner, { backgroundColor: delivered ? colors.greenBg : failed ? colors.redBg : colors.orangeBg }]}>
+          <Text style={[st.bannerText, { color: delivered ? colors.green : failed ? colors.red : colors.orangeText }]}>
+            {delivered
+              ? `Delivered ${dayLabel(o.day)} at ${clock(o.deliveredAt ?? '')}`
+              : failed
+                ? `Couldn't deliver${o.failReason ? `: ${o.failReason}` : ''}`
+                : `Pending · taken ${dayLabel(o.day)}`}
           </Text>
           <StatusBadge order={o} />
         </View>
+
+        {acc.canEdit('sales') && o.status === 'pending' ? (
+          <Card>
+            <H2>Fix or finish this {w.sale}</H2>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Button title="Change" kind="ghost" icon="pen" onPress={() => router.push(`/new-sale?edit=${o.id}`)} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button title="Delivered" kind="ghost" icon="check" onPress={() => router.push(`/delivery/${o.id}`)} />
+              </View>
+            </View>
+            <Button
+              title="Couldn't deliver"
+              kind="danger"
+              icon="x"
+              onPress={() => router.push({ pathname: '/delivery/[id]', params: { id: o.id, fail: '1' } })}
+            />
+            <Muted>
+              Change the items, customer, {w.rider} or payment. Mark it delivered for the {w.rider} if their phone is off.
+            </Muted>
+          </Card>
+        ) : null}
+
+        {acc.canEdit('sales') && failed ? (
+          <Card>
+            <Muted>
+              Nothing left the store for this {w.sale}. Try again to give it back to a {w.rider} as pending.
+            </Muted>
+            <Button title="Try again" kind="ghost" icon="refresh" onPress={() => retrySale(o.id)} />
+          </Card>
+        ) : null}
 
         <Card style={{ paddingVertical: 8 }}>
           <H2>Order</H2>

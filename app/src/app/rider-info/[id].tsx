@@ -17,13 +17,14 @@ import { colors, fonts } from '../../theme';
 import { DocumentsCard } from '../../components/DocumentsCard';
 import { DeleteButton } from '../../components/DeleteButton';
 import { LoginCard } from '../../components/LoginCard';
+import { SwitchRow } from '../../components/SwitchRow';
 import { useAccess } from '../../lib/useAccess';
 import { useWords } from '../../lib/words';
 
 /** One rider, as Admin and Staff see them. */
 export default function RiderInfo() {
   const { id, note } = useLocalSearchParams<{ id: string; note?: string }>();
-  const { state, updateRider, deleteRider } = useStore();
+  const { state, mode, updateRider, deleteRider, setRiderSignIn } = useStore();
   const acc = useAccess();
   const w = useWords();
   const r = state.riders.find((x) => x.id === id);
@@ -191,6 +192,21 @@ export default function RiderInfo() {
         <DocumentsCard rider={r} canAdd={acc.canEdit('riders')} />
 
         {state.session?.role === 'admin' ? <LoginCard kind="rider" id={r.id} name={r.name} note={note} /> : null}
+
+        {state.session?.role === 'admin' && (r.canSignIn !== undefined || mode === 'demo') ? (
+          <Card>
+            <SwitchRow
+              label="Can sign in"
+              sub={
+                r.canSignIn === false
+                  ? `Blocked: ${r.name.split(' ')[0]} can't use the app. Turn on to let them back in.`
+                  : 'Turn off to block access as soon as their phone is online.'
+              }
+              value={r.canSignIn !== false}
+              onChange={(on) => setRiderSignIn(r.id, on)}
+            />
+          </Card>
+        ) : null}
 
         {state.session?.role === 'admin' ? (
           hasHistory ? (
