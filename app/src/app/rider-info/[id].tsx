@@ -15,14 +15,15 @@ import { bikeParts, riderNow, riderOwed } from '../../lib/riders';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
 import { DocumentsCard } from '../../components/DocumentsCard';
+import { DeleteButton } from '../../components/DeleteButton';
 import { LoginCard } from '../../components/LoginCard';
 import { useAccess } from '../../lib/useAccess';
 import { useWords } from '../../lib/words';
 
 /** One rider, as Admin and Staff see them. */
 export default function RiderInfo() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { state, updateRider } = useStore();
+  const { id, note } = useLocalSearchParams<{ id: string; note?: string }>();
+  const { state, updateRider, deleteRider } = useStore();
   const acc = useAccess();
   const w = useWords();
   const r = state.riders.find((x) => x.id === id);
@@ -44,6 +45,8 @@ export default function RiderInfo() {
   const week = riderDays(state, r.id, periodOf('week', state.day)).reduce((s, d) => s + d.earned, 0);
   const owed = riderOwed(state, r.id);
   const newRate = Number(rate.replace(/[^\d]/g, '')) || 0;
+  // Riders with deliveries or pay on record stay, so the records and reports stay right.
+  const hasHistory = state.orders.some((o) => o.riderId === r.id) || state.expenses.some((e) => e.payee === r.id);
 
   return (
     <View style={{ flex: 1 }}>
@@ -187,7 +190,23 @@ export default function RiderInfo() {
 
         <DocumentsCard rider={r} canAdd={acc.canEdit('riders')} />
 
-        {state.session?.role === 'admin' ? <LoginCard kind="rider" id={r.id} name={r.name} /> : null}
+        {state.session?.role === 'admin' ? <LoginCard kind="rider" id={r.id} name={r.name} note={note} /> : null}
+
+        {state.session?.role === 'admin' ? (
+          hasHistory ? (
+            <Muted>
+              {r.name.split(' ')[0]} has {w.sales} or pay on record, so they can't be deleted. To stop giving them deliveries, set
+              them to Off duty.
+            </Muted>
+          ) : (
+            <DeleteButton
+              title={`Delete this ${w.rider}`}
+              question={`Delete ${r.name}?`}
+              message={`${r.name} will be removed from every phone, and their sign-in (if any) will stop working. This can't be undone.`}
+              remove={() => deleteRider(r.id)}
+            />
+          )
+        ) : null}
       </Screen>
     </View>
   );

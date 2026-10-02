@@ -47,6 +47,9 @@ export type PriceInput = { productId: string; costPrice: number; sellPrice: numb
 
 export type ProductInput = Omit<Product, 'id'>;
 
+/** What "Clear old data" can wipe. */
+export type ClearPart = 'sales' | 'stock' | 'products' | 'customers' | 'expenses';
+
 /** Which value stays after a sync clash: this phone's ("mine") or the one already on the server ("theirs"). */
 export type ClashChoice = 'mine' | 'theirs';
 
@@ -78,12 +81,30 @@ export type LiveEngine = {
   changePassword: (password: string) => Promise<string | null>;
   /** Admin: keep one of the two values after a sync clash. */
   resolveClash: (id: string, keep: ClashChoice) => Promise<void>;
-  addStaff: (input: StaffInput) => Promise<void>;
+  /** Saves a new staff member and returns their id. */
+  addStaff: (input: StaffInput) => Promise<string>;
   updateStaff: (id: string, changes: Partial<StaffInput>) => Promise<void>;
   /** Admin: give a staff member a role and any changes just for them. */
   saveStaffAccess: (staffId: string, input: AccessInput) => Promise<void>;
   /** Admin: add or change a staff role. Everyone with the role gets the change. */
   saveRole: (role: StaffRole) => Promise<void>;
+  /** Uploads what is waiting now. True when the given record (or everything) has reached the server. */
+  uploadNow: (rowId?: string) => Promise<boolean>;
+  /** Admin: removes a sale, its items and any stock it took out (the stock goes back). */
+  deleteSale: (orderId: string) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
+  /** Admin: removes one "received" stock entry, e.g. one typed by mistake. */
+  deleteStockMove: (id: string) => Promise<void>;
+  /** Admin: removes a customer. Their past sales keep the name and phone copied onto them. */
+  deleteCustomer: (id: string) => Promise<void>;
+  /** Admin: a product in past sales is hidden (so old records stay right); any other is removed with its stock records. */
+  removeProduct: (id: string) => Promise<void>;
+  /** Admin: only for riders with no sales; their sign-in must be removed first. */
+  deleteRider: (id: string) => Promise<void>;
+  /** Admin: their sign-in must be removed first. */
+  deleteStaff: (id: string) => Promise<void>;
+  /** Admin: wipes whole kinds of records, e.g. the sample data the business started with. */
+  clearData: (parts: ClearPart[]) => Promise<void>;
   /** A web address or file the app can show for a delivery photo, or null when it can't be loaded now. */
   photoUrl: (photo: string) => Promise<string | null>;
 };

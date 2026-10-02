@@ -4,6 +4,7 @@ import { StyleSheet, Switch, View } from 'react-native';
 
 import { Text } from '../components/Text';
 
+import { useNewLogin } from '../components/NewLogin';
 import { SwitchRow } from '../components/SwitchRow';
 import { Button, Card, Chips, Field, H2, Muted, Screen, TopBar } from '../components/ui';
 import { useStore } from '../store/AppStore';
@@ -36,6 +37,8 @@ export default function AddRider() {
   const [rate, setRate] = useState(String(old?.ratePerDelivery ?? state.riders[0]?.ratePerDelivery ?? 5000));
   const [active, setActive] = useState(true);
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const login = useNewLogin('rider', name.trim().split(' ')[0] || 'They');
 
   const title = old ? 'Edit details' : `Add a ${w.rider}`;
 
@@ -72,13 +75,19 @@ export default function AddRider() {
       router.back();
       return;
     }
+    const bad = login.check();
+    if (bad) return setError(bad);
+    setBusy(true);
     const id = await addRider({
       ...details,
       status: active ? 'active' : 'off_duty',
       statusSince: state.day,
       joined: state.day,
     });
-    router.replace(`/rider-info/${id}`);
+    const failed = await login.create(id);
+    setBusy(false);
+    // Saved either way; if the sign-in couldn't be made, their page lets Admin try again.
+    router.replace({ pathname: '/rider-info/[id]', params: failed ? { id, note: `${failed} Try again below.` } : { id } });
   };
 
   return (
@@ -88,7 +97,13 @@ export default function AddRider() {
         footer={
           <View style={{ gap: 8 }}>
             {error ? <Text style={st.error}>{error}</Text> : null}
-            <Button title={old ? 'Save changes' : `Save ${w.rider}`} kind="accent" icon="check" onPress={save} />
+            <Button
+              title={busy ? 'Saving…' : old ? 'Save changes' : `Save ${w.rider}`}
+              kind="accent"
+              icon="check"
+              onPress={save}
+              disabled={busy}
+            />
           </View>
         }
       >
@@ -150,16 +165,10 @@ export default function AddRider() {
           {old ? null : <SwitchRow label="Active" sub="Can be given deliveries" value={active} onChange={setActive} />}
         </Card>
 
-        {old ? (
-          <Muted>
-            The {w.rider} can change their own phone, address, next of kin, photo and where to pay them from their profile.
-          </Muted>
-        ) : (
-          <Muted>
-            To let the {w.rider} sign in to the app, create their account in Supabase and link it to this {w.rider} (setup guide,
-            step 3). They can then add their photo, next of kin and where to pay them from their profile.
-          </Muted>
-        )}
+        {old ? null : login.card}
+        <Muted>
+          The {w.rider} can change their own phone, address, next of kin, photo and where to pay them from their profile.
+        </Muted>
       </Screen>
     </View>
   );

@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Text } from '../components/Text';
 
+import { useNewLogin } from '../components/NewLogin';
 import { Button, Card, Chips, Field, Muted, Screen, TopBar } from '../components/ui';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
@@ -18,6 +19,8 @@ export default function AddStaff() {
   const [every, setEvery] = useState<'month' | 'week'>('month');
   const [roleId, setRoleId] = useState(state.roles[0]?.id ?? '');
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const login = useNewLogin('staff', name.trim().split(' ')[0] || 'They');
 
   if (state.session?.role !== 'admin') {
     return (
@@ -31,12 +34,27 @@ export default function AddStaff() {
   }
 
   const n = Number(pay.replace(/[^\d]/g, '')) || 0;
-  const save = () => {
+  const save = async () => {
     if (!name.trim()) return setError('Enter their full name.');
     if (!job.trim()) return setError('Enter their job, e.g. Store keeper.');
     if (n <= 0) return setError('Enter their pay.');
-    addStaff({ name: name.trim(), job: job.trim(), phone: phone.trim(), pay: n, payEvery: every, active: true, roleId });
-    router.back();
+    const bad = login.check();
+    if (bad) return setError(bad);
+    setBusy(true);
+    const id = await addStaff({
+      name: name.trim(),
+      job: job.trim(),
+      phone: phone.trim(),
+      pay: n,
+      payEvery: every,
+      active: true,
+      roleId,
+    });
+    const failed = await login.create(id);
+    setBusy(false);
+    // Saved either way; if the sign-in couldn't be made, their page lets Admin try again.
+    if (failed) router.replace({ pathname: '/staff-access/[id]', params: { id, note: `${failed} Try again below.` } });
+    else router.back();
   };
 
   return (
@@ -46,7 +64,7 @@ export default function AddStaff() {
         footer={
           <View style={{ gap: 8 }}>
             {error ? <Text style={st.error}>{error}</Text> : null}
-            <Button title="Save staff" kind="accent" icon="check" onPress={save} />
+            <Button title={busy ? 'Saving…' : 'Save staff'} kind="accent" icon="check" onPress={save} disabled={busy} />
           </View>
         }
       >
@@ -72,10 +90,8 @@ export default function AddStaff() {
           <Muted>{state.roles.find((r) => r.id === roleId)?.summary}</Muted>
           <Muted>You can change single things just for this person afterwards, in Users & access.</Muted>
         </Card>
-        <Muted>
-          Riders are added under Riders & bikes. To let this person sign in, create their account in Supabase and link it to them
-          (setup guide, step 3).
-        </Muted>
+        {login.card}
+        <Muted>Riders are added under Riders & bikes.</Muted>
       </Screen>
     </View>
   );

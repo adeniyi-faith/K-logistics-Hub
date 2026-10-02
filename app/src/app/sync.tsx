@@ -19,7 +19,7 @@ export default function SyncCentre() {
 
   const head =
     mode === 'demo'
-      ? { title: 'Demo mode', text: 'Changes stay on this phone. Uploading works once Supabase is set up.' }
+      ? { title: 'Demo mode', text: 'Changes stay on this phone. The real app uploads them for everyone.' }
       : offline
         ? { title: "You're offline", text: 'Keep working. Everything uploads by itself when the internet is back.' }
         : sync.status === 'syncing'
