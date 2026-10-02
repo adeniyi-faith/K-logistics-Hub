@@ -6,6 +6,7 @@ import { FunctionsFetchError, FunctionsHttpError, FunctionsRelayError, SupabaseC
 
 import { AppState } from '../data/types';
 import { runTool } from '../lib/assistantTools';
+import { shiftDay } from '../lib/stock';
 
 type Part = {
   text?: string;
@@ -62,13 +63,53 @@ async function readError(error: unknown): Promise<string> {
   return 'The AI Assistant could not answer right now. Please try again.';
 }
 
-/** Returns Gemini's answer, and the conversation to pass in with the next question. */
-export async function askGemini(state: AppState, history: Turn[], question: string): Promise<{ text: string; history: Turn[] }> {
+/** What each look-up is called on the "thinking" line. */
+const LOOKING_UP: Record<string, string> = {
+  money_summary: 'sales and profit',
+  product_sales: 'product sales',
+  stock: 'stock',
+  riders: 'riders',
+  orders: 'orders',
+  customers: 'customers',
+  expenses: 'expenses',
+};
+
+/**
+ * The figures most questions need, sent along with every question so Gemini can usually answer
+ * in one go instead of asking for look-ups first (each look-up is another trip to Gemini).
+ */
+function snapshot(state: AppState) {
+  const week = { startDay: shiftDay(state.day, -6), endDay: state.day };
+  const pick = (name: string, args: Record<string, unknown> = {}) => runTool(state, name, args).result;
+  const money = (r: unknown) => (r as { total?: unknown } | undefined)?.total;
+  const stock = (pick('stock') as { product: string; closing: number; unit: string; isLow: boolean }[] | undefined) ?? [];
+  return {
+    today: money(pick('money_summary')),
+    last7Days: { ...week, ...(money(pick('money_summary', week)) as object) },
+    bestSellersLast7Days: ((pick('product_sales', week) as unknown[]) ?? []).slice(0, 5),
+    lowStock: stock.filter((s) => s.isLow).map((s) => ({ product: s.product, inStore: s.closing, unit: s.unit })),
+    ridersLast7Days: pick('riders', week),
+    biggestCustomers: ((pick('customers') as unknown[]) ?? []).slice(0, 5),
+  };
+}
+
+/**
+ * Returns Gemini's answer, and the conversation to pass in with the next question.
+ * onStep says what is happening, e.g. "Looking up stock…", for the "thinking" line.
+ */
+export async function askGemini(
+  state: AppState,
+  history: Turn[],
+  question: string,
+  onStep?: (step: string) => void,
+): Promise<{ text: string; history: Turn[] }> {
   if (!client) throw new Error('The AI Assistant is not connected yet. Please sign in again.');
   const contents: Turn[] = [...trim(history), { role: 'user', parts: [{ text: question }] }];
+  const known = snapshot(state);
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
-    const { data, error } = await client.functions.invoke('assistant', { body: { contents, today: state.day } });
+    onStep?.(round === 0 ? 'Thinking' : 'Writing the answer');
+    const { data, error } = await client.functions.invoke('assistant', { body: { contents, today: state.day, snapshot: known } });
     if (error) throw new Error(await readError(error));
     const reply = (data as { content?: Turn })?.content;
     if (!reply?.parts) throw new Error('The AI Assistant gave an empty answer. Please try again.');
@@ -85,6 +126,7 @@ export async function askGemini(state: AppState, history: Turn[], question: stri
     }
 
     // Work out each figure Gemini asked for and send them all back together.
+    onStep?.(`Looking up ${[...new Set(calls.map((c) => LOOKING_UP[c.functionCall!.name] ?? 'figures'))].join(' and ')}`);
     contents.push({
       role: 'user',
       parts: calls.map(({ functionCall }) => ({
