@@ -108,7 +108,7 @@ Today, the business day the app is recording, is ${today}. "This week" means the
 "this month" means from the 1st of this month to today, unless the person says otherwise.
 
 How to answer:
-- Get every figure from the look-ups. Never guess or make up a number, name or date. If the look-ups cannot answer, say so plainly.
+- Get every figure from the look-ups or the figures given below. Never guess or make up a number, name or date. If the look-ups cannot answer, say so plainly.
 - Money is in Naira. Write amounts like ₦21,500.
 - Use short, plain English that a busy business owner can read in a few seconds. Start with the answer in one or two
   sentences. Add up to 6 short lines starting with "- " for the key figures only when they help.
