@@ -20,7 +20,7 @@ export function DayBehind() {
       <Icon name="alert" size={20} color={colors.orangeText} />
       <View style={{ flex: 1, gap: 4 }}>
         <Text style={st.text}>
-          The business day is still {dayLabel(state.day)}, but today is {dayLabel(now)}. New sales and expenses are dated{' '}
+          The business day is still {dayLabel(state.day)}, but today is {dayLabel(now)}. New orders and expenses are dated{' '}
           {dayLabel(state.day)} until the day is closed.
         </Text>
         {can('closeDay') ? <LinkText onPress={() => router.push('/close-day')}>Close the day</LinkText> : null}

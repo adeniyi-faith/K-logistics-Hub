@@ -83,7 +83,7 @@ export function buildReport(state: AppState, kind: ReportKind, p: Period, f: Fil
     return {
       ...base,
       summary: [
-        ['Total sales', naira(sales)],
+        ['Total orders', naira(sales)],
         ['Units sold', String(orders.reduce((s, o) => s + orderUnits(o), 0))],
         ...(seeCost ? [['Profit on goods', naira(profit)] as [string, string]] : []),
         ['Deliveries', String(delivered.length)],
@@ -100,11 +100,11 @@ export function buildReport(state: AppState, kind: ReportKind, p: Period, f: Fil
         itemsText(state, o),
         riders.get(o.riderId)?.name ?? '',
         o.takenBy,
-        o.status === 'delivered' ? 'Delivered' : 'Pending',
+        o.status === 'delivered' ? 'Delivered' : o.status === 'failed' ? "Couldn't deliver" : 'Pending',
         naira(orderTotal(o)),
       ]),
       total: ['Total', '', '', '', '', '', '', naira(sales)],
-      empty: orders.length ? undefined : 'No sales match.',
+      empty: orders.length ? undefined : 'No orders match.',
     };
   }
 
@@ -172,12 +172,12 @@ export function buildReport(state: AppState, kind: ReportKind, p: Period, f: Fil
     return {
       ...base,
       summary: [
-        ['Sales', naira(m.sales)],
+        ['Orders', naira(m.sales)],
         ['Cost of goods', naira(m.costOfGoods)],
         ['Expenses', naira(m.expenses)],
         ['Profit', naira(m.profit)],
       ],
-      columns: ['Date', 'Sales', 'Cost of goods', 'Expenses', 'Profit'],
+      columns: ['Date', 'Orders', 'Cost of goods', 'Expenses', 'Profit'],
       numeric: [1, 2, 3, 4],
       rows: days.map((d) => [dayLabel(d.day), naira(d.sales), naira(d.costOfGoods), naira(d.expenses), naira(d.profit)]),
       total: ['Total', naira(m.sales), naira(m.costOfGoods), naira(m.expenses), naira(m.profit)],

@@ -184,7 +184,7 @@ export function sampleState(day: string): AppState {
     const c = byId.get(customerId)!;
     const lines = items.map(([productId, qty]) => ({ productId, qty, unitPrice: price }));
     const total = lines.reduce((s, l) => s + l.qty * l.unitPrice, 0);
-    const code = `S-${d.slice(5).replace('-', '')}-${String(n).padStart(2, '0')}`;
+    const code = `ORD-${d.slice(5).replace('-', '')}-${String(n).padStart(2, '0')}`;
     return {
       id: code,
       code,
