@@ -29,18 +29,20 @@ Good to know:
    npx supabase functions deploy assistant
    ```
 
-   You can also add the secret in the Supabase dashboard under **Edge Functions → Secrets**.
+   You can also do this without a computer, in the Supabase dashboard:
+   - **Edge Functions → Secrets**: add `GEMINI_API_KEY` with your key.
+   - **Edge Functions → Deploy a new function → Via Editor**: name it `assistant`, paste in everything from `supabase/functions/assistant/index.ts`, and deploy. To update it later, open the function, paste the new code over the old and deploy again.
 3. That's it. Open the app as Admin and tap **Ask AI**.
 
 ## Choosing the Gemini model
 
-The function uses `gemini-3.8-flash` (the newest Flash 3 model) unless you choose another. To switch, set a second secret. No app update is needed:
+The function uses `gemini-3.7-flash` unless you choose another. To switch, set a second secret called `GEMINI_MODEL`. No app update is needed:
 
 ```bash
-npx supabase secrets set GEMINI_MODEL=gemini-3.5-flash
+npx supabase secrets set GEMINI_MODEL=gemini-3.6-flash
 ```
 
-Any Flash 3 model works, for example `gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-3.6-flash` or `gemini-3.5-flash`. Newer ones handle harder questions better. Older ones and the "lite" ones are cheaper.
+Good choices are `gemini-3.7-flash` (the default) and `gemini-3.6-flash`, which is a little cheaper and quicker. If you set `GEMINI_MODEL` before, check its value under **Edge Functions → Secrets**, because it wins over the default.
 
 ## Cost
 
