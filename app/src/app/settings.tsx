@@ -7,6 +7,7 @@ import { Text } from '../components/Text';
 import { BusinessLogo } from '../components/BusinessLogo';
 import { SwitchRow } from '../components/SwitchRow';
 import { ListEditor } from '../components/ListEditor';
+import { ClearDataCard } from '../components/ClearDataCard';
 import { Button, Card, Chips, Field, H2, Muted, Screen, TopBar } from '../components/ui';
 import { RIDER_WORDS, SALE_WORDS } from '../data/settings';
 import { Settings as SettingsType } from '../data/types';
@@ -209,6 +210,8 @@ export default function Settings() {
         </Card>
 
         <Muted>Other phones get the changes when they're online.</Muted>
+
+        {acc.isAdmin ? <ClearDataCard /> : null}
       </Screen>
     </View>
   );

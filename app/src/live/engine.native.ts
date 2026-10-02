@@ -386,11 +386,13 @@ export function createLiveEngine(): LiveEngine {
       if (photo || documents) uploadWaitingPhotos(supabase).catch(() => {});
     },
     async addStaff(input) {
+      const id = uuid();
       const role = snap.state.roles.find((r) => r.id === input.roleId);
       await db.execute(
         `INSERT INTO staff (id, name, initials, job, phone, pay, pay_every, active, role_id, overrides, access)
-         VALUES (uuid(), ?, ?, ?, ?, ?, ?, ?, ?, '{}', ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '{}', ?)`,
         [
+          id,
           input.name,
           initialsOf(input.name),
           input.job,
@@ -402,6 +404,7 @@ export function createLiveEngine(): LiveEngine {
           role ? JSON.stringify(role.access) : null,
         ],
       );
+      return id;
     },
     async updateStaff(id, changes) {
       await updateRow('staff', id, {
@@ -454,6 +457,80 @@ export function createLiveEngine(): LiveEngine {
             x.id,
           ]);
         }
+      });
+    },
+    async uploadNow(rowId) {
+      // A sync may already be running; wait for it, then run one more so this change goes too.
+      for (let i = 0; i < 40 && syncing; i++) await new Promise((r) => setTimeout(r, 250));
+      await syncNow();
+      const left = rowId
+        ? await db.getOptional('SELECT 1 AS x FROM sync_outbox WHERE row_id = ? LIMIT 1', [rowId])
+        : await db.getOptional('SELECT 1 AS x FROM sync_outbox LIMIT 1');
+      return !left;
+    },
+    async deleteSale(orderId) {
+      await db.writeTransaction(async (tx) => {
+        await tx.execute('DELETE FROM stock_moves WHERE order_id = ?', [orderId]);
+        await tx.execute('DELETE FROM order_items WHERE order_id = ?', [orderId]);
+        await tx.execute('DELETE FROM orders WHERE id = ?', [orderId]);
+      });
+    },
+    async deleteExpense(id) {
+      await db.execute('DELETE FROM expenses WHERE id = ?', [id]);
+    },
+    async deleteStockMove(id) {
+      await db.execute("DELETE FROM stock_moves WHERE id = ? AND kind = 'received'", [id]);
+    },
+    async deleteCustomer(id) {
+      await db.writeTransaction(async (tx) => {
+        await tx.execute('UPDATE orders SET customer_id = NULL WHERE customer_id = ?', [id]);
+        await tx.execute('DELETE FROM customers WHERE id = ?', [id]);
+      });
+    },
+    async removeProduct(id) {
+      await db.writeTransaction(async (tx) => {
+        const sold = await tx.getOptional('SELECT 1 AS x FROM order_items WHERE product_id = ? LIMIT 1', [id]);
+        if (sold) {
+          await tx.execute('UPDATE products SET active = 0 WHERE id = ?', [id]);
+          return;
+        }
+        await tx.execute('DELETE FROM stock_moves WHERE product_id = ?', [id]);
+        await tx.execute('DELETE FROM day_openings WHERE product_id = ?', [id]);
+        await tx.execute('DELETE FROM products WHERE id = ?', [id]);
+      });
+    },
+    async deleteRider(id) {
+      await db.writeTransaction(async (tx) => {
+        const used = await tx.getOptional('SELECT 1 AS x FROM orders WHERE rider_id = ? LIMIT 1', [id]);
+        if (!used) await tx.execute('DELETE FROM riders WHERE id = ?', [id]);
+      });
+    },
+    async deleteStaff(id) {
+      await db.execute('DELETE FROM staff WHERE id = ?', [id]);
+    },
+    async clearData(parts) {
+      const has = (p: (typeof parts)[number]) => parts.includes(p);
+      // Products can only go once nothing points at them.
+      const products = has('products');
+      const sales = products || has('sales');
+      const stock = products || has('stock');
+      await db.writeTransaction(async (tx) => {
+        if (stock) {
+          await tx.execute('DELETE FROM stock_moves');
+          await tx.execute('DELETE FROM day_openings');
+        } else if (sales) {
+          await tx.execute('DELETE FROM stock_moves WHERE order_id IS NOT NULL');
+        }
+        if (sales) {
+          await tx.execute('DELETE FROM order_items');
+          await tx.execute('DELETE FROM orders');
+        }
+        if (has('customers')) {
+          await tx.execute('UPDATE orders SET customer_id = NULL WHERE customer_id IS NOT NULL');
+          await tx.execute('DELETE FROM customers');
+        }
+        if (has('expenses')) await tx.execute('DELETE FROM expenses');
+        if (products) await tx.execute('DELETE FROM products');
       });
     },
     async photoUrl(photo) {

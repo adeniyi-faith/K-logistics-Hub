@@ -65,6 +65,13 @@ export default function More() {
             onPress={() => router.push('/users')}
           />
           <Row
+            lead={<IconTile name="eye" />}
+            title="See the app as…"
+            sub={`What a staff member or ${w.rider} sees`}
+            rightSub={<Icon name="chev" color={colors.muted} />}
+            onPress={() => router.push('/view-as')}
+          />
+          <Row
             lead={<IconTile name="sliders" />}
             title="Business settings"
             sub="Logo, lists, words and delivery photo"

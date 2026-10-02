@@ -15,6 +15,7 @@ async function call(body: Record<string, unknown>): Promise<{ email?: string | n
   if (!client) {
     const key = `${body.kind}:${body.id}`;
     if (body.action === 'set') demo.set(key, String(body.email));
+    if (body.action === 'remove') demo.delete(key);
     return { email: demo.get(key) ?? null };
   }
   const { data, error } = await client.functions.invoke('manage-login', { body });
@@ -25,7 +26,8 @@ async function call(body: Record<string, unknown>): Promise<{ email?: string | n
       const b = await error.context.json();
       if (b?.error) return { error: String(b.error) };
     } catch {}
-    if (error.context.status === 404) return { error: 'The sign-in service is not set up yet (see docs/SETUP.md).' };
+    if (error.context.status === 404)
+      return { error: "Sign-in details can't be set yet: the sign-in service hasn't been switched on for the business." };
   }
   return { error: 'Could not reach the sign-in service. Please try again.' };
 }
@@ -38,4 +40,9 @@ export async function getLogin(kind: LoginKind, id: string) {
 /** Creates their sign-in, or changes its email and (if given) password. */
 export async function setLogin(kind: LoginKind, id: string, email: string, password: string) {
   return call({ action: 'set', kind, id, email, password: password || undefined });
+}
+
+/** Removes their sign-in, if they have one, so they can no longer open the app. */
+export async function removeLogin(kind: LoginKind, id: string) {
+  return call({ action: 'remove', kind, id });
 }

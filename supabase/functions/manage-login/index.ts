@@ -1,4 +1,5 @@
-// Lets Admin give a staff member or rider an email and password to sign in with, or change them.
+// Lets Admin give a staff member or rider an email and password to sign in with, change them,
+// or remove them when the person is removed from the app.
 //
 // Making accounts needs Supabase's secret "service role" key. It is only available here on
 // Supabase's servers (an "Edge Function"), never on a phone. Every call checks that the person
@@ -50,6 +51,16 @@ Deno.serve(async (req) => {
 
   const table = kind === 'staff' ? 'staff' : 'riders';
   const link = kind === 'staff' ? 'staff_id' : 'rider_id';
+
+  // Removing someone: delete their account (their profile goes with it). Fine if they never had one.
+  if (action === 'remove') {
+    const { data: linked } = await server.from('profiles').select('id').eq(link, id).maybeSingle();
+    if (linked) {
+      const { error } = await server.auth.admin.deleteUser(linked.id);
+      if (error) return json({ error: error.message }, 400);
+    }
+    return json({ email: null });
+  }
   const { data: person } = await server.from(table).select('id, name').eq('id', id).maybeSingle();
   if (!person) return json({ error: `This ${kind} isn't online yet. Try again once their record has uploaded.` }, 404);
   const { data: profile } = await server.from('profiles').select('id').eq(link, id).maybeSingle();
