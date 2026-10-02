@@ -60,7 +60,7 @@ const st = StyleSheet.create({
   wrap: { paddingVertical: 12, gap: 4 },
   border: { borderTopWidth: 1, borderTopColor: colors.line },
   line: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  code: { fontFamily: fonts.bodyBold, fontSize: 13, color: colors.muted },
+  code: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.muted },
   customer: { flex: 1, fontFamily: fonts.bodyBold, fontSize: 15, color: colors.navy },
   amount: { fontFamily: fonts.bodyBold, fontSize: 15, color: colors.navy },
   sub: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, flexShrink: 1 },
