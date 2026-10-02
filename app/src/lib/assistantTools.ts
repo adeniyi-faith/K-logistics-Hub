@@ -7,7 +7,7 @@
 // what the signed-in person is already allowed to see.
 import { AppState, Order } from '../data/types';
 import { itemsText } from './sales';
-import { dayMoney, deliveredOn, isLow, orderTotal, riderDay, shiftDay, stockFor } from './stock';
+import { dayMoney, deliveredOn, isLow, orderTotal, promisedStock, riderDay, shiftDay, stockFor } from './stock';
 
 type Args = Record<string, unknown>;
 
@@ -76,6 +76,7 @@ const TOOLS: Record<string, (state: AppState, args: Args) => unknown> = {
 
   stock(state, args) {
     const day = isDay(text(args.day)) ? text(args.day) : state.day;
+    const waiting = promisedStock(state);
     return state.products
       .filter((p) => has(p.name, text(args.product)))
       .map((p) => {
@@ -90,6 +91,7 @@ const TOOLS: Record<string, (state: AppState, args: Args) => unknown> = {
           unit: p.unit,
           day,
           ...line,
+          waitingForDelivery: waiting.get(p.id) ?? 0,
           lowStockLevel: p.lowAt,
           isLow: isLow(p, line),
           costPrice: p.costPrice,
@@ -118,10 +120,18 @@ const TOOLS: Record<string, (state: AppState, args: Args) => unknown> = {
   orders(state, args) {
     const days = new Set(daysBetween(state, args));
     const status = text(args.status);
+    const code = text(args.code).replace(/^#/, '');
+    const phone = text(args.phone).replace(/\s/g, '');
+    const product = text(args.product);
+    // An order number or phone finds the order whatever its day.
+    const anyDay = status === 'pending' || !!code || !!phone;
     const list = state.orders
       .filter(
         (o) =>
-          (status === 'pending' ? o.status === 'pending' : days.has(o.day)) &&
+          (anyDay || days.has(o.day)) &&
+          has(o.code, code) &&
+          has(o.phone.replace(/\s/g, ''), phone) &&
+          (!product || o.items.some((it) => has(state.products.find((p) => p.id === it.productId)?.name ?? '', product))) &&
           (!status || o.status === status) &&
           has(o.customer, text(args.customer)) &&
           has(state.riders.find((r) => r.id === o.riderId)?.name ?? '', text(args.rider)) &&
