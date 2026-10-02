@@ -100,7 +100,7 @@ const TOOLS = [
   },
 ];
 
-function instructions(today: string) {
+function instructions(today: string, snapshot: string) {
   return `You are the AI Assistant in K-Logistics Hub, the app of a business in Port Harcourt, Nigeria that sells herbal and
 health products to shops and people and delivers them with motorbike riders.
 
@@ -108,13 +108,17 @@ Today, the business day the app is recording, is ${today}. "This week" means the
 "this month" means from the 1st of this month to today, unless the person says otherwise.
 
 How to answer:
-- Get every figure from the look-ups. Never guess or make up a number, name or date. If the look-ups cannot answer, say so plainly.
+- Get every figure from the look-ups or the figures given below. Never guess or make up a number, name or date. If the look-ups cannot answer, say so plainly.
 - Money is in Naira. Write amounts like ₦21,500.
 - Use short, plain English that a busy business owner can read in a few seconds. Start with the answer in one or two
   sentences. Add up to 6 short lines starting with "- " for the key figures only when they help.
 - Plain text only: no headings, tables, bold or other formatting.
 - You can only read the business data. If asked to change something, say which part of the app to use.
-- Only answer questions about this business. Politely decline anything else.`;
+- Only answer questions about this business. Politely decline anything else.
+- The business calls a sale an "order". Say "orders", not "sales".
+${snapshot ? `
+Figures already worked out (use them when they answer the question, so you need no look-up; use look-ups for anything else):
+${snapshot}` : ''}`;
 }
 
 Deno.serve(async (req) => {
@@ -131,7 +135,7 @@ Deno.serve(async (req) => {
   const { data: role } = await supabase.rpc('my_role');
   if (role !== 'admin') return json({ error: 'Only Admin can use the AI Assistant.' }, 403);
 
-  let body: { contents?: unknown; today?: unknown };
+  let body: { contents?: unknown; today?: unknown; snapshot?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -143,18 +147,29 @@ Deno.serve(async (req) => {
     return json({ error: 'The conversation was empty or too long.' }, 400);
   }
 
+  // Today's figures from the phone, so most questions need no look-up. Capped to keep each call small.
+  const known = body.snapshot && typeof body.snapshot === 'object' ? JSON.stringify(body.snapshot).slice(0, 12000) : '';
+
   const model = Deno.env.get('GEMINI_MODEL') || DEFAULT_MODEL;
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: instructions(today) }] },
-      contents,
-      tools: [{ functionDeclarations: TOOLS }],
-      // Quick answers matter more than deep reasoning for these questions.
-      generationConfig: { thinkingConfig: { thinkingLevel: 'low' } },
-    }),
+  const request = JSON.stringify({
+    systemInstruction: { parts: [{ text: instructions(today, known) }] },
+    contents,
+    tools: [{ functionDeclarations: TOOLS }],
+    // Quick answers matter more than deep reasoning for these questions.
+    generationConfig: { thinkingConfig: { thinkingLevel: 'low' } },
   });
+  // When Gemini is busy, wait a moment and try again (twice) before telling the person.
+  let res: Response;
+  for (let attempt = 0; ; attempt++) {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: request,
+    });
+    if (!(res.status === 429 || res.status === 503) || attempt === 2) break;
+    await res.body?.cancel();
+    await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+  }
 
   if (!res.ok) {
     console.error('Gemini error', res.status, await res.text());
