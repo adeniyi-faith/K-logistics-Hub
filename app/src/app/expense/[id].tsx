@@ -1,9 +1,9 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 
 import { DeleteButton } from '../../components/DeleteButton';
 import { ProofPhoto } from '../../components/ProofPhoto';
-import { Card, H2, Muted, Row, Screen, TopBar } from '../../components/ui';
+import { Card, H2, LinkText, Muted, Row, Screen, TopBar } from '../../components/ui';
 import { frequencyLabel } from '../../lib/expenses';
 import { clock, dayLabel, naira } from '../../lib/format';
 import { payeeName } from '../../lib/pay';
@@ -30,7 +30,15 @@ export default function ExpenseDetail() {
   const paid = payeeName(state, e.payee);
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title={e.category} back />
+      <TopBar
+        title={e.category}
+        back
+        right={
+          acc.canEdit(e.payee ? 'staffpay' : 'expenses') ? (
+            <LinkText onPress={() => router.push(`/add-expense?id=${e.id}`)}>Change</LinkText>
+          ) : undefined
+        }
+      />
       <Screen>
         <Card style={{ paddingVertical: 4 }}>
           <Row first title="Amount" right={naira(e.amount)} />

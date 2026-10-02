@@ -67,7 +67,7 @@ export function demoAnswer(state: AppState, question: string): Answer {
 
   if (/^(hi|hello|hey|good (morning|afternoon|evening))\b/.test(q)) {
     return {
-      text: 'Hello! Ask me anything about the business: sales, profit, stock, riders, customers or expenses.',
+      text: 'Hello! Ask me anything about the business: orders, profit, stock, riders, customers or expenses.',
     };
   }
 
@@ -149,7 +149,7 @@ export function demoAnswer(state: AppState, question: string): Answer {
         pending.reduce((s, o) => s + orderTotal(o), 0),
       )} in total.`,
       facts: pending.map((o) => ({ label: `${o.customer} (${o.area})`, value: rider(o.riderId) })),
-      links: [{ label: 'See sales', href: '/admin/sales' }],
+      links: [{ label: 'See orders', href: '/admin/sales' }],
     };
   }
 
@@ -206,7 +206,7 @@ export function demoAnswer(state: AppState, question: string): Answer {
         { label: 'Orders', value: String(m.salesCount) },
         ...(period.days.length > 1 ? [{ label: 'Period', value: `${dayLabel(firstDay)} to ${dayLabel(state.day)}` }] : []),
       ],
-      links: [{ label: 'See sales', href: '/admin/sales' }],
+      links: [{ label: 'See orders', href: '/admin/sales' }],
     };
   }
 
@@ -217,7 +217,7 @@ export function demoAnswer(state: AppState, question: string): Answer {
 
   return {
     text:
-      'This demo can only answer questions about sales, profit, stock, riders, customers, deliveries and expenses. ' +
+      'This demo can only answer questions about orders, profit, stock, riders, customers, deliveries and expenses. ' +
       'The real assistant, powered by Gemini, will understand questions asked in any wording.',
   };
 }

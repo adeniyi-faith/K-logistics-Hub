@@ -5,7 +5,8 @@ import { Text } from '../components/Text';
 
 import { Icon } from '../components/Icon';
 import { Button, Card, H2, Muted, Screen, TopBar } from '../components/ui';
-import { closingStock, nextDay } from '../lib/stock';
+import { confirm } from '../lib/confirm';
+import { closingStock, nextDay, shiftDay } from '../lib/stock';
 import { useStore } from '../store/AppStore';
 import { colors, fonts } from '../theme';
 import { useAccess } from '../lib/useAccess';
@@ -15,9 +16,10 @@ const short = (day: string) => `${Number(day.slice(8))} ${MO[Number(day.slice(5,
 
 /** Check the day, then copy each product's closing stock into tomorrow as opening stock. */
 export default function CloseDay() {
-  const { state, sync, closeDay } = useStore();
+  const { state, sync, closeDay, reopenDay } = useStore();
   const acc = useAccess();
   const next = nextDay(state.day);
+  const prev = shiftDay(state.day, -1);
   const closing = closingStock(state);
   const pending = state.orders.filter((o) => o.status === 'pending').length;
   const noRider = state.orders.filter((o) => o.day === state.day && !o.riderId).length;
@@ -46,7 +48,7 @@ export default function CloseDay() {
     },
     {
       ok: noRider === 0,
-      title: noRider ? `${noRider} sales have no rider` : 'All sales have a rider',
+      title: noRider ? `${noRider} orders have no rider` : 'All orders have a rider',
       sub: noRider ? 'Give them a rider before tomorrow' : 'Nothing missing',
     },
   ];
@@ -65,13 +67,13 @@ export default function CloseDay() {
                 router.replace('/admin');
               }}
             />
-            <Muted style={{ textAlign: 'center' }}>A closed day can't be changed from the app.</Muted>
+            <Muted style={{ textAlign: 'center' }}>Admin can reopen it later if something needs fixing.</Muted>
           </View>
         }
       >
         <View style={st.note}>
           <Text style={st.noteText}>
-            Closing locks today's record. Tonight's closing stock is copied into tomorrow as opening stock.
+            Closing moves the business to the next day. Tonight's closing stock becomes tomorrow's opening stock.
           </Text>
         </View>
 
@@ -105,6 +107,31 @@ export default function CloseDay() {
             </View>
           ))}
         </Card>
+
+        {acc.isAdmin ? (
+          <Card>
+            <H2>Need to fix {short(prev)}?</H2>
+            <Muted>
+              Reopening goes back to {short(prev)} so you can add or fix its sales, stock and expenses. Close it again when you're
+              done. Anything added meanwhile counts for {short(prev)}.
+            </Muted>
+            <Button
+              title={`Reopen ${short(prev)}`}
+              kind="ghost"
+              icon="back"
+              onPress={async () => {
+                const ok = await confirm(
+                  `Reopen ${short(prev)}?`,
+                  `Every phone goes back to ${short(prev)} until someone closes it again.`,
+                  'Reopen',
+                );
+                if (!ok) return;
+                reopenDay();
+                router.replace('/admin');
+              }}
+            />
+          </Card>
+        ) : null}
       </Screen>
     </View>
   );

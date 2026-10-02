@@ -72,7 +72,7 @@ export default function Finance() {
         <View style={st.hero}>
           <Text style={st.heroLabel}>{isNow ? `Profit ${word}` : 'Profit'}</Text>
           <Text style={st.heroValue}>{naira(m.profit)}</Text>
-          <Text style={st.heroSub}>Sales − cost of goods − expenses</Text>
+          <Text style={st.heroSub}>Orders − cost of goods − expenses</Text>
           <View style={st.heroRow}>
             <Bit label="Sales" value={shortNaira(m.sales)} />
             <Bit label="Cost of goods" value={shortNaira(m.costOfGoods)} />
@@ -91,7 +91,7 @@ export default function Finance() {
 
         {bars.length ? (
           <Card>
-            <H2>{period.kind === 'week' ? 'Daily sales (₦)' : 'Weekly sales (₦)'}</H2>
+            <H2>{period.kind === 'week' ? 'Orders each day (₦)' : 'Orders each week (₦)'}</H2>
             <View style={st.chart}>
               {bars.map((b) => (
                 <View key={b.key} style={st.barCol}>

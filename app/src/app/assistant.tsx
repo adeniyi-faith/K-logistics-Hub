@@ -75,7 +75,7 @@ export default function Assistant() {
                 <AiIcon name="spark" size={30} color={colors.orange} />
               </View>
               <Text style={st.welcomeTitle}>Hi {first}, what would you like to know?</Text>
-              <Text style={st.welcomeSub}>Ask about sales, profit, stock, riders, customers or expenses.</Text>
+              <Text style={st.welcomeSub}>Ask about orders, profit, stock, riders, customers or expenses.</Text>
               <Text style={st.tryLabel}>Try asking</Text>
               <View style={st.suggestions}>
                 {SUGGESTIONS.map((q) => (

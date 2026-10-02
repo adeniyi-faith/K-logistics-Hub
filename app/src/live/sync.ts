@@ -96,6 +96,36 @@ async function sendOne(remote: SupabaseClient, row: Row, by: string) {
   if (result.error) throw result.error;
 }
 
+/**
+ * Notes a refused change and undoes it on this phone: a new row the server does not have is
+ * removed, and the table is downloaded again in full so changed or deleted rows come back.
+ */
+async function refused(sql: Sql, row: Row, e: any) {
+  const reason = String(e?.code === '42501' ? 'Not allowed' : (e?.message ?? e?.code ?? 'Refused')).slice(0, 200);
+  await sql.transaction(async (tx) => {
+    await tx.run('INSERT INTO sync_refused (tbl, op, row_id, at, reason) VALUES (?, ?, ?, ?, ?)', [
+      row.tbl,
+      row.op,
+      String(row.row_id),
+      new Date().toISOString(),
+      reason,
+    ]);
+    if (row.op === 'PUT' && TABLES[row.tbl]) {
+      const later = await tx.first('SELECT 1 AS x FROM sync_outbox WHERE tbl = ? AND row_id = ? AND seq > ? LIMIT 1', [
+        row.tbl,
+        row.row_id,
+        row.seq,
+      ]);
+      if (!later) {
+        await tx.run("UPDATE sync_meta SET value = '1' WHERE key = 'applying'");
+        await tx.run(`DELETE FROM ${row.tbl} WHERE id = ?`, [String(row.row_id)]);
+        await tx.run("UPDATE sync_meta SET value = '0' WHERE key = 'applying'");
+      }
+    }
+    await tx.run('DELETE FROM sync_meta WHERE key = ?', [`cursor:${row.tbl}`]);
+  });
+}
+
 /** Sends the waiting changes, oldest first. Stops at the first one that cannot be sent right now. */
 export async function push(sql: Sql, remote: SupabaseClient, by: () => string): Promise<Outcome> {
   for (;;) {
@@ -106,8 +136,9 @@ export async function push(sql: Sql, remote: SupabaseClient, by: () => string): 
     } catch (e: any) {
       if (isFatal(e)) {
         // The server refused this change for good (e.g. not allowed). Drop it so the queue
-        // does not get stuck; the next download puts the phone back in line.
+        // does not get stuck, note it for the Sync centre, and put the phone back in line.
         console.warn('Change refused by the server and discarded', e);
+        await refused(sql, row, e);
       } else {
         return isOffline(e) ? 'offline' : 'error';
       }
