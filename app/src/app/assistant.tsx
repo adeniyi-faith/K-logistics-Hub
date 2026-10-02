@@ -3,7 +3,7 @@
 // common questions itself from the sample data (src/lib/assistant.ts).
 import { Href, Redirect, router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text, TextInput } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -62,7 +62,7 @@ export default function Assistant() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <TopBar back sub="Ask about your business" title="AI Assistant" />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView
           ref={scroll}
           onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}

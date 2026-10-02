@@ -2,7 +2,7 @@
 //
 // One question can take a few calls: Gemini may first ask for figures (a "function call"),
 // the phone works them out with runTool, sends them back, and Gemini then writes the answer.
-import { FunctionsFetchError, FunctionsHttpError, SupabaseClient } from '@supabase/supabase-js';
+import { FunctionsFetchError, FunctionsHttpError, FunctionsRelayError, SupabaseClient } from '@supabase/supabase-js';
 
 import { AppState } from '../data/types';
 import { runTool } from '../lib/assistantTools';
@@ -42,11 +42,23 @@ function trim(history: Turn[]): Turn[] {
 async function readError(error: unknown): Promise<string> {
   if (error instanceof FunctionsFetchError) return 'No internet connection. The AI Assistant needs internet to answer.';
   if (error instanceof FunctionsHttpError) {
+    const res = error.context as Response;
+    let body: { error?: unknown; message?: unknown; msg?: unknown; code?: unknown } | null = null;
     try {
-      const body = await (error.context as Response).json();
-      if (typeof body?.error === 'string') return body.error;
+      body = await res.json();
     } catch {}
+    // Our own function always answers with { error: "..." } in plain words.
+    if (typeof body?.error === 'string') return body.error;
+    // Anything else came from Supabase before our code ran, so say what Admin can fix.
+    if (res.status === 404)
+      return 'The assistant function is not on Supabase yet (error 404). Deploy it in Edge Functions with the name "assistant".';
+    if (res.status === 401)
+      return 'Supabase turned the request away (error 401). In Edge Functions → assistant → Settings, turn off "Verify JWT" and save.';
+    const detail = [body?.message, body?.msg, body?.code].find((x) => typeof x === 'string');
+    return `The assistant function failed (error ${res.status}${detail ? `: ${detail}` : ''}). Check its Logs in Supabase.`;
   }
+  if (error instanceof FunctionsRelayError)
+    return 'Supabase could not reach the assistant function. Please try again in a minute.';
   return 'The AI Assistant could not answer right now. Please try again.';
 }
 
