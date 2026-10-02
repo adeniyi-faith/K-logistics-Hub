@@ -10,7 +10,7 @@
 //   GEMINI_MODEL    which Gemini model to use (optional, default below)
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const DEFAULT_MODEL = 'gemini-3.8-flash';
+const DEFAULT_MODEL = 'gemini-3.7-flash';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -43,8 +43,9 @@ const TOOLS = [
   {
     name: 'stock',
     description:
-      'Stock per product for one day: opening, received, delivered and closing (closing = what is in store), low-stock level, ' +
-      'whether it is low, cost and selling price, nearest expiry and supplier.',
+      'Stock per product for one day: opening, received, delivered, adjusted (count changes for damage, expiry, returns or a ' +
+      'recount: added minus taken off) and closing (closing = what is in store), waitingForDelivery (on pending orders, still ' +
+      'in store), low-stock level, whether it is low, cost and selling price, nearest expiry and supplier.',
     parameters: {
       type: 'object',
       properties: {
@@ -64,7 +65,8 @@ const TOOLS = [
     name: 'orders',
     description:
       'Orders taken between two days, newest first (at most 40 listed, with the full count and total value). ' +
-      'Each has customer, area, rider, items, total, payment and status. With status "pending" it lists every pending order, whatever its day.',
+      'Each has customer, area, rider, items, total, payment and status. With status "pending", or a code or phone, it looks at every day. ' +
+      'Order numbers start with ORD- (older ones with S-).',
     parameters: {
       type: 'object',
       properties: {
@@ -73,6 +75,9 @@ const TOOLS = [
         customer: { type: 'string', description: 'Part of a customer name.' },
         rider: { type: 'string', description: 'Part of a rider name.' },
         area: { type: 'string', description: 'Delivery area, e.g. Rumuola.' },
+        code: { type: 'string', description: 'Part of an order number, e.g. ORD-1002-19. Searches every day.' },
+        phone: { type: 'string', description: "Part of the customer's phone number. Searches every day." },
+        product: { type: 'string', description: 'Part of a product name in the order.' },
       },
     },
   },
@@ -134,7 +139,7 @@ Deno.serve(async (req) => {
   }
   const contents = body.contents;
   const today = typeof body.today === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.today) ? body.today : new Date().toISOString().slice(0, 10);
-  if (!Array.isArray(contents) || contents.length === 0 || contents.length > 80) {
+  if (!Array.isArray(contents) || contents.length === 0 || contents.length > 160) {
     return json({ error: 'The conversation was empty or too long.' }, 400);
   }
 
