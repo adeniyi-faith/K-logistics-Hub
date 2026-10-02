@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 
+import { DeleteButton } from '../../components/DeleteButton';
 import { ProofPhoto } from '../../components/ProofPhoto';
 import { Card, H2, Muted, Row, Screen, TopBar } from '../../components/ui';
 import { frequencyLabel } from '../../lib/expenses';
@@ -11,7 +12,7 @@ import { useAccess } from '../../lib/useAccess';
 
 export default function ExpenseDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { state } = useStore();
+  const { state, deleteExpense } = useStore();
   const acc = useAccess();
   const e = state.expenses.find((x) => x.id === id);
 
@@ -45,6 +46,14 @@ export default function ExpenseDetail() {
             <H2>Receipt photo</H2>
             <ProofPhoto photo={e.receipt} label="Receipt photo" />
           </Card>
+        ) : null}
+        {acc.isAdmin ? (
+          <DeleteButton
+            title={e.payee ? 'Delete this payment' : 'Delete this expense'}
+            question={e.payee ? 'Delete this payment?' : 'Delete this expense?'}
+            message={`${naira(e.amount)} on ${dayLabel(e.day)} will be removed from the records and reports for everyone. This can't be undone.`}
+            remove={() => deleteExpense(e.id)}
+          />
         ) : null}
       </Screen>
     </View>

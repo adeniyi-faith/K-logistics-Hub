@@ -5,6 +5,7 @@ import { StyleSheet, Switch, View } from 'react-native';
 import { Text } from '../../components/Text';
 
 import { AccessEditor } from '../../components/AccessEditor';
+import { DeleteButton } from '../../components/DeleteButton';
 import { LoginCard } from '../../components/LoginCard';
 import { SwitchRow } from '../../components/SwitchRow';
 import { Avatar, Badge, Button, Card, Chips, Field, H2, LinkText, Muted, Screen, TopBar } from '../../components/ui';
@@ -14,8 +15,8 @@ import { colors, fonts } from '../../theme';
 
 /** Admin: one staff member's role, changes just for them, and whether they can sign in. */
 export default function StaffAccess() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { state, saveStaffAccess } = useStore();
+  const { id, note } = useLocalSearchParams<{ id: string; note?: string }>();
+  const { state, saveStaffAccess, deleteStaff } = useStore();
   const person = state.staff.find((x) => x.id === id);
   const [job, setJob] = useState(person?.job ?? '');
   const [roleId, setRoleId] = useState(person?.roleId ?? state.roles[0]?.id ?? '');
@@ -94,7 +95,7 @@ export default function StaffAccess() {
 
         <AccessEditor value={access} onChange={setAccess} who={first} />
 
-        <LoginCard kind="staff" id={person.id} name={person.name} />
+        <LoginCard kind="staff" id={person.id} name={person.name} note={note} />
 
         <Card>
           <H2>Sign-in</H2>
@@ -109,6 +110,17 @@ export default function StaffAccess() {
             onChange={setCanSignIn}
           />
         </Card>
+
+        {state.expenses.some((e) => e.payee === person.id) ? (
+          <Muted>{first} has pay on record, so they can't be deleted. To stop their access, turn off Can sign in above.</Muted>
+        ) : (
+          <DeleteButton
+            title="Delete this staff member"
+            question={`Delete ${person.name}?`}
+            message={`${person.name} will be removed from every phone, and their sign-in (if any) will stop working. This can't be undone.`}
+            remove={() => deleteStaff(person.id)}
+          />
+        )}
       </Screen>
     </View>
   );

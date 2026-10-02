@@ -3,6 +3,7 @@ import { Linking, StyleSheet, View } from 'react-native';
 
 import { Text } from '../../components/Text';
 
+import { DeleteButton } from '../../components/DeleteButton';
 import { StatusBadge } from '../../components/OrderCard';
 import { ProofPhoto } from '../../components/ProofPhoto';
 import { Avatar, Button, Card, H2, Muted, Row, Screen, TopBar } from '../../components/ui';
@@ -12,6 +13,7 @@ import { orderTotal } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
 import { colors, fonts } from '../../theme';
 import { useAccess } from '../../lib/useAccess';
+import { useWords } from '../../lib/words';
 
 /** "0803 111 2233" -> "2348031112233" for WhatsApp links. */
 function waNumber(phone: string): string {
@@ -22,8 +24,9 @@ function waNumber(phone: string): string {
 /** One order. Once delivered, this is the proof: who delivered it, when, where and who received it. */
 export default function OrderDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { state } = useStore();
+  const { state, deleteSale } = useStore();
   const acc = useAccess();
+  const w = useWords();
   const o = state.orders.find((x) => x.id === id);
   if (!o) {
     return (
@@ -42,7 +45,7 @@ export default function OrderDetail() {
 
   const share = () => {
     const text = [
-      `K-logistics Hub · Order #${o.code}`,
+      `${state.settings.businessName} · Order #${o.code}`,
       o.customer ? `${o.customer}, ${o.area}` : o.area,
       itemsText(state, o),
       `Amount: ${naira(total)} (${paymentText(o)})`,
@@ -125,6 +128,18 @@ export default function OrderDetail() {
             <H2>Delivery photo</H2>
             <ProofPhoto photo={o.photo} />
           </Card>
+        ) : null}
+        {acc.isAdmin ? (
+          <DeleteButton
+            title={`Delete this ${w.sale}`}
+            question={`Delete ${w.sale} #${o.code}?`}
+            message={
+              delivered
+                ? `It will be removed from every phone and from the reports. The goods go back into stock, and it no longer counts towards ${rider?.name.split(' ')[0] ?? 'the rider'}'s earnings. This can't be undone.`
+                : `It will be removed from every phone, including ${rider?.name.split(' ')[0] ?? 'the rider'}'s deliveries. This can't be undone.`
+            }
+            remove={() => deleteSale(o.id)}
+          />
         ) : null}
       </Screen>
     </View>

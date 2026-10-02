@@ -1,9 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '../../components/Text';
 
+import { DeleteButton } from '../../components/DeleteButton';
+import { Icon } from '../../components/Icon';
 import { Button, Card, H2, LinkText, Muted, Row, Screen, TopBar } from '../../components/ui';
+import { confirm } from '../../lib/confirm';
 import { count, dayLabel, naira } from '../../lib/format';
 import { shiftDay, stockFor } from '../../lib/stock';
 import { useStore } from '../../store/AppStore';
@@ -12,8 +15,8 @@ import { useAccess } from '../../lib/useAccess';
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { state } = useStore();
-  const { canEdit, can } = useAccess();
+  const { state, deleteStockMove, removeProduct } = useStore();
+  const { canEdit, can, isAdmin } = useAccess();
   const p = state.products.find((x) => x.id === id);
   if (!p) {
     return (
@@ -32,6 +35,18 @@ export default function ProductDetail() {
   const latest = state.moves
     .filter((m) => m.productId === p.id && m.kind === 'received' && m.expiry)
     .sort((a, b) => (a.expiry ?? '').localeCompare(b.expiry ?? ''))[0];
+  const received = state.moves
+    .filter((m) => m.productId === p.id && m.kind === 'received')
+    .sort((a, b) => b.at.localeCompare(a.at))
+    .slice(0, 8);
+  const sold = state.orders.some((o) => o.items.some((it) => it.productId === p.id));
+  const dropEntry = async (m: (typeof received)[number]) => {
+    const ok = await confirm(
+      'Delete this stock entry?',
+      `${count(m.qty, p.unit)} received ${dayLabel(m.day)} will be taken off the stock count. Use this for an entry typed by mistake.`,
+    );
+    if (ok) deleteStockMove(m.id);
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -124,6 +139,45 @@ export default function ProductDetail() {
             );
           })}
         </Card>
+
+        {isAdmin && received.length ? (
+          <Card style={{ paddingVertical: 8 }}>
+            <H2>Stock received</H2>
+            {received.map((m, i) => (
+              <Row
+                key={m.id}
+                first={i === 0}
+                title={`${count(m.qty, p.unit)}${m.batch ? ` · batch ${m.batch}` : ''}`}
+                sub={`${dayLabel(m.day)}${m.by ? ` · ${m.by}` : ''}`}
+                rightSub={
+                  <Pressable
+                    onPress={() => dropEntry(m)}
+                    hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel="Delete this stock entry"
+                    style={st.drop}
+                  >
+                    <Icon name="trash" size={18} color={colors.red} />
+                  </Pressable>
+                }
+              />
+            ))}
+          </Card>
+        ) : null}
+
+        {isAdmin ? (
+          <DeleteButton
+            title={sold ? 'Hide this product' : 'Delete this product'}
+            question={sold ? `Hide ${p.name}?` : `Delete ${p.name}?`}
+            message={
+              sold
+                ? `${p.name} is in past sales, so it stays in those records and reports. It will no longer show in stock lists or new sales.`
+                : `${p.name} and its stock counts will be removed from every phone. This can't be undone.`
+            }
+            yes={sold ? 'Hide' : 'Delete'}
+            remove={() => removeProduct(p.id)}
+          />
+        ) : null}
       </Screen>
     </View>
   );
@@ -139,6 +193,7 @@ function Part({ label, value, strong }: { label: string; value: number; strong?:
 }
 
 const st = StyleSheet.create({
+  drop: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   tr: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 30 },
   th: { width: 48, textAlign: 'right', fontFamily: fonts.bodyBold, fontSize: 12, color: colors.muted },
   td: { width: 48, textAlign: 'right', fontFamily: fonts.body, fontSize: 14, color: colors.navy },

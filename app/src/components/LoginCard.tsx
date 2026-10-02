@@ -9,14 +9,14 @@ import { Text } from './Text';
 import { Button, Card, Field, H2, Muted } from './ui';
 
 /** Admin: the email and password a staff member or rider signs in with. */
-export function LoginCard({ kind, id, name }: { kind: LoginKind; id: string; name: string }) {
+export function LoginCard({ kind, id, name, note: firstNote }: { kind: LoginKind; id: string; name: string; note?: string }) {
   const { mode } = useStore();
   const first = name.split(' ')[0];
   const [current, setCurrent] = useState<string | null | undefined>(undefined);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
-  const [note, setNote] = useState<{ text: string; ok?: boolean } | null>(null);
+  const [note, setNote] = useState<{ text: string; ok?: boolean } | null>(firstNote ? { text: firstNote } : null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
