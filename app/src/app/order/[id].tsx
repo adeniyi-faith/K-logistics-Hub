@@ -67,7 +67,7 @@ export default function OrderDetail() {
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title={delivered ? 'Delivery proof' : 'Order'} sub={`#${o.code} ${orderFor(o)}`} back />
+      <TopBar title={`Order #${o.code}`} sub={delivered ? `Delivery proof · ${orderFor(o)}` : orderFor(o)} back />
       <Screen
         footer={
           <View style={{ flexDirection: 'row', gap: 10 }}>

@@ -48,7 +48,7 @@ export default function CloseDay() {
     },
     {
       ok: noRider === 0,
-      title: noRider ? `${noRider} sales have no rider` : 'All sales have a rider',
+      title: noRider ? `${noRider} orders have no rider` : 'All orders have a rider',
       sub: noRider ? 'Give them a rider before tomorrow' : 'Nothing missing',
     },
   ];

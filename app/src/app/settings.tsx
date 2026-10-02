@@ -9,7 +9,7 @@ import { SwitchRow } from '../components/SwitchRow';
 import { ListEditor } from '../components/ListEditor';
 import { ClearDataCard } from '../components/ClearDataCard';
 import { Button, Card, Chips, Field, H2, Muted, Screen, TopBar } from '../components/ui';
-import { RIDER_WORDS, SALE_WORDS } from '../data/settings';
+import { RIDER_WORDS } from '../data/settings';
 import { Settings as SettingsType } from '../data/types';
 import { PAY_CATEGORY } from '../lib/pay';
 import { takeDeliveryPhoto } from '../lib/photo';
@@ -162,21 +162,13 @@ export default function Settings() {
 
         <Card>
           <H2>Words we use</H2>
-          <Text style={st.label}>Call a sale</Text>
-          <Chips<string>
-            options={SALE_WORDS.map((x) => ({ value: x, label: x }))}
-            value={draft.words.sale}
-            onChange={(sale) => set({ words: { ...draft.words, sale } })}
-          />
           <Text style={st.label}>Call a rider</Text>
           <Chips<string>
             options={RIDER_WORDS.map((x) => ({ value: x, label: x }))}
             value={draft.words.rider}
             onChange={(rider) => set({ words: { ...draft.words, rider } })}
           />
-          <Muted>
-            The app will say "New {w.sale}", "{w.Sales}" and "{w.Riders} & bikes" on everyone's phone.
-          </Muted>
+          <Muted>The app will say "{w.Riders} & bikes" on everyone's phone.</Muted>
         </Card>
 
         <Card>

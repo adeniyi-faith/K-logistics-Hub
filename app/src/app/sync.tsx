@@ -124,8 +124,8 @@ export default function SyncCentre() {
         </Card>
 
         <Muted>
-          Sales, payments and expenses are always added as new records, so they never clash. Stock is worked out from what came in
-          and went out, so it doesn't clash either.
+          Orders, payments and expenses are always added as new records, so they never clash. Stock is worked out from what came
+          in and went out, so it doesn't clash either.
         </Muted>
       </Screen>
     </View>

@@ -41,7 +41,7 @@ export default function AdminHome() {
           accessibilityLabel="Open finance"
           style={st.hero}
         >
-          <Text style={st.heroLabel}>Today's sales</Text>
+          <Text style={st.heroLabel}>Today's orders</Text>
           <Text style={st.heroValue}>{naira(money.sales)}</Text>
           <Text style={st.heroSub}>{count(money.salesCount, w.sale)}</Text>
           <View style={st.heroRow}>
