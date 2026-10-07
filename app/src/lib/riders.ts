@@ -1,6 +1,6 @@
 import { AppState, Rider } from '../data/types';
 import { dayLabel } from './format';
-import { riderDay } from './stock';
+import { deliveryPay, riderDay } from './stock';
 
 /** What a rider is doing now, worked out from their status and today's deliveries. */
 export function riderNow(state: AppState, r: Rider): { label: string; kind: 'blue' | 'green' | 'gray' | 'red'; note: string } {
@@ -21,8 +21,9 @@ export function bikeParts(bike: string): { name: string; plate: string } {
 
 /** Everything a rider has earned, minus everything they've been paid. */
 export function riderOwed(state: AppState, riderId: string): { earned: number; paid: number; owed: number } {
-  const rate = state.riders.find((r) => r.id === riderId)?.ratePerDelivery ?? 0;
-  const earned = state.orders.filter((o) => o.riderId === riderId && o.status === 'delivered').length * rate;
+  const earned = state.orders
+    .filter((o) => o.riderId === riderId && o.status === 'delivered')
+    .reduce((s, o) => s + deliveryPay(state, o), 0);
   const paid = state.expenses.filter((e) => e.payee === riderId).reduce((s, e) => s + e.amount, 0);
   return { earned, paid, owed: Math.max(0, earned - paid) };
 }

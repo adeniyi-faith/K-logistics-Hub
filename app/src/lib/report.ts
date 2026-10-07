@@ -6,7 +6,7 @@ import { count, dayLabel, naira } from './format';
 import { daysIn, inPeriod, Period, periodLabel, periodMoney } from './money';
 import { payeeName, PAY_CATEGORY } from './pay';
 import { itemsText } from './sales';
-import { deliveredOn, orderTotal, orderUnits, stockFor } from './stock';
+import { deliveredOn, deliveryPay, orderTotal, orderUnits, stockFor } from './stock';
 import { Area, Perm } from '../data/access';
 
 export type ReportKind = 'sales' | 'stock' | 'expenses' | 'profit' | 'customer' | 'rider' | 'pay';
@@ -219,7 +219,7 @@ export function buildReport(state: AppState, kind: ReportKind, p: Period, f: Fil
   const done = state.orders
     .filter((o) => o.status === 'delivered' && inPeriod(deliveredOn(o), p) && (!f.rider || o.riderId === f.rider))
     .sort((a, b) => (a.deliveredAt ?? '').localeCompare(b.deliveredAt ?? ''));
-  const earned = done.reduce((s, o) => s + (riders.get(o.riderId)?.ratePerDelivery ?? 0), 0);
+  const earned = done.reduce((s, o) => s + deliveryPay(state, o), 0);
   return {
     ...base,
     summary: [
@@ -236,7 +236,7 @@ export function buildReport(state: AppState, kind: ReportKind, p: Period, f: Fil
       o.customer || '—',
       o.area,
       o.receivedBy ?? '',
-      naira(riders.get(o.riderId)?.ratePerDelivery ?? 0),
+      naira(deliveryPay(state, o)),
     ]),
     total: ['Total', '', '', '', '', '', naira(earned)],
     empty: done.length ? undefined : 'No deliveries in this period.',

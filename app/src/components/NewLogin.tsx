@@ -34,7 +34,11 @@ export function useNewLogin(kind: LoginKind, who: string) {
   const create = async (id: string) => {
     if (!on) return '';
     // The new record must reach the business online before a sign-in can point at it.
-    if (!(await uploadNow(id))) return 'No internet, so the sign-in was not made yet.';
+    try {
+      if (!(await uploadNow(id))) return 'No internet, so the sign-in was not made yet.';
+    } catch (e: any) {
+      return `The business could not save this record online (${e?.message ?? 'refused'}).`;
+    }
     const r = await setLogin(kind, id, email.trim(), password);
     return r.error ?? '';
   };
@@ -55,6 +59,7 @@ export function useNewLogin(kind: LoginKind, who: string) {
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
+            autoCorrect={false}
             keyboardType="email-address"
             placeholder="name@example.com"
           />

@@ -134,8 +134,9 @@ export default function Assistant() {
             placeholderTextColor="#8A93A6"
             style={st.input}
             accessibilityLabel="Your question"
-            returnKeyType="send"
-            onSubmitEditing={() => ask(draft)}
+            multiline
+            maxLength={2000}
+            scrollEnabled
           />
           <Pressable
             onPress={() => ask(draft)}
@@ -296,7 +297,7 @@ const st = StyleSheet.create({
   chipText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.navy },
   inputBar: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     gap: 8,
     paddingHorizontal: 16,
     paddingTop: 10,
@@ -308,9 +309,12 @@ const st = StyleSheet.create({
   input: {
     flex: 1,
     minHeight: 48,
+    maxHeight: 112, // About four lines; longer pasted text scrolls inside the box instead of growing it.
     paddingHorizontal: 16,
+    paddingTop: 13,
+    paddingBottom: 13,
     backgroundColor: colors.bg,
-    borderRadius: 999,
+    borderRadius: 24,
     fontFamily: fonts.bodyMedium,
     fontSize: 15,
     color: colors.navy,

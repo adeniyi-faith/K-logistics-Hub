@@ -164,6 +164,8 @@ export type Order = {
   receivedBy?: string;
   collected?: { method: 'cash' | 'transfer' | 'paid_before'; amount: number };
   failReason?: string;
+  /** What the rider is paid for this delivery. When empty, the rider's usual rate is used. */
+  riderPay?: number;
   /** Delivery photo: a file on this phone, or its name in online storage. */
   photo?: string;
 };
