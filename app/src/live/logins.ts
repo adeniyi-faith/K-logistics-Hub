@@ -26,8 +26,17 @@ async function call(body: Record<string, unknown>): Promise<{ email?: string | n
       const b = await error.context.json();
       if (b?.error) return { error: String(b.error) };
     } catch {}
-    if (error.context.status === 404)
-      return { error: "Sign-in details can't be set yet: the sign-in service hasn't been switched on for the business." };
+    const status = error.context.status;
+    if (status === 404)
+      return {
+        error:
+          "Sign-in details can't be set yet: the 'manage-login' function has not been deployed on Supabase (see docs/SETUP.md).",
+      };
+    if (status === 401)
+      return {
+        error: "Supabase refused the request. Open the 'manage-login' function's settings and turn OFF 'Verify JWT', then save.",
+      };
+    return { error: `The sign-in service answered with an error (${status}). Please try again.` };
   }
   return { error: 'Could not reach the sign-in service. Please try again.' };
 }

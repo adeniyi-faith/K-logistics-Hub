@@ -16,17 +16,18 @@ import { NoAccess } from '../components/NoAccess';
 const toNumber = (t: string) => Number(t.replace(/[^\d]/g, '')) || 0;
 
 export default function ReceiveStock() {
-  const params = useLocalSearchParams<{ product?: string }>();
-  const { state, receiveStock } = useStore();
+  const params = useLocalSearchParams<{ product?: string; move?: string }>();
+  const { state, receiveStock, editStockMove } = useStore();
+  const old = params.move ? state.moves.find((m) => m.id === params.move && m.kind === 'received') : undefined;
   const acc = useAccess();
   const seeCost = acc.can('seeCost');
-  const [productId, setProductId] = useState(params.product ?? '');
+  const [productId, setProductId] = useState(old?.productId ?? params.product ?? '');
   const [search, setSearch] = useState('');
-  const [qty, setQty] = useState('');
+  const [qty, setQty] = useState(old ? String(old.qty) : '');
   const product = state.products.find((p) => p.id === productId);
-  const [cost, setCost] = useState(product ? String(product.costPrice) : '');
-  const [batch, setBatch] = useState('');
-  const [expiry, setExpiry] = useState('');
+  const [cost, setCost] = useState(old ? String(old.costPrice ?? '') : product ? String(product.costPrice) : '');
+  const [batch, setBatch] = useState(old?.batch ?? '');
+  const [expiry, setExpiry] = useState(old?.expiry ?? '');
   const [error, setError] = useState('');
 
   const pick = (id: string) => {
@@ -37,12 +38,24 @@ export default function ReceiveStock() {
   const n = toNumber(qty);
   const c = toNumber(cost);
   const line = product ? stockFor(state, product.id) : null;
+  // When editing, the stock now already includes the old amount.
+  const base = (line?.closing ?? 0) - (old?.qty ?? 0);
 
   const save = () => {
     if (!product) return setError('Pick the product you received.');
     if (n <= 0) return setError('Enter how many came in.');
     if (seeCost && c <= 0) return setError('Enter the cost price per unit.');
     if (expiry && !/^\d{4}-\d{2}$/.test(expiry)) return setError('Write the expiry date as year-month, e.g. 2028-03.');
+    if (old) {
+      // Correcting an entry typed wrongly: the person without cost access keeps its cost as it was.
+      editStockMove(old.id, {
+        qty: n,
+        costPrice: seeCost ? c : (old.costPrice ?? product.costPrice),
+        batch: batch.trim(),
+        expiry,
+      });
+      return router.back();
+    }
     // Without cost access the price isn't shown, so the product keeps its current cost price.
     receiveStock({ productId: product.id, qty: n, costPrice: seeCost ? c : product.costPrice, batch: batch.trim(), expiry });
     router.back();
@@ -50,16 +63,16 @@ export default function ReceiveStock() {
 
   const matches = state.products.filter((p) => p.name.toLowerCase().includes(search.trim().toLowerCase()));
 
-  if (!acc.canEdit('stock')) return <NoAccess title="Receive stock" />;
+  if (!acc.canEdit('stock') || (params.move && !acc.isAdmin)) return <NoAccess title="Receive stock" />;
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar title="Receive stock" back />
+      <TopBar title={old ? 'Edit stock entry' : 'Receive stock'} back />
       <Screen
         footer={
           <View style={{ gap: 8 }}>
             {error ? <Text style={st.error}>{error}</Text> : null}
-            <Button title="Save stock" kind="accent" onPress={save} />
+            <Button title={old ? 'Save changes' : 'Save stock'} kind="accent" onPress={save} />
           </View>
         }
       >
@@ -67,7 +80,7 @@ export default function ReceiveStock() {
           <Card>
             <Text style={st.label}>Product</Text>
             <Pressable
-              onPress={() => setProductId('')}
+              onPress={() => (old ? undefined : setProductId(''))}
               style={st.picked}
               accessibilityRole="button"
               accessibilityLabel="Change product"
@@ -76,7 +89,7 @@ export default function ReceiveStock() {
                 <Text style={st.pickedName}>{product.name}</Text>
                 <Muted>{product.pack}</Muted>
               </View>
-              <Text style={st.change}>Change</Text>
+              {old ? null : <Text style={st.change}>Change</Text>}
             </Pressable>
           </Card>
         ) : (
@@ -100,7 +113,7 @@ export default function ReceiveStock() {
           {product && line ? (
             <View style={st.now}>
               <Muted>Stock now {count(line.closing, product.unit)}</Muted>
-              <Text style={st.after}>After this: {count(line.closing + n, product.unit)}</Text>
+              <Text style={st.after}>After this: {count(base + n, product.unit)}</Text>
             </View>
           ) : null}
           {seeCost ? (

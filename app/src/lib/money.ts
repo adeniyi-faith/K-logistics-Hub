@@ -1,6 +1,6 @@
 // Money over a stretch of days (a day, a week or a month), for the Expenses and Finance screens.
 import { AppState, Expense } from '../data/types';
-import { dayMoney, deliveredOn, orderUnits, shiftDay } from './stock';
+import { dayMoney, deliveredOn, deliveryPay, orderUnits, shiftDay } from './stock';
 
 export type PeriodKind = 'day' | 'week' | 'month';
 
@@ -140,12 +140,11 @@ export function periodMoney(state: AppState, p: Period) {
 
 /** One rider's deliveries and earnings for each day of the period, newest first. */
 export function riderDays(state: AppState, riderId: string, p: Period) {
-  const rate = state.riders.find((r) => r.id === riderId)?.ratePerDelivery ?? 0;
   const done = state.orders.filter((o) => o.riderId === riderId && o.status === 'delivered' && inPeriod(deliveredOn(o), p));
   return daysIn(p)
     .map((day) => {
-      const n = done.filter((o) => deliveredOn(o) === day).length;
-      return { day, deliveries: n, earned: n * rate };
+      const list = done.filter((o) => deliveredOn(o) === day);
+      return { day, deliveries: list.length, earned: list.reduce((s, o) => s + deliveryPay(state, o), 0) };
     })
     .reverse();
 }

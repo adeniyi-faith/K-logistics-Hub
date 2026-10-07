@@ -112,6 +112,7 @@ export const TABLES: Record<string, TableDef> = {
       collected_amount: 'integer',
       fail_reason: 'text',
       photo_path: 'text',
+      rider_pay: 'integer',
     },
   },
   order_items: {
@@ -167,7 +168,7 @@ export const TABLE_NAMES = Object.keys(TABLES);
 export const YES_NO = ['require_photo', 'active', 'can_sign_in', 'resolved'];
 
 /** Bump when a table above changes. The phone's copy is then rebuilt from the server. */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 /** A random id in the usual uuid shape, made inside SQLite. */
 const UUID_SQL =

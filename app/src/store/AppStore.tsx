@@ -91,6 +91,8 @@ export type Store = {
   deleteExpense: (id: string) => void;
   /** Admin: removes one "received" stock entry. */
   deleteStockMove: (id: string) => void;
+  /** Admin: corrects a "received" stock entry. */
+  editStockMove: (id: string, input: { qty: number; costPrice: number; batch: string; expiry: string }) => void;
   /** Admin: removes a customer; their past sales keep the name copied onto them. */
   deleteCustomer: (id: string) => void;
   /** Admin: hides a product that is in past sales, or removes any other product with its stock records. */
@@ -135,9 +137,10 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 type BaseStore = Omit<Store, 'viewAs' | 'setViewAs'>;
 
 /** Removes the person's sign-in first, so nobody is left with an account that points at nothing. */
-async function withoutLogin(kind: 'staff' | 'rider', id: string, remove: () => unknown) {
-  const r = await removeLogin(kind, id);
-  if (r.error) return r.error;
+async function withoutLogin(kind: 'staff' | 'rider', id: string, hasLogin: boolean, remove: () => unknown) {
+  // Someone who never had a sign-in has nothing to remove, so deleting them works without the sign-in service.
+  const r = hasLogin ? await removeLogin(kind, id) : {};
+  if ('error' in r && r.error) return r.error;
   await remove();
   return null;
 }
@@ -224,10 +227,13 @@ function LiveProvider({ children }: { children: ReactNode }) {
       deleteSale: (id) => report(e.deleteSale(id)),
       deleteExpense: (id) => report(e.deleteExpense(id)),
       deleteStockMove: (id) => report(e.deleteStockMove(id)),
+      editStockMove: (id, input) => report(e.editStockMove(id, input)),
       deleteCustomer: (id) => report(e.deleteCustomer(id)),
       removeProduct: (id) => report(e.removeProduct(id)),
-      deleteRider: (id) => withoutLogin('rider', id, () => e.deleteRider(id)),
-      deleteStaff: (id) => withoutLogin('staff', id, () => e.deleteStaff(id)),
+      deleteRider: (id) =>
+        withoutLogin('rider', id, snap.state.riders.find((x) => x.id === id)?.canSignIn !== undefined, () => e.deleteRider(id)),
+      deleteStaff: (id) =>
+        withoutLogin('staff', id, snap.state.staff.find((x) => x.id === id)?.canSignIn !== undefined, () => e.deleteStaff(id)),
       clearData: e.clearData,
       updateSale: (id, input) => report(e.updateSale(id, input)),
       markFailed: (id, reason) => report(e.markFailed(id, reason)),
@@ -415,6 +421,7 @@ function DemoProvider({ children }: { children: ReactNode }) {
                 riderId: input.riderId,
                 items: input.items,
                 payment: input.payment,
+                riderPay: input.riderPay,
                 status: 'pending',
               },
             ],
@@ -552,6 +559,12 @@ function DemoProvider({ children }: { children: ReactNode }) {
           expenses: s.expenses.filter((e) => e.id !== id),
           pending: [...s.pending, note('Deleted an expense', id)],
         })),
+      editStockMove: (id, { qty, costPrice, batch, expiry }) =>
+        update((s) => ({
+          ...s,
+          moves: s.moves.map((m) => (m.id === id && m.kind === 'received' ? { ...m, qty, costPrice, batch, expiry } : m)),
+          pending: [...s.pending, note('Edited a stock entry', id)],
+        })),
       deleteStockMove: (id) =>
         update((s) => ({
           ...s,
@@ -589,7 +602,7 @@ function DemoProvider({ children }: { children: ReactNode }) {
           };
         }),
       deleteRider: (id) =>
-        withoutLogin('rider', id, () =>
+        withoutLogin('rider', id, true, () =>
           update((s) =>
             s.orders.some((o) => o.riderId === id)
               ? s
@@ -597,7 +610,7 @@ function DemoProvider({ children }: { children: ReactNode }) {
           ),
         ),
       deleteStaff: (id) =>
-        withoutLogin('staff', id, () =>
+        withoutLogin('staff', id, true, () =>
           update((s) => ({
             ...s,
             staff: s.staff.filter((x) => x.id !== id),
@@ -652,6 +665,7 @@ function DemoProvider({ children }: { children: ReactNode }) {
                     address: input.address,
                     riderId: input.riderId,
                     payment: input.payment,
+                    riderPay: input.riderPay,
                     items: input.items,
                   }
                 : x,

@@ -109,6 +109,11 @@ export function deliveredOn(o: Order): string {
   return o.deliveredDay ?? o.day;
 }
 
+/** What the rider earns for one delivery: the amount set on that order, or else their usual rate. */
+export function deliveryPay(state: AppState, o: Order): number {
+  return o.riderPay ?? state.riders.find((r) => r.id === o.riderId)?.ratePerDelivery ?? 0;
+}
+
 /**
  * One rider's day. Earnings = deliveries completed that day × the rider's rate.
  * Pending orders from earlier days carry over, so "left" counts every pending order.
@@ -118,13 +123,12 @@ export function riderDay(state: AppState, riderId: string, day = state.day) {
   const delivered = mine.filter((o) => o.status === 'delivered' && deliveredOn(o) === day);
   const failed = mine.filter((o) => o.status === 'failed' && o.day === day);
   const left = day === state.day ? mine.filter((o) => o.status === 'pending').length : 0;
-  const rate = state.riders.find((r) => r.id === riderId)?.ratePerDelivery ?? 0;
   return {
     assigned: delivered.length + failed.length + left,
     delivered: delivered.length,
     left,
     failed: failed.length,
-    earned: delivered.length * rate,
+    earned: delivered.reduce((s, o) => s + deliveryPay(state, o), 0),
   };
 }
 
