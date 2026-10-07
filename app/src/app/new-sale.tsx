@@ -45,6 +45,10 @@ export default function NewSale() {
   const [area, setArea] = useState(editing?.area ?? picked?.area ?? '');
   const [address, setAddress] = useState(editing?.address ?? picked?.address ?? '');
   const [payment, setPayment] = useState<Order['payment']>(editing?.payment ?? 'on_delivery');
+  // What the rider is paid for this delivery. Until typed, it is the rider's usual rate.
+  const [payText, setPayText] = useState<string | null>(editing?.riderPay != null ? String(editing.riderPay) : null);
+  const usualPay = state.riders.find((r) => r.id === riderId)?.ratePerDelivery ?? 0;
+  const riderPay = payText === null ? usualPay : Number(payText.replace(/[^\d]/g, '')) || 0;
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -70,6 +74,11 @@ export default function NewSale() {
     if (lr && !params.rider) setRiderId(lr.riderId);
   };
 
+  const setPrice = (productId: string, text: string) =>
+    setLines((ls) =>
+      ls.map((l) => (l.productId === productId ? { ...l, unitPrice: Number(text.replace(/[^\d]/g, '')) || 0 } : l)),
+    );
+
   const setQty = (productId: string, qty: number) =>
     setLines((ls) =>
       qty <= 0 ? ls.filter((l) => l.productId !== productId) : ls.map((l) => (l.productId === productId ? { ...l, qty } : l)),
@@ -94,6 +103,7 @@ export default function NewSale() {
       address: address.trim(),
       riderId,
       payment,
+      riderPay: riderPay !== usualPay ? riderPay : undefined,
       items: lines.map((l) => ({ productId: l.productId, qty: l.qty, unitPrice: priceOf(l) })),
     };
     if (editing) {
@@ -190,8 +200,14 @@ export default function NewSale() {
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text style={st.lineName}>{p.name}</Text>
                   <Muted>
-                    {naira(priceOf(l))} each · {count(available(p.id), p.unit)} in stock
+                    Usual price {naira(p.sellPrice)} · {count(available(p.id), p.unit)} in stock
                   </Muted>
+                  <Field
+                    label="Price each (change it for this order)"
+                    keyboardType="number-pad"
+                    value={String(priceOf(l))}
+                    onChangeText={(t) => setPrice(p.id, t)}
+                  />
                   <Muted>
                     {l.qty} × {naira(priceOf(l))} = {naira(l.qty * priceOf(l))}
                   </Muted>
@@ -249,6 +265,13 @@ export default function NewSale() {
               options={[...new Set([...state.settings.areas, ...(area ? [area] : [])])].map((a) => ({ value: a, label: a }))}
             />
           </ScrollView>
+          <Field
+            label={`${w.Rider} is paid for this delivery`}
+            keyboardType="number-pad"
+            value={String(riderPay)}
+            onChangeText={setPayText}
+            helper={`Usual ${naira(usualPay)}. Change it if this delivery pays differently (e.g. ₦2,500 or ₦3,000).`}
+          />
           <Field label="Address" value={address} onChangeText={setAddress} placeholder="Street and landmark" />
         </Card>
 

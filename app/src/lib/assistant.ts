@@ -10,7 +10,7 @@ import { dayMoney, deliveredOn, isLow, orderTotal, riderDay, shiftDay, stockFor 
 
 export type Answer = {
   text: string;
-  /** Short label/value lines shown under the text, e.g. "Sales · ₦215,000". */
+  /** Short label/value lines shown under the text, e.g. "Orders · ₦215,000". */
   facts?: { label: string; value: string }[];
   /** Buttons that open the screen the answer came from. */
   links?: { label: string; href: string }[];
@@ -183,11 +183,11 @@ export function demoAnswer(state: AppState, question: string): Answer {
   if (/(profit|gain|make|made|earn)/.test(q)) {
     const m = sumMoney(state, period.days);
     return {
-      text: `Your profit ${period.name} is ${naira(m.profit)}. That is sales of ${naira(m.sales)}, minus ${naira(
+      text: `Your profit ${period.name} is ${naira(m.profit)}. That is orders worth ${naira(m.sales)}, minus ${naira(
         m.costOfGoods,
       )} for the goods and ${naira(m.expenses)} of expenses.`,
       facts: [
-        { label: 'Sales', value: naira(m.sales) },
+        { label: 'Orders', value: naira(m.sales) },
         { label: 'Cost of goods', value: naira(m.costOfGoods) },
         { label: 'Expenses', value: naira(m.expenses) },
         { label: 'Profit', value: naira(m.profit) },
@@ -202,7 +202,7 @@ export function demoAnswer(state: AppState, question: string): Answer {
     return {
       text: `You sold ${naira(m.sales)} ${period.name}, from ${m.salesCount} ${m.salesCount === 1 ? 'order' : 'orders'}.`,
       facts: [
-        { label: 'Sales', value: naira(m.sales) },
+        { label: 'Orders', value: naira(m.sales) },
         { label: 'Orders', value: String(m.salesCount) },
         ...(period.days.length > 1 ? [{ label: 'Period', value: `${dayLabel(firstDay)} to ${dayLabel(state.day)}` }] : []),
       ],

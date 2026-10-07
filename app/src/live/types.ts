@@ -36,6 +36,8 @@ export type SaleInput = {
   riderId: string;
   payment: Order['payment'];
   items: Order['items'];
+  /** What the rider is paid for this delivery (leave out for the rider's usual rate). */
+  riderPay?: number;
 };
 
 export type ExpenseInput = Pick<Expense, 'day' | 'category' | 'note' | 'amount' | 'frequency' | 'bike' | 'payee' | 'receipt'>;
@@ -126,6 +128,8 @@ export type LiveEngine = {
   deleteExpense: (id: string) => Promise<void>;
   /** Admin: removes one "received" stock entry, e.g. one typed by mistake. */
   deleteStockMove: (id: string) => Promise<void>;
+  /** Admin: corrects one "received" stock entry (how many, cost, batch, expiry) instead of deleting it. */
+  editStockMove: (id: string, input: { qty: number; costPrice: number; batch: string; expiry: string }) => Promise<void>;
   /** Admin: removes a customer. Their past sales keep the name and phone copied onto them. */
   deleteCustomer: (id: string) => Promise<void>;
   /** Admin: a product in past sales is hidden (so old records stay right); any other is removed with its stock records. */

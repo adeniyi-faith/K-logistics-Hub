@@ -172,6 +172,7 @@ export default function ProductDetail() {
                     : `${m.kind === 'added' ? '+' : '−'}${count(m.qty, p.unit)}${m.note ? ` · ${m.note}` : ''}`
                 }
                 sub={`${dayLabel(m.day)}${m.by ? ` · ${m.by}` : ''}`}
+                onPress={isAdmin && m.kind === 'received' ? () => router.push(`/receive-stock?move=${m.id}`) : undefined}
                 rightSub={
                   !isAdmin || m.kind !== 'received' ? undefined : (
                     <Pressable

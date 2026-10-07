@@ -108,6 +108,7 @@ export function createLiveEngine(): LiveEngine {
   let syncTimer: ReturnType<typeof setTimeout> | undefined;
 
   /** Uploads what is waiting, then downloads what changed. Never runs twice at once. */
+  let signingOut = false;
   async function syncNow() {
     const current = session;
     if (!current) return;
@@ -121,6 +122,12 @@ export function createLiveEngine(): LiveEngine {
       do {
         syncAgain = false;
         const local = await opened;
+        // Signed in on the phone only (no usable login with the server yet): do not send anything, or
+        // the server would wrongly refuse the changes. Wait until the login is back.
+        if (!(await supabase.auth.getSession()).data.session) {
+          online = false;
+          break;
+        }
         const sent = await push(local.forSync, supabase, by);
         const got = sent === 'done' ? await pull(local.forSync, supabase, current.user.id) : sent;
         online = got !== 'offline';
@@ -132,6 +139,32 @@ export function createLiveEngine(): LiveEngine {
     } finally {
       syncing = false;
       reload();
+      rollDay();
+    }
+  }
+
+  /**
+   * The business day follows the calendar by itself. When the phone's date is past the business day,
+   * Admin's phone closes each finished day (stock carries over) so nobody has to remember to.
+   */
+  let rolling = false;
+  async function rollDay() {
+    if (rolling || snap.phase !== 'ready' || snap.state.session?.role !== 'admin' || snap.state.session.viewing) return;
+    if (snap.state.day >= today()) return;
+    rolling = true;
+    try {
+      for (let i = 0; i < 62 && snap.state.day < today(); i++) {
+        const was = snap.state.day;
+        await engine.closeDay();
+        dirty = true;
+        await reload();
+        if (snap.state.day === was) break; // Did not move on (e.g. another phone already did): stop.
+      }
+      syncNow();
+    } catch (e) {
+      console.warn('Could not move to the new day', e);
+    } finally {
+      rolling = false;
     }
   }
 
@@ -183,7 +216,10 @@ export function createLiveEngine(): LiveEngine {
   // Look for other phones' changes now and then, and whenever the app comes back to the front.
   setInterval(() => syncNow(), CHECK_EVERY_MS);
   AppVisibility.addEventListener('change', (s) => {
-    if (s === 'active') syncNow();
+    if (s === 'active') {
+      supabase.auth.startAutoRefresh(); // Renews the login as soon as there is internet again.
+      syncNow();
+    } else supabase.auth.stopAutoRefresh();
   });
 
   async function start(next: Session | null) {
@@ -200,9 +236,26 @@ export function createLiveEngine(): LiveEngine {
     await reload();
   }
 
-  supabase.auth.getSession().then(({ data }) => start(data.session));
-  supabase.auth.onAuthStateChange((_event, next) => {
-    if (next?.user.id !== session?.user.id) start(next);
+  // Being offline must never sign anyone out: only the Sign out button does that. If the phone could
+  // not renew the login (no internet), carry on with the login saved on the phone.
+  async function savedSession(): Promise<Session | null> {
+    try {
+      const keys = (await AsyncStorage.getAllKeys()).filter((k) => /^sb-.*-auth-token$/.test(k));
+      for (const k of keys) {
+        const found = JSON.parse((await AsyncStorage.getItem(k)) ?? 'null');
+        if (found?.user?.id) return found as Session;
+      }
+    } catch {}
+    return null;
+  }
+
+  supabase.auth.getSession().then(async ({ data }) => start(data.session ?? (await savedSession())));
+  supabase.auth.onAuthStateChange((event, next) => {
+    if (!next) {
+      if (event === 'SIGNED_OUT' && signingOut) start(null);
+      return; // Not an explicit sign out: keep the person signed in.
+    }
+    if (next.user.id !== session?.user.id) start(next);
     else session = next;
   });
 
@@ -218,7 +271,7 @@ export function createLiveEngine(): LiveEngine {
     ]);
   };
 
-  return {
+  const engine: LiveEngine = {
     subscribe(listener) {
       listeners.add(listener);
       listener(snap);
@@ -229,7 +282,13 @@ export function createLiveEngine(): LiveEngine {
       return error ? 'Wrong email or password, or no internet. Please try again.' : null;
     },
     async signOut() {
-      await supabase.auth.signOut();
+      signingOut = true;
+      try {
+        await supabase.auth.signOut();
+        if (session) await start(null);
+      } finally {
+        signingOut = false;
+      }
     },
     async receiveStock({ productId, qty, costPrice, batch, expiry }) {
       await db.writeTransaction(async (tx) => {
@@ -494,8 +553,8 @@ export function createLiveEngine(): LiveEngine {
           ]);
         }
         await tx.execute(
-          'UPDATE orders SET customer_id = ?, customer = ?, phone = ?, area = ?, address = ?, rider_id = ?, payment = ? WHERE id = ?',
-          [customerId, name, phone, input.area, input.address, input.riderId, input.payment, orderId],
+          'UPDATE orders SET customer_id = ?, customer = ?, phone = ?, area = ?, address = ?, rider_id = ?, payment = ?, rider_pay = ? WHERE id = ?',
+          [customerId, name, phone, input.area, input.address, input.riderId, input.payment, input.riderPay ?? null, orderId],
         );
         // Change the lines that stay, remove the ones taken off, add the new ones.
         const old = await tx.getAll<Row>('SELECT id, product_id FROM order_items WHERE order_id = ?', [orderId]);
@@ -594,6 +653,14 @@ export function createLiveEngine(): LiveEngine {
       // A sync may already be running; wait for it, then run one more so this change goes too.
       for (let i = 0; i < 40 && syncing; i++) await new Promise((r) => setTimeout(r, 250));
       await syncNow();
+      if (rowId) {
+        // The server may have said no to this record: pass on why, so the screen can tell the person.
+        const no = await db.getOptional<{ reason: string }>(
+          'SELECT reason FROM sync_refused WHERE row_id = ? ORDER BY seq DESC LIMIT 1',
+          [rowId],
+        );
+        if (no) throw new Error(no.reason || 'The business refused this record.');
+      }
       const left = rowId
         ? await db.getOptional('SELECT 1 AS x FROM sync_outbox WHERE row_id = ? LIMIT 1', [rowId])
         : await db.getOptional('SELECT 1 AS x FROM sync_outbox LIMIT 1');
@@ -608,6 +675,12 @@ export function createLiveEngine(): LiveEngine {
     },
     async deleteExpense(id) {
       await db.execute('DELETE FROM expenses WHERE id = ?', [id]);
+    },
+    async editStockMove(id, { qty, costPrice, batch, expiry }) {
+      await db.execute(
+        "UPDATE stock_moves SET qty = ?, cost_price = ?, batch = ?, expiry = ? WHERE id = ? AND kind = 'received'",
+        [qty, costPrice, batch || null, expiry || null, id],
+      );
     },
     async deleteStockMove(id) {
       await db.execute("DELETE FROM stock_moves WHERE id = ? AND kind = 'received'", [id]);
@@ -698,8 +771,8 @@ export function createLiveEngine(): LiveEngine {
           ]);
         }
         await tx.execute(
-          `INSERT INTO orders (id, code, day, created_at, taken_by, customer_id, customer, phone, area, address, rider_id, payment, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+          `INSERT INTO orders (id, code, day, created_at, taken_by, customer_id, customer, phone, area, address, rider_id, payment, rider_pay, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
           [
             id,
             nextOrderCode(s),
@@ -713,6 +786,7 @@ export function createLiveEngine(): LiveEngine {
             input.address,
             input.riderId,
             input.payment,
+            input.riderPay ?? null,
           ],
         );
         for (const it of input.items) {
@@ -752,6 +826,7 @@ export function createLiveEngine(): LiveEngine {
       ]);
     },
   };
+  return engine;
 }
 
 // ------------------------------------------------------------ reading data
@@ -981,6 +1056,7 @@ async function readSnapshot(
       receivedBy: o.received_by ?? undefined,
       collected: o.collected_method ? { method: o.collected_method, amount: o.collected_amount ?? 0 } : undefined,
       failReason: o.fail_reason ?? undefined,
+      riderPay: o.rider_pay ?? undefined,
       photo: o.photo_path ?? undefined,
     }),
   );

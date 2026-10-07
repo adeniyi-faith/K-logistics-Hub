@@ -75,7 +75,11 @@ async function sendOne(remote: SupabaseClient, row: Row, by: string) {
     const now = JSON.parse(row.data) as Row;
     if (row.op === 'PUT') {
       const body: Row = { id };
-      for (const c of cols) body[c] = toRemote(row.tbl, c, now[c]);
+      // Blank boxes are left out, so the server fills in its own default (some columns may not be empty).
+      for (const c of cols) {
+        const v = toRemote(row.tbl, c, now[c]);
+        if (v !== null) body[c] = v;
+      }
       result = await table.upsert(body);
     } else {
       const before = (row.prev ? JSON.parse(row.prev) : {}) as Row;

@@ -32,6 +32,11 @@ export default function Finance() {
   }
 
   const m = periodMoney(state, period);
+  const quick = (['day', 'week', 'month'] as const).map((k) => ({
+    key: k,
+    label: { day: 'Today', week: 'This week', month: 'This month' }[k],
+    profit: periodMoney(state, periodOf(k, state.day)).profit,
+  }));
   const before = periodMoney(state, { ...period, ...shifted(period) });
   const name = new Map(state.products.map((p) => [p.id, p]));
   const top = m.products.slice(0, 5);
@@ -67,6 +72,17 @@ export default function Finance() {
     <View style={{ flex: 1 }}>
       <TopBar title="Finance" back right={<Icon name="lock" size={18} color={colors.muted} />} />
       <Screen>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {quick.map((q) => (
+            <View key={q.key} style={st.quick}>
+              <Text style={st.quickLabel}>{q.label}</Text>
+              <Text style={st.quickValue} numberOfLines={1} adjustsFontSizeToFit>
+                {shortNaira(q.profit)}
+              </Text>
+              <Text style={st.quickNote}>profit</Text>
+            </View>
+          ))}
+        </View>
         <PeriodPicker value={period} onChange={setPeriod} />
 
         <View style={st.hero}>
@@ -217,6 +233,18 @@ const st = StyleSheet.create({
   perf: { gap: 6, paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.line },
   perfTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   perfName: { flex: 1, fontFamily: fonts.bodyBold, fontSize: 14, color: colors.navy },
+  quick: {
+    flex: 1,
+    backgroundColor: colors.white,
+    borderRadius: 14,
+    padding: 12,
+    gap: 2,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  quickLabel: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.muted },
+  quickValue: { fontFamily: fonts.head, fontSize: 18, color: colors.navy },
+  quickNote: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
   perfProfit: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.green },
   perfBottom: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   track: { flex: 1, height: 8, borderRadius: 6, backgroundColor: '#EEF1F8' },
