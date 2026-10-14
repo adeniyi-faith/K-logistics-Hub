@@ -75,4 +75,4 @@ docs/       setup, release and AI assistant guides, architecture, screenshots
 
 ## Licence
 
-All rights reserved. The code is public to read and review, not to reuse. See [LICENSE](LICENSE).
+All rights reserved. The code is here to read, not to reuse. See [LICENSE](LICENSE).

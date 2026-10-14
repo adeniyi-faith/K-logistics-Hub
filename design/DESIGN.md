@@ -1,7 +1,5 @@
 # K-Logistics Hub — App Design (UI/UX)
 
-Interactive design canvas (all screens, clickable): https://claude.ai/artifact/HZaDXZrpnfzgh4joyEetDc
-
 This folder holds the approved look and flow for the first Expo (React Native) app.
 The numbers on the screens are sample data only.
 
